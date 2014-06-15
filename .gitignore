@@ -1,0 +1,10 @@
+/xqt.adapters.csv/target/
+/xqt.eninge.builtin/target/
+/xqt.test/target/
+/xqt.model/target/
+/xqt.engine/target/
+/xqt.lang/target/
+/xqt.runtime/target/
+/xqt.api/target/
+/xqt.lang/src/main/java/xqt/lang/grammar/source/
+*.g4
