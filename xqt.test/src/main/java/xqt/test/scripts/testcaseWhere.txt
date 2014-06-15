@@ -1,0 +1,1 @@
+SELECT PERSPECTIVE p1 FROM db1.table1 INTO p2 WHERE (my <> 42)

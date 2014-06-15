@@ -1,0 +1,4 @@
+SELECT PERSPECTIVE p1 FROM db1.table1
+SELECT PERSPECTIVE p1 FROM db1.table1 JOIN db1.table2 ON t1Id == t2Id
+SELECT PERSPECTIVE p1 FROM db1.table1 JOIN db1.table2 ON t1Id == t2Id INTO p2
+SELECT PERSPECTIVE p1 FROM db1.table1 JOIN db1.table2 ON t1Id == t2Id INTO p2 WHERE ((my == 10) AND (my <> 30))

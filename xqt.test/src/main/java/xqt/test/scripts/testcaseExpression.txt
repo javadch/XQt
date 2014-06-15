@@ -1,0 +1,14 @@
+//my + 10
+//mw - 10 + 78
+//M - 10 * 11
+//(m + x) - (12 + 3 * (w - 8))
+//x > 12
+//(10 + x) == (12 - m)
+//(10 + x) && (12 - m)
+my <> -21.2 && mt == 12 || tiger < 10
+(my == 10) AND (my <> 30)
+(my <> -21.2 AND mt == 12 OR tiger & 10) | 8
+my <> -21.2 AND mt == 12 OR tiger & 10 | 8
+mt&2 == 12
+mt IS NaN || mt IS NULL
+mt IS NaN && mt IS NOT NULL

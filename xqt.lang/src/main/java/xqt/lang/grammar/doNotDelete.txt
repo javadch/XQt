@@ -1,0 +1,2 @@
+Do not delete this file, it prevents the container package (xqt.lang.grammar)
+from being deleted when it is empty

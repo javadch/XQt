@@ -1,0 +1,18 @@
+PERSPECTIVE p0
+{
+	ATTRIBUTE a0,
+	ATTRIBUTE a2: String,
+}
+
+PERSPECTIVE p1 EXTENDS p0
+{
+	ATTRIBUTE a1,
+	ATTRIBUTE a2: Integer,
+	ATTRIBUTE a3: Boolean :: Semkey1,
+	ATTRIBUTE a4::SemKey2,
+        ATTRIBUTE a5 MapTo=f1:Integer,
+	ATTRIBUTE a6 MapTo=f1:String::HCode,
+}
+
+SELeCT FROM var1
+

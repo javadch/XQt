@@ -1,0 +1,14 @@
+SELECT FROM g13.12 //INTO p2 //container by Id
+//SELeCT FROM var1
+//Select FROM g13.sheet1 INTO p2 //automatic perspective
+//SELECT DISTINCT FROM g13.sheet1 INTO p2
+//SELECT DISTINCT FROM g13.0 INTO p2 SKIP 10 TAKE 20
+//SELECT DISTINCT FROM g13.sheet1 INTO p2 SKIP 10
+//SELECT DISTINCT FROM g13.sheet1 INTO p2 TAKE 20
+//SELECT DISTINCT FROM g13.sheet1 INTO p2 TAKE 20 GROUP BY h1
+//SELECT DISTINCT FROM g13.sheet1 INTO p2 ORDER BY x1, x2 DESC, x3 DESC, x4 ASC, x5 NULL LAST, x6 ASC NULL LAST TAKE 20 GROUP BY h1
+//SELECT PERsPectiVe p1 FROM g13.sheet2 INTO p2 // explicit perspective
+//SELeCT perspective p1 From db1.table1 INTO p2 WHERE ((my <> -21.2 AND mt == 12 OR tiger & 10) | 8)
+//SELECT PERSPECTIVE p1 FROM db1.table1 INTO p2 WHERE (mt&2 == 12 || mt IS NaN || mt IS NOT NULL)
+//SELECT PERSPECTIVE p1 FROM db1.table1 JOIN db1.table2 ON t1Id == t2Id INTO p2 WHERE (my == 10)
+//SELECT PERSPECTIVe p1 FROM db1.table1 JOIN db1.2 ON t1Id == t2Id INTO p2 WHERE ((my == 10) AND (my <> 30))

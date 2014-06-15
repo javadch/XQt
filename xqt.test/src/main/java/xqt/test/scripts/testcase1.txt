@@ -1,0 +1,24 @@
+PERSPECTIVE m1
+{
+	ATTRIBUTE   Longitude: real   MapTo = longitude,
+	ATT         Latitude: Real    MapTo = latitude,
+	ATTRIBUTE   Elevation: Real   MapTo = elevation / 0.3048,
+}
+PERSPECTIVE soil EXTENDS m1
+{
+	//ATTRIBUTE Timestamp: Date   MapTo = timestamp,
+        ATT         ID: Integer     MapTo = id,
+   	ATTRIBUTE Temperature: Real MapTo = 1.8 * temperature + 32, //0 + 00 + 01 + 001 + 00120 + -100 + 10, // sum: 32
+   	ATTRIBUTE SN: Real          MapTo = soilNi / 1000, 
+}
+CONNECTION cnn1 ADAPTER=CSV SOURCE_URI="D:\\SciQL\\data\\" PARAMETERS=delimiter:comma, fileExtension:csv, firstRowIsHeader:true, y:false
+BIND b1 CONNECTION=cnn1 SCOPE=xdata_10 // data_10_time is the file name and the extension is defined in the connection info
+SELECT PERS soil FROM b1.0 INTO jVar WHERE (Temperature > 100) LIMIT SKIP 1 TAKE 9
+
+
+//SELECT PERS soil FROM b1.0 INTO var1 ORDER BY Elevation DESC LIMIT SKIP 1 TAKE 2
+//SELECT PERS soil FROM b1.0 INTO var1 WHERE (Temperature > 0) ORDER BY Elevation DESC LIMIT SKIP 1 TAKE 2
+
+// SELECT PERS soil FROM b1.0 INTO var1 WHERE (math.abs(Elevation*2) > 10&Temperature && Temperature <=22 AND Temperature >0 OR Elevation ==100.23 AND Temperature IS NOT NULL)
+// AND Elevation <= 323 AND Temperature >= 32 Temperature <= 47)
+// SELECT PERS soil FROM b1.0 INTO var1 Anchor Start 1 Stop 20 WHERE (Elevation ==100.23 AND Temperature IS NOT NULL) Order by Elevation AS
