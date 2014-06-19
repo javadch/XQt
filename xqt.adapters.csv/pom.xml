@@ -19,7 +19,7 @@
         </dependency>
     <dependency>
       <groupId>com.vaiona</groupId>
-      <artifactId>CsvMonster</artifactId>
+      <artifactId>CsvQuery</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
