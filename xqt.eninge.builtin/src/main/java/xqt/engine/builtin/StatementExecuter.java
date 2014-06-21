@@ -51,7 +51,7 @@ public class StatementExecuter implements StatementVisitor{
             //adapter = new CsvDataAdapter();
             if(adapter == null){
                 // read the adapter info from the adapters config file in the applications installation folder
-                String adapterJar = "file:D:/javad/Projects/XQtProjects/XQt/xqt.adapters.csv/target/CsvAdapter-1.0-SNAPSHOT.jar";
+                String adapterJar = "file:D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/CsvAdapter-1.0-SNAPSHOT.jar";
                 String adapterClass = "xqt.adapters.csv.CsvDataAdapter";
                 ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterJar)});
                 Class cl = classLoader.loadClass(adapterClass);
