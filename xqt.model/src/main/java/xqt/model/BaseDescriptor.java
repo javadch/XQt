@@ -5,7 +5,10 @@
 
 package xqt.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.antlr.v4.runtime.ParserRuleContext;
+import xqt.model.exceptions.LanguageException;
 
 /**
  *
@@ -18,6 +21,19 @@ public class BaseDescriptor {
     protected String id = "";
     protected String type = "";
     protected ParserRuleContext parserContext;
+    protected List<LanguageException> languageExceptions = new ArrayList<>();
+
+    public boolean hasError(){
+        return languageExceptions.size() > 0;
+    }
+    
+    public List<LanguageException> getLanguageExceptions() {
+        return languageExceptions;
+    }
+
+    public void setLanguageExceptions(List<LanguageException> languageExceptions) {
+        this.languageExceptions = languageExceptions;
+    }
 
     public ParserRuleContext getParserContext() {
         return parserContext;

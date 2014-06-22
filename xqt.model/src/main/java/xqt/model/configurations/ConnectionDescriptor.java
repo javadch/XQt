@@ -46,16 +46,17 @@ public class ConnectionDescriptor extends ConfigurationDescriptor{
         return parameters;
     }
 
-    public void addParameter(ConnectionParameterDescriptor parameter) throws LanguageException {
+    public void addParameter(ConnectionParameterDescriptor parameter) {
          if(this.parameters.containsKey(parameter.getId()) || this.parameters.containsValue(parameter)) {  //the parameter already exists
-            throw LanguageExceptionBuilder.builder()
+            this.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                         .setMessageTemplate("There is a duplicate parameter named %s defined in connection %s.")
                         .setContextInfo1(parameter.getId())
                         .setContextInfo2(id)
                         .setLineNumber(parameter.getParserContext().getStart().getLine())
                         .setColumnNumber(parameter.getParserContext().getStop().getCharPositionInLine())
                         .build()
-                        ;
+            );
         } else {
             parameter.setConnection(this);
             this.parameters.put(parameter.getId(), parameter);

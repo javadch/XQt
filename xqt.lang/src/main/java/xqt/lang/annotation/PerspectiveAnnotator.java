@@ -17,7 +17,7 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
  */
 public class PerspectiveAnnotator {
     
-    public static PerspectiveDescriptor describePerspective(XQtParser.PerspectiveContext ctx, ProcessModel processModel) throws Exception {
+    public static PerspectiveDescriptor describePerspective(XQtParser.PerspectiveContext ctx, ProcessModel processModel) {
         PerspectiveDescriptor perspective = new PerspectiveDescriptor();
         perspective.setId(ctx.name.getText());
         perspective.setExplicit(Boolean.TRUE);
@@ -30,21 +30,22 @@ public class PerspectiveAnnotator {
                 perspective.getAttributes().putAll(sup.getAttributes());// .entrySet().addAll(sup.getAttributes().entrySet());
                 // add the sup's attributes to pers
             } else {
-                throw LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("Perspective %s has extended perspective %s but it does not exist!")
-                    .setContextInfo1( perspective.getId())
-                    .setContextInfo2(ctx.superPerspective.getText())
-                    .setLineNumber(ctx.getStart().getLine())
-                    .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                    .build()
-                    ;
+                perspective.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate("Perspective %s has extended perspective %s but it does not exist!")
+                        .setContextInfo1( perspective.getId())
+                        .setContextInfo2(ctx.superPerspective.getText())
+                        .setLineNumber(ctx.getStart().getLine())
+                        .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                        .build()
+                );
             }
         }
         perspective.setParserContext((ParserRuleContext)ctx);
         return perspective;
     }
 
-    public static PerspectiveAttributeDescriptor describePerspectiveAttribute(XQtParser.Attribute_defContext ctx, String perspectiveId) throws Exception {
+    public static PerspectiveAttributeDescriptor describePerspectiveAttribute(XQtParser.Attribute_defContext ctx, String perspectiveId) {
     
         PerspectiveAttributeDescriptor attDesc = new PerspectiveAttributeDescriptor();  
         attDesc.setParserContext(ctx);
@@ -58,23 +59,16 @@ public class PerspectiveAnnotator {
             }
             if(ctx.smartId().semanticKey()!= null)
                 attDesc.setSemanticKey(ctx.smartId().semanticKey().getText());
-
-//            if(ctx.fwd != null){ //these items will be moved to expression visitor/ descriptor methds
-//                attDesc.getForwardExpression().setBody(ctx.fwd.getText());
-//            }
-//            if(ctx.rvs != null){
-//                attDesc.getReverseExpression().setBody(ctx.rvs.getText());
-//            }
-            return attDesc;
         } else { //Error: the attribute has no ID
-                throw LanguageExceptionBuilder.builder()
+            attDesc.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("There is an attribute in perspective %s without an identifier.")
                     .setContextInfo1(perspectiveId)
                     .setLineNumber(ctx.getStart().getLine())
                     .setColumnNumber(ctx.getStop().getCharPositionInLine())
                     .build()
-                    ;
+            );
         }
-    }
-    
+        return attDesc;
+    }    
 }

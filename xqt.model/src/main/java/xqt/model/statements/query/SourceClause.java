@@ -27,41 +27,33 @@
 package xqt.model.statements.query;
 
 import java.util.UUID;
-import xqt.model.ClauseDescriptor;
-import xqt.model.configurations.BindingDescriptor;
+import xqt.model.DataContainerDescriptor;
 
 /**
  *
  * @author Javad Chamanara
- * @project SciQuest
+ * @project XQt
  */
-public class SourceClause extends ClauseDescriptor{
-    private BindingDescriptor binding; // can be an external source (binding) or a variable
-    private Integer containerIndex; //shoud be an index to one of the scopes defined in the linked binding
-    // all the above fields are temporary
+public class SourceClause extends DataContainerDescriptor{
     
-    public BindingDescriptor getBinding() {
-        return binding;
-    }
-
-    public void setBinding(BindingDescriptor binding) {
-        this.binding = binding;
-    }
-
-    public Integer getContainerIndex() {
-        return containerIndex;
-    }
-
-    public String getContainer() {
-        return  binding.getScopes().get(containerIndex);
-    }
-
-    public void setContainerIndex(Integer container) {
-        this.containerIndex = container;
-    }
-
-    public SourceClause(){
+    public final void init(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Source.toString();
+        type = SelectClauseType.Source.toString();        
     }
+   
+    public SourceClause(){
+        init();
+    }
+    
+    public static SourceClause convert(DataContainerDescriptor base){
+        SourceClause source = new SourceClause();
+        source.setBinding(base.getBinding());
+        source.setContainerIndex(base.getContainerIndex());
+        source.setDataContainerType(base.getDataContainerType());
+        source.setLanguageExceptions(base.getLanguageExceptions());
+        source.setOrderInParent(base.getOrderInParent());
+        source.setParserContext(base.getParserContext());
+        source.setVariableName(base.getVariableName());
+        return source;
+    } 
 }

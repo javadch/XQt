@@ -4,6 +4,7 @@
  */
 package xqt.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,11 +24,42 @@ public class ProcessModel {
     private Map<Integer, StatementDescriptor> statements = new LinkedHashMap<>();
     private Map<String, DeclarationDescriptor> declarations = new HashMap<>();
     private Map<String, ConfigurationDescriptor> configurations = new HashMap<>();
+        protected List<LanguageException> languageExceptions = new ArrayList<>();
+
+    public List<LanguageException> getLanguageExceptions() {
+        return languageExceptions;
+    }
+
+    public void setLanguageExceptions(List<LanguageException> languageExceptions) {
+        this.languageExceptions = languageExceptions;
+    }
 
     public ProcessModel (){
 		super();
     }
 
+    public boolean hasError(){
+        // go through the languageExceptions and also ask all the elements: declarations, statements, configurations etc
+        if(this.languageExceptions.stream().count() > 0)
+            return true;
+        if (declarations.values().stream().anyMatch(p -> p.hasError())) {
+            return true;
+        }
+        if (configurations.values().stream().anyMatch(p -> p.hasError())) {
+            return true;
+        }
+        return statements.values().stream().anyMatch(p -> p.hasError());
+    }
+    
+    public List<LanguageException> getEffectiveErrors(){
+        List<LanguageException> errors = new ArrayList<>();
+        errors.addAll(this.languageExceptions);
+        declarations.values().stream().forEach(p-> errors.addAll(p.getLanguageExceptions()));
+        configurations.values().stream().forEach(p-> errors.addAll(p.getLanguageExceptions()));
+        statements.values().stream().forEach(p-> errors.addAll(p.getLanguageExceptions()));
+        return errors;
+    }
+        
     public void addStatementDescriptor(StatementDescriptor statement){
             statements.put(statement.getOrderInParent(), statement);
     }
@@ -40,16 +72,17 @@ public class ProcessModel {
         // satatement id is the id aasigned to the statement during the annotation/ parsin, not its index in the list
         return statements.get(statementId);
     }
-    public void addDeclaration(DeclarationDescriptor declaration) throws LanguageException {
+    public void addDeclaration(DeclarationDescriptor declaration) {
         //check whether all types of declarations should have unique ids or each type of them ...
         if(this.declarations.containsKey(declaration.getId()) || this.declarations.containsValue(declaration))
-            throw LanguageExceptionBuilder.builder()
+            this.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Duplicate perspective declaration encountered. Persective id: %s")
                     .setContextInfo1(declaration.getId())
                     .setLineNumber(declaration.getParserContext().getStart().getLine())
                     .setColumnNumber(declaration.getParserContext().getStop().getCharPositionInLine())
                     .build()
-                    ;
+            );
         this.declarations.put(declaration.getId(), declaration);
     }
 
@@ -57,11 +90,18 @@ public class ProcessModel {
         return declarations;
     }
     
-    public void addConfiguration(ConfigurationDescriptor configuration) throws Exception {
+    public void addConfiguration(ConfigurationDescriptor configuration) {
         //check whether all types of configurations should have unique ids or each type of them ...
         if(this.configurations.containsKey(configuration.getId()) 
                 || this.configurations.containsValue(configuration))
-            throw new Exception(String.format("Duplicate configuration declaration encountered. id: %s", configuration.getId()));
+            this.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Duplicate configuration declaration encountered. id: %s")
+                    .setContextInfo1(configuration.getId())
+                    .setLineNumber(configuration.getParserContext().getStart().getLine())
+                    .setColumnNumber(configuration.getParserContext().getStop().getCharPositionInLine())
+                    .build()
+            );
         this.configurations.put(configuration.getId(), configuration);
     }
 
@@ -71,6 +111,5 @@ public class ProcessModel {
     
     public Integer totalElementCount(){
         return declarations.size() + configurations.size() + statements.size(); // + mConfigurations
-    }
-    
+    }    
 }

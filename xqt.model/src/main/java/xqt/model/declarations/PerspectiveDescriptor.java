@@ -30,7 +30,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         return attributes;
     }
 
-    public void addAttribute(PerspectiveAttributeDescriptor attribute) throws LanguageException {
+    public void addAttribute(PerspectiveAttributeDescriptor attribute) {
         attribute.setPerspective(this);
         if(attributes.containsKey(attribute.getId())){  //the attribute already exists
             PerspectiveAttributeDescriptor existing = attributes.get(attribute.getId());
@@ -39,14 +39,15 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
                 attributes.remove(attribute.getId());
                 attributes.put(attribute.getId(), attribute);
             } else { // the attribute is an illegal duplicate
-                throw LanguageExceptionBuilder.builder()
+                this.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
                         .setMessageTemplate("There is a duplicate attribute named %s defined in perspective %s.")
                         .setContextInfo1(attribute.getId())
                         .setContextInfo2(id)
                         .setLineNumber(attribute.getParserContext().getStart().getLine())
                         .setColumnNumber(attribute.getParserContext().getStop().getCharPositionInLine())
                         .build()
-                        ;
+                );
             }
         } else { //the attribute is not defined in the super perspective, nor defined before so add it to the perspective
             attributes.put(attribute.getId(), attribute);

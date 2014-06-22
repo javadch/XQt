@@ -163,7 +163,7 @@ public class CsvDataAdapter implements DataAdapter {
             convertor.visit(select.getFilterClause().getPredicate());
             String filterString = convertor.getSource();
             builder        
-                .addWhere(filterString);            
+                .where(filterString);            
         }
     }
 

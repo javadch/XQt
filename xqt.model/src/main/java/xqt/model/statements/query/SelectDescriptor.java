@@ -67,18 +67,19 @@ public class SelectDescriptor extends StatementDescriptor{
         return (GroupClause)clauses.get(SelectClauseType.Group.toString());
     }
 
-    public void addClause(ClauseDescriptor clause) throws LanguageException{
+    public void addClause(ClauseDescriptor clause){
         if(clause == null)
             //throw new LanguageException("Fatal error a null clause is provided to the select statement");
             return;
         if(this.clauses.containsKey(clause.getType()) || this.clauses.containsValue(clause))
-            throw LanguageExceptionBuilder.builder()
+            this.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Duplicate clause of type %s detected.")
                     .setContextInfo1(clause.getType())
                     .setLineNumber(clause.getParserContext().getStart().getLine())
                     .setColumnNumber(clause.getParserContext().getStop().getCharPositionInLine())
                     .build()
-                    ;
+            );
         this.clauses.put(clause.getType(), clause);
         clause.setOrderInParent(clauses.size()+1);
     }

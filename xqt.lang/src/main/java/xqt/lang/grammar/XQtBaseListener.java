@@ -1,4 +1,4 @@
-// Generated from D:\javad\Projects\XQtProjects\XQt\xqt.lang\src\main\java\xqt\lang\grammar\source\XQt.g4 by ANTLR 4.2.2
+// Generated from D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\xqt\lang\grammar\source\XQt.g4 by ANTLR 4.2.2
 package xqt.lang.grammar;
 
 import org.antlr.v4.runtime.ParserRuleContext;

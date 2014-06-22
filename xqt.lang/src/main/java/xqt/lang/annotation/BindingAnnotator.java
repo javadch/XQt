@@ -19,32 +19,34 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
  */
 public class BindingAnnotator {
 
-    public static BindingDescriptor describeBinding(XQtParser.BindingContext ctx, ProcessModel processModel) throws LanguageException {
+    public static BindingDescriptor describeBinding(XQtParser.BindingContext ctx, ProcessModel processModel) {
         BindingDescriptor binding = new BindingDescriptor();
         binding.setId(ctx.name.getText());
         //binding.setName(binding.getId());
 
         if(ctx.connectionName == null){
-             throw LanguageExceptionBuilder.builder()
+            binding.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Binding %s has not defined a connection!")
                     .setContextInfo1(binding.getId())
                     .setLineNumber(ctx.getStart().getLine())
                     .setColumnNumber(ctx.getStop().getCharPositionInLine())
                     .build()
-                    ;
+            );
         }
         ConnectionDescriptor connection = (ConnectionDescriptor)processModel.getConfigurations().get(ctx.connectionName.getText());
         if(connection != null){
             binding.setConnection(connection);
         } else {
-                throw LanguageExceptionBuilder.builder()
+            binding.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Binding %s is using the connection %s, which is not declared!")
                     .setContextInfo1(binding.getId())
                     .setContextInfo2(ctx.connectionName.getText())
                     .setLineNumber(ctx.getStart().getLine())
                     .setColumnNumber(ctx.getStart().getCharPositionInLine())
                     .build()
-                    ;
+            );
         }        
         binding.setParserContext((ParserRuleContext)ctx);
         return binding;       
@@ -55,6 +57,7 @@ public class BindingAnnotator {
         if(ctx.ID()!= null){
             return ctx.ID().getText();
         } else { //Error: the attribute has no ID
+            // do not change this part, there is no upper level object to hold the exception here!
             throw LanguageExceptionBuilder.builder()
                     .setMessageTemplate("There is a scope in the binding %s without an identifier.")
                     .setContextInfo1(bindingId)

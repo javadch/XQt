@@ -40,16 +40,17 @@ public class BindingDescriptor extends ConfigurationDescriptor{
         return scopes;
     }
 
-    public void addScope(String scope, ParserRuleContext context) throws LanguageException {
+    public void addScope(String scope, ParserRuleContext context) {
         if(this.scopes.contains(scope)) {  //the scope already exists
-            throw LanguageExceptionBuilder.builder()
+            this.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
                     .setMessageTemplate("There is a duplicate scope named %s defined in perspective %s.")
                     .setContextInfo1(scope)
                     .setContextInfo2(id)
                     .setLineNumber(context.getStart().getLine())
                     .setColumnNumber(context.getStop().getCharPositionInLine())
                     .build()
-                    ;
+            );
         } else {
             this.scopes.add(scope);
         }

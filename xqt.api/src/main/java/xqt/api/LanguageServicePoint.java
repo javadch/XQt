@@ -8,7 +8,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.InputMismatchException;
 import xqt.engine.QueryEngine;
+import xqt.model.exceptions.LanguageException;
 import xqt.model.statements.StatementDescriptor;
 import xqt.runtime.RuntimeSystem;
 
