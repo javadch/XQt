@@ -87,7 +87,7 @@ public class CsvDataAdapter implements DataAdapter {
                 // as long as the query has not changed. means the reader can read/ query different files the share the same column info
                 // but maybe different delimiter, etc.
                 List<Object> result = reader
-                        // in XQt domain these methods should not be called 
+                        // in XQt usage scenarios these methods should not be called. instead they are called on the builder
                         // ====================================================>
                         //.columnDelimiter(",") // set during build
                         //.quoteDelimiter("\"")
@@ -102,7 +102,7 @@ public class CsvDataAdapter implements DataAdapter {
                 
                 //System.out.println("The result set contains " + result.stream().count() + " records.");
                 if(result != null){
-                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular); 
                     resultSet.setData(result);
                     resultSet.setSchema(prepareSchema(select));
                     return resultSet;
