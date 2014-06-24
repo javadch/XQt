@@ -9,6 +9,8 @@ package xqt.adapters.csv;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
 import com.vaiona.csv.reader.HeaderBuilder;
+import com.vaiona.csv.reader.TestEntity;
+import com.vaiona.csv.reader.TestReader;
 import com.vaiona.data.FieldInfo;
 import com.vaiona.data.TypeSystem;
 import java.io.IOException;
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import xqt.model.DataContainerDescriptor;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
@@ -44,7 +47,7 @@ public class CsvDataAdapter implements DataAdapter {
         DataReaderBuilder builder = new DataReaderBuilder();
         try{
             builder
-                .baseClassName("Test")
+                .baseClassName("GeneratedX")
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
                 //.addProjection("MAX", "SN")// MIN, SUM, COUNT, AVG, 
             ;
@@ -76,6 +79,7 @@ public class CsvDataAdapter implements DataAdapter {
             prepareWhere(builder, select);            
             prepareOrdering(builder, select);
             prepareLimit(builder, select);
+            shouldResultBeWrittenIntoFile(builder, select);
             
             DataReader<Object> reader = builder.build();
             if(reader != null){
@@ -83,18 +87,28 @@ public class CsvDataAdapter implements DataAdapter {
                 // as long as the query has not changed. means the reader can read/ query different files the share the same column info
                 // but maybe different delimiter, etc.
                 List<Object> result = reader
+                        // in XQt domain these methods should not be called 
+                        // ====================================================>
                         //.columnDelimiter(",") // set during build
                         //.quoteDelimiter("\"")
                         //.unitDelimiter("::")
+                        // <====================================================
                         .source(getCompleteSourceName(select))
+                        .target(getCompleteTargetName(select))
+                        // pass th target file
                         .bypassFirstRow(firstRowIsHeader)
+                        .trimTokens(true) // default is true
                         .read();
                 
                 //System.out.println("The result set contains " + result.stream().count() + " records.");
-                Resultset resultSet = new Resultset(ResultsetType.Tabular);
-                resultSet.setData(result);
-                resultSet.setSchema(prepareSchema(select));
-                return resultSet;
+                if(result != null){
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
+                    resultSet.setData(result);
+                    resultSet.setSchema(prepareSchema(select));
+                    return resultSet;
+                }else {
+                    return null;
+                }
             }
         } catch (IOException | ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException | ParseException ex1) {
             Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
@@ -102,6 +116,38 @@ public class CsvDataAdapter implements DataAdapter {
         }
         return null;        
     }
+
+    //@Override
+    public Resultset run2(SelectDescriptor select) {
+        try{
+            Boolean firstRowIsHeader = true;            
+            
+            TestReader reader = new TestReader();
+            if(reader != null){
+                List<TestEntity> result = reader
+                    .source(getCompleteSourceName(select))
+                    .target(getCompleteTargetName(select))
+                    .bypassFirstRow(firstRowIsHeader)
+                    .trimTokens(true) // default is true
+                    .read();
+                
+                if(result != null){
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
+                    resultSet.setData(result);
+                    resultSet.setSchema(prepareSchema(select));
+                    return resultSet;
+                }else {
+                    return null;
+                }
+            }
+        } catch (Exception ex1) {
+            Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
+            // throw a proper exception
+        }
+        return null;        
+    }
+
+    
 
     @Override
     public void setup(Map<String, Object> config) {
@@ -119,6 +165,20 @@ public class CsvDataAdapter implements DataAdapter {
         return fileName;
     }
   
+    private String getCompleteTargetName(SelectDescriptor select){ //may need a container index too!
+        if(select.getTargetClause().getDataContainerType() != DataContainerDescriptor.DataContainerType.Simplecontainer)
+            return null;
+        String basePath = select.getTargetClause().getBinding().getConnection().getSourceUri();
+        String container0 = select.getTargetClause().getContainer();
+        String fileExtention = "csv";
+        String fileName = "";
+        try{
+            fileExtention = select.getSourceClause().getBinding().getConnection().getParameters().get("fileExtension").getValue();
+        } catch (Exception ex){}
+        fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+        return fileName;
+    }
+    
     private Boolean prepareFields(DataReaderBuilder builder, SelectDescriptor select) throws IOException {
         String fileName = getCompleteSourceName(select);
         HeaderBuilder hb = new HeaderBuilder();
@@ -180,4 +240,12 @@ public class CsvDataAdapter implements DataAdapter {
                .take(select.getLimitClause().getTake());
     }
 
+    private void shouldResultBeWrittenIntoFile(DataReaderBuilder builder, SelectDescriptor select) {
+        builder.writeResultsToFile(
+                (
+                    select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Simplecontainer
+                ||  select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.JoinedContainer
+                )
+        );
+    }
 }

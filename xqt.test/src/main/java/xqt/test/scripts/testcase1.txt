@@ -11,7 +11,7 @@ PERSPECTIVE soil EXTENDS m1
    	ATTRIBUTE Temperature: Real MapTo = 1.8 * temperature + 32, //0 + 00 + 01 + 001 + 00120 + -100 + 10, // sum: 32
    	ATTRIBUTE SN: Real          MapTo = soilNi / 1000, 
 }
-CONNECTION cnn1 ADAPTER=CSV SOURCE_URI="D:\\SciQL\\data\\" PARAMETERS=delimiter:comma, fileExtension:csv, firstRowIsHeader:true, y:false
+CONNECTION cnn1 ADAPTER=CSV SOURCE_URI="D:\\Projects\\PhD\\Data\\" PARAMETERS=delimiter:comma, fileExtension:csv, firstRowIsHeader:true, y:false
 BIND b1 CONNECTION=cnn1 SCOPE=xdata_10 // data_10_time is the file name and the extension is defined in the connection info
 SELECT PERS soil FROM b1.0 INTO jVar WHERE (Temperature > 100) LIMIT SKIP 1 TAKE 9
 
