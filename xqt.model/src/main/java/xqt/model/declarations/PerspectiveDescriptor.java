@@ -5,6 +5,7 @@
 package xqt.model.declarations;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
@@ -15,7 +16,7 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
  */
 public class PerspectiveDescriptor extends DeclarationDescriptor{
     private PerspectiveDescriptor superPerspective;
-    private Map<String, PerspectiveAttributeDescriptor> attributes = new HashMap<String, PerspectiveAttributeDescriptor>();
+    private Map<String, PerspectiveAttributeDescriptor> attributes = new LinkedHashMap<>(); // should keep the order
     private Boolean explicit = false;
 
     public void setExplicit(Boolean explicit) {
