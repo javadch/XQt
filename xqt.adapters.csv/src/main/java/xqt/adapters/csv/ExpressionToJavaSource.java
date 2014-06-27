@@ -68,7 +68,10 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
     
     @Override
     public void visit(Expression expr) {
-        source = visitAll(expr);
+        if(expr == null)
+            source = "";
+        else
+            source = visitAll(expr);
     }
 
     private String visitAll(Expression expression){

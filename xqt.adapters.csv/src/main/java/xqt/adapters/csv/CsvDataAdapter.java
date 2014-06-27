@@ -218,13 +218,12 @@ public class CsvDataAdapter implements DataAdapter {
     }
 
     private void prepareWhere(DataReaderBuilder builder, SelectDescriptor select) {
-        if(select.getFilterClause().getPredicate() != null ){
-            convertor.reset();
-            convertor.visit(select.getFilterClause().getPredicate());
-            String filterString = convertor.getSource();
-            builder        
-                .where(filterString);            
-        }
+        convertor.reset();
+        convertor.visit(select.getFilterClause().getPredicate()); // visit returns empty predicate string on null expressions
+        String filterString = convertor.getSource();
+        builder        
+            .where(filterString);            
+        
     }
 
     private void prepareOrdering(DataReaderBuilder builder, SelectDescriptor select) {
