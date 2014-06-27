@@ -24,7 +24,7 @@ public class ProcessModel {
     private Map<Integer, StatementDescriptor> statements = new LinkedHashMap<>();
     private Map<String, DeclarationDescriptor> declarations = new HashMap<>();
     private Map<String, ConfigurationDescriptor> configurations = new HashMap<>();
-        protected List<LanguageException> languageExceptions = new ArrayList<>();
+    protected List<LanguageException> languageExceptions = new ArrayList<>();
 
     public List<LanguageException> getLanguageExceptions() {
         return languageExceptions;

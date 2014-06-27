@@ -29,6 +29,7 @@ import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.SchemaItem;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -110,9 +111,35 @@ public class CsvDataAdapter implements DataAdapter {
                     return null;
                 }
             }
-        } catch (IOException | ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException | ParseException ex1) {
-            Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
-            // throw a proper exception
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
+                    .build()
+            );            
+        }
+        catch (IOException ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+            );                        
+        }
+        catch (ParseException ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
+                    .build()
+            );                        
         }
         return null;        
     }

@@ -33,8 +33,9 @@ public class ConnectionAnnotator {
                     .setColumnNumber(ctx.getStop().getCharPositionInLine())
                     .build()
             );
+        } else  {
+            connection.setAdapterName(ctx.adapterName.getText());
         }
-        connection.setAdapterName(ctx.adapterName.getText());
         //check if the adapter is registered in the system
         if(!isAdapterRegistered()){
             connection.getLanguageExceptions().add(
@@ -55,9 +56,9 @@ public class ConnectionAnnotator {
                     .setColumnNumber(ctx.getStart().getCharPositionInLine())
                     .build()
             );
+        } else {
+            connection.setSourceUri(ctx.srcURI.getText());
         }
-        connection.setSourceUri(ctx.srcURI.getText());
-        
         connection.setParserContext((ParserRuleContext)ctx);
         return connection;       
     }

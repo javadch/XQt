@@ -8,7 +8,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.InputMismatchException;
+import java.util.List;
 import xqt.engine.QueryEngine;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.statements.StatementDescriptor;
@@ -23,6 +25,11 @@ public class LanguageServicePoint {
     private InputStream inputStream;
     private RuntimeSystem runtime = null;
     private QueryEngine engine;
+    protected List<Exception> exceptions = new ArrayList<>();
+
+    public List<Exception> getExceptions() {
+        return exceptions;
+    }
 
     public RuntimeSystem getRuntime() {
         return runtime;
@@ -33,18 +40,21 @@ public class LanguageServicePoint {
     }
 
     
-    public LanguageServicePoint(String processScript) throws UnsupportedEncodingException, IOException{
-        //this(new ByteArrayInputStream(processScript.getBytes("UTF-8"))); // also should work, but it must be the first statement
-        InputStream stream = new ByteArrayInputStream(processScript.getBytes("UTF-8"));
-        init(stream);
+    public LanguageServicePoint(String processScript) {
+        try{
+            InputStream stream = new ByteArrayInputStream(processScript.getBytes("UTF-8"));
+            init(stream);
+        } catch(Exception ex){
+            this.exceptions.add(ex);
+        }
     }
         
-    public LanguageServicePoint(InputStream processScript) throws IOException {
+    public LanguageServicePoint(InputStream processScript) {
        init(processScript);
     }
     
     // it is to keep the ctors clean
-    private void init(InputStream processScript) throws IOException{
+    private void init(InputStream processScript){
         //prepare the parser/ annotator and create the DST use the runtime system for all the functions, 
         // The API is just a facade over the runtime
         // every statement should have an ID
@@ -52,12 +62,18 @@ public class LanguageServicePoint {
         //dstNode.getDependsUponElements(ElementType.Statement ...)
         this.inputStream = processScript;
         runtime = new RuntimeSystem();
-        engine = runtime.createQueryEngine(processScript); // also static method should work        
+        try{
+            engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work           
+        }
+        catch (Exception ex) {
+            this.exceptions.add(ex);
+        }       
     }
     
     public void process(){
         // process all the statements and store the results, but do not return anything
-        engine.execute();
+        if(exceptions == null || exceptions.size() <=0)
+            engine.execute();
     }
     
     public Object process(Integer statementId, Boolean forceExecution, Boolean executeIfNeeded){
@@ -90,4 +106,12 @@ public class LanguageServicePoint {
         StatementDescriptor statement = engine.getProcessModel().getStatement(id);
         return statement;
     }
+    
+    public boolean hasError(){
+        // go through the languageExceptions and also ask all the elements: declarations, statements, configurations etc
+        if(this.exceptions.stream().count() > 0)
+            return true;
+        return false;
+    }
+    
 }

@@ -4,6 +4,7 @@
  */
 package xqt.model.exceptions;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import org.antlr.v4.runtime.RecognitionException;
@@ -57,10 +58,10 @@ public class LanguageException extends Exception{
         //super();
     }
     
-    public LanguageException(String messageTemplate, Integer lineNumber, Integer columnNumber,
-            List<String> ruleStack, RecognitionException cause){        
+    public LanguageException(String messageTemplate, Integer lineNumber, Integer columnNumber, List<String> ruleStack, RecognitionException cause){        
         //super(String.format(messageTemplate + " Line %s ", contextInfo1, contextInfo2, lineNumber, columnNumber));
-        super(String.format(messageTemplate + " Line %s " + "Column %s.", lineNumber, columnNumber));
+        super(MessageFormat.format("{0} Line {1} Column {2}", messageTemplate, lineNumber, columnNumber));
+        //super(String.format(messageTemplate + " Line %s " + "Column %s.", lineNumber, columnNumber));
         this.messageTemplate = messageTemplate;
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
@@ -70,8 +71,7 @@ public class LanguageException extends Exception{
         this.cause = cause;
     }
 
-    public LanguageException(String messageTemplate, Integer lineNumber, Integer columnNumber,
-            String contextInfo1, List<String> ruleStack, RecognitionException cause){        
+    public LanguageException(String messageTemplate, Integer lineNumber, Integer columnNumber, String contextInfo1, List<String> ruleStack, RecognitionException cause){        
         //super(String.format(messageTemplate + " Line %s ", contextInfo1, contextInfo2, lineNumber, columnNumber));
         super(String.format(messageTemplate + " Line %s " + "Column %s.", contextInfo1, lineNumber, columnNumber));
         this.messageTemplate = messageTemplate;

@@ -23,19 +23,20 @@ public class LanguageExceptionBuilder {
     private List<String> ruleStackTrace = new ArrayList<>();
     private RecognitionException cause;
     private List<String> contexInfos = new ArrayList<>();
+    private boolean useAsTemplate = true;
 
-    public LanguageExceptionBuilder setMessageTemplate(String messageTemplate) {
-        this.messageTemplate = messageTemplate;
+    public LanguageExceptionBuilder setMessageTemplate(String value) {
+        this.messageTemplate = value;
         return this;
     }
 
-    public LanguageExceptionBuilder setLineNumber(Integer lineNumber) {
-        this.lineNumber = lineNumber;
+    public LanguageExceptionBuilder setLineNumber(Integer value) {
+        this.lineNumber = value;
         return this;
     }
 
-    public LanguageExceptionBuilder setColumnNumber(Integer columnNumber) {
-        this.columnNumber = columnNumber;
+    public LanguageExceptionBuilder setColumnNumber(Integer value) {
+        this.columnNumber = value;
         return this;
     }
 
@@ -49,23 +50,28 @@ public class LanguageExceptionBuilder {
         return this;
     }
 
-    public LanguageExceptionBuilder setContextInfo1(String contextInfo1) {
-        this.contextInfo1 = contextInfo1;
+    public LanguageExceptionBuilder setContextInfo1(String value) {
+        this.contextInfo1 = value;
         return this;
     }
 
-    public LanguageExceptionBuilder setContextInfo2(String contextInfo2) {
-        this.contextInfo2 = contextInfo2;
+    public LanguageExceptionBuilder setContextInfo2(String value) {
+        this.contextInfo2 = value;
         return this;
     }
 
-    public LanguageExceptionBuilder setRuleStackTrace(List<String> ruleStackTrace) {
-        this.ruleStackTrace = ruleStackTrace;
+    public LanguageExceptionBuilder setRuleStackTrace(List<String> value) {
+        this.ruleStackTrace = value;
         return this;
     }
 
-    public LanguageExceptionBuilder setCause(RecognitionException cause) {
-        this.cause = cause;
+    public LanguageExceptionBuilder setCause(RecognitionException value) {
+        this.cause = value;
+        return this;
+    }
+
+    public LanguageExceptionBuilder useAsTemplate(boolean value) {
+        this.useAsTemplate = value;
         return this;
     }
 
@@ -80,7 +86,13 @@ public class LanguageExceptionBuilder {
     public LanguageException build(){
         // the number of arguements used in the template is between 0 - 2. as I do not know how to pass proper arguent 
         // to its corresponsing placeholder in the template, I am just counting them and decide!
-        int count = messageTemplate.length() - messageTemplate.replaceAll("\\%","").length();
+        int count = 0;
+        if(useAsTemplate) //otherwise the message body does not have any placeholder for context 1 and 2
+            count = messageTemplate == null? 0: (messageTemplate.length() - messageTemplate.replaceAll("\\%","").length());
+        if(messageTemplate == null || messageTemplate.isEmpty() || messageTemplate.toUpperCase().equals("NULL")){
+            messageTemplate = "Unknown";
+            count = 0;
+        }
         if(count <=0){
             LanguageException ex = new LanguageException(
                 messageTemplate, lineNumber, columnNumber, ruleStackTrace, cause);
