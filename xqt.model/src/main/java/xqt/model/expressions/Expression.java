@@ -120,10 +120,18 @@ public abstract class Expression extends ElementDescriptor {
         return new UnaryExpression(operand, ExpressionType.IsNull);
     }
     
-    public static UnaryExpression IsNaN(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.IsNaN);
+    public static UnaryExpression IsNumber(Expression operand){
+        return new UnaryExpression(operand, ExpressionType.IsNumber);
     }
 
+    public static UnaryExpression IsDate(Expression operand){
+        return new UnaryExpression(operand, ExpressionType.IsDate);
+    }
+    
+    public static UnaryExpression IsEmpty(Expression operand){
+        return new UnaryExpression(operand, ExpressionType.IsEmpty);
+    }
+    
     public static MemberExpression Member(String name) {        
         return new MemberExpression(name);
     }

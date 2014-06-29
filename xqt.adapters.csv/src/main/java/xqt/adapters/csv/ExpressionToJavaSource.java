@@ -6,10 +6,13 @@
 
 package xqt.adapters.csv;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import xqt.model.expressions.BinaryExpression;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.ExpressionType;
@@ -30,32 +33,34 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
     private final static Map<ExpressionType, String> patterns = new HashMap<>();
     
     static {
-        patterns.put(ExpressionType.Add, "(( %s ) + ( %s ))");
-        patterns.put(ExpressionType.And, "(( %s ) && ( %s ))");
-        patterns.put(ExpressionType.ArithmeticAnd, "(( %s ) & ( %s ))");
-        patterns.put(ExpressionType.ArithmeticOr, "(( %s ) | ( %s ))");
-        //patterns.put(ExpressionType.ArithmeticXor, "(( %s ) + ( %s ))");
-        patterns.put(ExpressionType.Attribute, "( %s )");
-        patterns.put(ExpressionType.Constant, " %s ");
-        patterns.put(ExpressionType.Divide, "(( %s ) / ( %s ))");
-        patterns.put(ExpressionType.Equal, "(( %s ) == ( %s ))");
-        patterns.put(ExpressionType.Function, "( %s ( %s ) )"); // the second arg is the parameters' source
-        patterns.put(ExpressionType.GreaterThan, "(( %s ) > ( %s ))");
-        patterns.put(ExpressionType.GreaterThanOrEqual, "(( %s ) >= ( %s ))");
-        patterns.put(ExpressionType.LessThan, "(( %s ) < ( %s ))");
-        patterns.put(ExpressionType.LessThanOrEqual, "(( %s ) <= ( %s ))");
-        patterns.put(ExpressionType.Member, " %s "); //maybe type conversion is needed too!
-        patterns.put(ExpressionType.Modulo, "(( %s ) % ( %s ))");
-        patterns.put(ExpressionType.Multiply, "(( %s ) * ( %s ))");
-        patterns.put(ExpressionType.Negate, "( - ( %s ))");
-        patterns.put(ExpressionType.Not, "( ! ( %s ))");
-        patterns.put(ExpressionType.NotEqual, "(( %s ) != ( %s ))");
-        patterns.put(ExpressionType.Or, "(( %s ) || ( %s ))");
-        patterns.put(ExpressionType.Parameter, " %s ");
-        patterns.put(ExpressionType.Power, "(java.lang.Math.pow( %s , %s ))");
-        patterns.put(ExpressionType.Subtract, "(( %s ) - ( %s ))");
-        patterns.put(ExpressionType.IsNull, "(( %s ) == null)");
-        patterns.put(ExpressionType.IsNaN, "( %s.isNaN ( %s ))"); // <DataType>.isNaN(x)
+        patterns.put(ExpressionType.Add, "(( {0} ) + ( {1} ))");
+        patterns.put(ExpressionType.And, "(( {0} ) && ( {1} ))");
+        patterns.put(ExpressionType.ArithmeticAnd, "(( {0} ) & ( {1} ))");
+        patterns.put(ExpressionType.ArithmeticOr, "(( {0} ) | ( {1} ))");
+        //patterns.put(ExpressionType.ArithmeticXor, "(( {0} ) + ( {1} ))");
+        patterns.put(ExpressionType.Attribute, "( {0} )");
+        patterns.put(ExpressionType.Constant, " {0} ");
+        patterns.put(ExpressionType.Divide, "(( {0} ) / ( {1} ))");
+        patterns.put(ExpressionType.Equal, "(( {0} ) == ( {1} ))");
+        patterns.put(ExpressionType.Function, "( {0} ( {1} ) )"); // the second arg is the parameters' source
+        patterns.put(ExpressionType.GreaterThan, "(( {0} ) > ( {1} ))");
+        patterns.put(ExpressionType.GreaterThanOrEqual, "(( {0} ) >= ( {1} ))");
+        patterns.put(ExpressionType.LessThan, "(( {0} ) < ( {1} ))");
+        patterns.put(ExpressionType.LessThanOrEqual, "(( {0} ) <= ( {1} ))");
+        patterns.put(ExpressionType.Member, " {0} "); //maybe type conversion is needed too!
+        patterns.put(ExpressionType.Modulo, "(( {0} ) % ( {1} ))");
+        patterns.put(ExpressionType.Multiply, "(( {0} ) * ( {1} ))");
+        patterns.put(ExpressionType.Negate, "( - ( {0} ))");
+        patterns.put(ExpressionType.Not, "( ! ( {0} ))");
+        patterns.put(ExpressionType.NotEqual, "(( {0} ) != ( {1} ))");
+        patterns.put(ExpressionType.Or, "(( {0} ) || ( {1} ))");
+        patterns.put(ExpressionType.Parameter, " {0} ");
+        patterns.put(ExpressionType.Power, "(java.lang.Math.pow( {0} , {1} ))");
+        patterns.put(ExpressionType.Subtract, "(( {0} ) - ( {1} ))");
+        patterns.put(ExpressionType.IsNull, "(( {0} ) == null)");
+        patterns.put(ExpressionType.IsNumber, "({0}.matches(\"-?\\\\d+(\\\\.\\\\d+)?\"))"); // <DataType>.isNaN(x) not supported yet
+        patterns.put(ExpressionType.IsDate, "(( {0} ) == null)"); // not supported yet
+        patterns.put(ExpressionType.IsEmpty, "((( {0} ) != null) && ({0} .length() <= 0))");
     }
 
     public String getSource() {
@@ -80,7 +85,7 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
             String left = visitAll(exp.getLeft());
             String right = visitAll(exp.getRight());
             String pattern = patterns.get(exp.getExpressionType());
-            return String.format(pattern, left, right); 
+            return MessageFormat.format(pattern, left, right); 
             
         } else if(expression.getClass().equals(FunctionExpression.class)){
             FunctionExpression exp = (FunctionExpression)expression;
@@ -88,12 +93,12 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
             for (Expression p: exp.getParameters()) {
                 String pa = visitAll(p);
                 String pattern = patterns.get(p.getExpressionType());
-                paramStringBuilder.append(String.format(pattern, pa));
+                paramStringBuilder.append(MessageFormat.format(pattern, pa));
                 paramStringBuilder.append(",");
             }
             paramStringBuilder.deleteCharAt(paramStringBuilder.lastIndexOf(","));
             String funcPattern = patterns.get(exp.getExpressionType());
-            return String.format(funcPattern, exp.getId(), paramStringBuilder.toString()); // packageId is not considered
+            return MessageFormat.format(funcPattern, exp.getId(), paramStringBuilder.toString()); // packageId is not considered
             
         } else if(expression.getClass().equals(MemberExpression.class)){
             MemberExpression exp = (MemberExpression)expression;
@@ -102,18 +107,18 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
                 memeberNames.add(exp.getId());
             }
             String pattern = patterns.get(exp.getExpressionType());
-            return String.format(pattern, exp.getId());
+            return MessageFormat.format(pattern, exp.getId());
             
         } else if(expression.getClass().equals(UnaryExpression.class)){
             UnaryExpression exp = (UnaryExpression)expression;
             String operand = visitAll(exp.getOperand());
             String pattern = patterns.get(exp.getExpressionType());
-            return String.format(pattern, operand); 
+            return MessageFormat.format(pattern, operand); 
             
         } else if(expression.getClass().equals(ValueExpression.class)){
             ValueExpression exp = (ValueExpression)expression;
             String pattern = patterns.get(exp.getExpressionType());
-            return String.format(pattern, exp.getValue()); // type conversion to be considered
+            return MessageFormat.format(pattern, exp.getValue()); // type conversion to be considered
             
         }
         return "";

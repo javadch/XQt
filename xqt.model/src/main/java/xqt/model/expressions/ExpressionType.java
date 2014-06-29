@@ -31,5 +31,7 @@ public enum ExpressionType {
         Power,
         Subtract,
         IsNull,
-        IsNaN,
+        IsNumber,
+        IsDate,
+        IsEmpty
 }

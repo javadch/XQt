@@ -16,6 +16,7 @@ package xqt.lang.parsing;
  * Visit http://www.pragmaticprogrammer.com/titles/tpantlr2 for more book information.
 ***/
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -34,9 +35,12 @@ import xqt.model.ProcessModel;
 import xqt.model.configurations.BindingDescriptor;
 import xqt.model.configurations.ConnectionDescriptor;
 import xqt.model.configurations.ConnectionParameterDescriptor;
+import xqt.model.data.PostponedValidationRecord;
 import xqt.model.declarations.DeclarationDescriptor;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
+import xqt.model.exceptions.LanguageException;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.BinaryExpression;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.ExpressionType;
@@ -44,8 +48,6 @@ import xqt.model.expressions.FunctionExpression;
 import xqt.model.expressions.MemberExpression;
 import xqt.model.expressions.UnaryExpression;
 import xqt.model.expressions.ValueExpression;
-import xqt.model.exceptions.LanguageException;
-import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.AnchorClause;
 import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.GroupClause;
@@ -279,7 +281,27 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 );
             }
         }
-
+        for(PostponedValidationRecord record: selectLateValidations){
+            if(record.getContext3().toUpperCase().equals("TYPE-CHECK")){
+                if(projection.getPerspective().getAttributes().values().stream()
+                        .filter(p->p.getId().equals(record.getContext1()) && p.getDataType().equals(record.getContext2())).count() <=0){
+                    // the requested attrinute/type pair are not defined in the perspective;
+                    String msg = MessageFormat.format("Attribute \"{0}\" of type \"{1}\"", record.getContext1(), record.getContext2());
+                    select.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate(msg + " is not found in perspective %s ")
+                            .setContextInfo1(projection.getPerspective().getId())
+                            //.setContextInfo2(projection.getPerspective().getId())
+                            .setLineNumber(record.getParserContext().getStart().getLine())
+                            .setColumnNumber(record.getParserContext().getStart().getCharPositionInLine())
+                           .build()
+                    );
+                    
+                }
+            }
+        }
+        selectLateValidations.clear();
+                
         // clauses are added in the grammar order, and the order is preserved in the clauses linked list.
         // also each clause knows its order in the parent element; Select in this case
         select.addClause(setQuantifier);
@@ -631,19 +653,32 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         return exp;
     }
     
+    List<PostponedValidationRecord> selectLateValidations = new ArrayList<>();
     @Override
     public Object visitExpression_is(@NotNull XQtParser.Expression_isContext ctx) { 
         Expression operand = (Expression)visit(ctx.operand);
+        PostponedValidationRecord rec = new PostponedValidationRecord();
+        rec.setContext1(operand.getId());
+        rec.setContext2("String");
+        rec.setContext3("TYPE-CHECK");
+        rec.setParserContext(ctx.operand);
+        selectLateValidations.add(rec);
         UnaryExpression exp = null;
         if(ctx.isType.getText().toUpperCase().equals("NULL")){
             exp = Expression.IsNull(operand);
             exp.setParserContext(ctx);
-        } else if(ctx.isType.getText().toUpperCase().equals("NULL")){
-            exp = Expression.IsNaN(operand);
+        } else if(ctx.isType.getText().toUpperCase().equals("NUMBER")){
+            exp = Expression.IsNumber(operand);
+            exp.setParserContext(ctx);
+        } else if(ctx.isType.getText().toUpperCase().equals("DATE")){
+            exp = Expression.IsDate(operand);
+            exp.setParserContext(ctx);
+        } else if(ctx.isType.getText().toUpperCase().equals("EMPTY")){
+            exp = Expression.IsEmpty(operand);
             exp.setParserContext(ctx);
         }
-        if(ctx.not.getText().toUpperCase().equals("NOT")){
-            exp.setParserContext(null); // the upper exprerssion gets the context
+        if(ctx.not != null && ctx.not.getText().toUpperCase().equals("NOT")){
+            //exp.setParserContext(null); // the upper exprerssion gets the context
             exp = Expression.Not(exp);
             exp.setParserContext(ctx);
         }        
