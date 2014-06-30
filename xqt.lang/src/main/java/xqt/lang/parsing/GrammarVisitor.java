@@ -348,6 +348,11 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
 
     @Override
+    public Object visitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) {
+        return visitChildren(ctx); 
+    }
+    
+    @Override
     public Object visitSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) {
         SetQualifierClause qualifier = new SetQualifierClause();
         try {

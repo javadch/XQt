@@ -334,6 +334,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitLiteral(@NotNull XQtParser.LiteralContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#plotStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#expression_andOr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
