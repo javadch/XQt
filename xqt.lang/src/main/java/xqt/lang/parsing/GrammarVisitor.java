@@ -199,15 +199,31 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         LimitClause         limit       = ctx.limitClause() == null? new LimitClause(): (LimitClause)visitLimitClause(ctx.limitClause());
         GroupClause         group       = ctx.groupClause() == null? new GroupClause(): (GroupClause)visitGroupClause(ctx.groupClause());
 
-        // -> when all the clauses are described perform the second round to interconnect and validate them
+        // -> when all the clauses are described perform the second round validation to interconnect and validate them
         if(projection.getPerspective() == null) {
-            // projection may be defined by the source clause, so there is an implicit perspective to be extracted
+            // the projection may not be defined by the source clause, so there is an implicit perspective to be extracted
             PerspectiveDescriptor implicitPerspective = extractPerspective(source);
             implicitPerspective.setExplicit(false);
             projection.setPerspective(implicitPerspective);
         }
         // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
+        if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
+            if(targetedVariables.contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
+                target.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Target variable %s is already in use! "
+                                + "Using one variable as the target of more than one statement is not allowed. ")
+                            .setContextInfo1(target.getVariableName())
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                );
+            } else {
+                targetedVariables.add(target.getVariableName());
+            }
+        }
+        
         // -> the target variable should point to its statement.
 //            if(target.getVariable() != null) // select may have no target
 //                target.getVariable().setStatement(selectDesc);
@@ -281,6 +297,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 );
             }
         }
+        // check postponed validations
         for(PostponedValidationRecord record: selectLateValidations){
             if(record.getContext3().toUpperCase().equals("TYPE-CHECK")){
                 if(projection.getPerspective().getAttributes().values().stream()
@@ -481,26 +498,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(varName == null || varName.isEmpty()){
             item.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("The target selection clause should point to a variable! Line %s.")
+                    .setMessageTemplate("Expecting a variable name, but not provided!")
                     .setLineNumber(ctx.getStart().getLine())
                     .setColumnNumber(ctx.getStart().getCharPositionInLine())
                     .build()
             );
-        }        // check duplicate variable names!!!
-        else if(targetedVariables.contains(varName)){ // variables are immutable, using them in more than one target clause is not allowed
-            item.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("Target variable %s is already in use! "
-                            + "Using one variable as the target of more than one statement is not allowed. ")
-                        .setContextInfo1(varName)
-                        .setLineNumber(ctx.getStart().getLine())
-                        .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                        .build()
-            );
-        } else {
-            item.setVariableName(varName);
-            targetedVariables.add(varName);
         }
+        // check duplicate variable names!!!
+        // it is not correct to check for duplicates here, as it is not clear whether the variable is used as source of target!
+        item.setVariableName(varName);
         return item;
     }
     
