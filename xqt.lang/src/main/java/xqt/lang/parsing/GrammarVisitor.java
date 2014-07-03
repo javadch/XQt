@@ -347,10 +347,10 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         return select;
     }
 
-    @Override
-    public Object visitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) {
-        return visitChildren(ctx); 
-    }
+//    @Override
+//    public Object visitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) {
+//        return visitChildren(ctx); 
+//    }
     
     @Override
     public Object visitSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) {

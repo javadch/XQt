@@ -615,19 +615,6 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterExpression_andOr(@NotNull XQtParser.Expression_andOrContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -648,6 +635,19 @@ public class XQtBaseListener implements XQtListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPlot(@NotNull XQtParser.PlotContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPlot(@NotNull XQtParser.PlotContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

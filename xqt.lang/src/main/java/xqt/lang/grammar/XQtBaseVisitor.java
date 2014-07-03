@@ -386,14 +386,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitExpression_andOr(@NotNull XQtParser.Expression_andOrContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -403,6 +395,14 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitPlot(@NotNull XQtParser.PlotContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}

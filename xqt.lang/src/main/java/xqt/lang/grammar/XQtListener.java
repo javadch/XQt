@@ -515,17 +515,6 @@ public interface XQtListener extends ParseTreeListener {
 	void exitLiteral(@NotNull XQtParser.LiteralContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link XQtParser#plotStatement}.
-	 * @param ctx the parse tree
-	 */
-	void enterPlotStatement(@NotNull XQtParser.PlotStatementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#plotStatement}.
-	 * @param ctx the parse tree
-	 */
-	void exitPlotStatement(@NotNull XQtParser.PlotStatementContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link XQtParser#expression_andOr}.
 	 * @param ctx the parse tree
 	 */
@@ -546,6 +535,17 @@ public interface XQtListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link XQtParser#plot}.
+	 * @param ctx the parse tree
+	 */
+	void enterPlot(@NotNull XQtParser.PlotContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#plot}.
+	 * @param ctx the parse tree
+	 */
+	void exitPlot(@NotNull XQtParser.PlotContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link XQtParser#statement}.
