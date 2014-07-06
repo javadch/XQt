@@ -641,6 +641,19 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterPlot(@NotNull XQtParser.PlotContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPlot(@NotNull XQtParser.PlotContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterStatement(@NotNull XQtParser.StatementContext ctx) { }
 	/**
 	 * {@inheritDoc}

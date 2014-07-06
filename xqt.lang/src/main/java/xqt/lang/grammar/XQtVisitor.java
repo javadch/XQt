@@ -348,6 +348,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#plot}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPlot(@NotNull XQtParser.PlotContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
