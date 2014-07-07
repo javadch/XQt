@@ -18,6 +18,7 @@ package xqt.lang.parsing;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
@@ -68,7 +69,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         
     protected ProcessModel processModel;
     protected Stack<ElementDescriptor> stack = new Stack<>();
-    protected List<String> targetedVariables = new ArrayList<>();
+    protected HashMap<String, PerspectiveDescriptor> variablesUsedAsTarget = new HashMap<>();
 
     public GrammarVisitor(){
         processModel = new ProcessModel();
@@ -209,7 +210,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
         if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
-            if(targetedVariables.contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
+            if(variablesUsedAsTarget.keySet().contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
                 target.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("Target variable %s is already in use! "
@@ -219,12 +220,58 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                             .setColumnNumber(ctx.getStop().getCharPositionInLine())
                             .build()
                 );
-            } else {
-                targetedVariables.add(target.getVariableName());
+            } else {                
+                variablesUsedAsTarget.put(target.getVariableName(), projection.getPerspective());
+            }
+        }
+
+            // when the source is a variable it is not possible to change the perspective. 
+            // So there should be an error message here if the perspective clause is present in the statement
+        if(source.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
+            if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
+                source.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared "
+                                    + " variable '%s' and perspective '%s'")
+                            .setContextInfo1(source.getVariableName())
+                            .setContextInfo2(projection.getPerspective().getId())
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                            .build()
+                );                
+            } else { // the source variable should have already been defined as target in a previous statement
+                PerspectiveDescriptor pers = variablesUsedAsTarget.get(source.getVariableName());
+                if(pers != null){
+                    projection.setPerspective(pers);
+                    variablesUsedAsTarget.put(source.getVariableName(), pers); // replace the previouslly set perspective
+                } else {
+                    source.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
+                                .setContextInfo1(source.getVariableName())
+                                //.setContextInfo2(projection.getPerspective().getId())
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                                .build()
+                    );                      
+                }
             }
         }
         
-        // -> the target variable should point to its statement.
+            // the source and target can not use a same container
+            if(target.getDataContainerType() == source.getDataContainerType() 
+                    && target.getId().toUpperCase().equals(source.getId().toUpperCase())){
+                source.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Using the same name '%s' for the source and target of a statement is not allowed! ")
+                            .setContextInfo1(source.getId())                            
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                            .build()
+                );                                                
+            }
+
+            // -> the target variable should point to its statement.
 //            if(target.getVariable() != null) // select may have no target
 //                target.getVariable().setStatement(selectDesc);
 
@@ -233,7 +280,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The WHERE clause is using attribute \"%s\" that is not defined in perspective \"%s\".")
+                       .setMessageTemplate("The WHERE clause is using attribute '%s' that is not defined in perspective '%s'.")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -246,7 +293,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR START clause is using attribute \"%s\" that is not defined in perspective \"%s\"")
+                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' that is not defined in perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -259,7 +306,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR STOP clause is using attribute \"%s\" that is not defined in perspective \"%s\"")
+                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' that is not defined in perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -273,7 +320,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
                 select.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ORDER BY clause is using attribute \"%s\" that is not defined in associated perspective \"%s\"")
+                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' that is not defined in associated perspective '%s'")
                         .setContextInfo1(orderItem.getSortKey())
                         .setContextInfo2(projection.getPerspective().getId())
                         .setLineNumber(orderItem.getParserContext().getStart().getLine())
@@ -288,7 +335,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 select.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
                         .setMessageTemplate("The group by clause refers to attribute %s "
-                             + ", which is not defined in the associated perspective %s! Line %s")
+                             + ", which is not defined in the associated perspective ")
                         .setContextInfo1(groupItem.getId())
                         .setContextInfo2(projection.getPerspective().getId())
                         .setLineNumber(groupItem.getParserContext().getStart().getLine())
@@ -303,7 +350,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 if(projection.getPerspective().getAttributes().values().stream()
                         .filter(p->p.getId().equals(record.getContext1()) && p.getDataType().equals(record.getContext2())).count() <=0){
                     // the requested attrinute/type pair are not defined in the perspective;
-                    String msg = MessageFormat.format("Attribute \"{0}\" of type \"{1}\"", record.getContext1(), record.getContext2());
+                    String msg = MessageFormat.format("Attribute ''{0}'' of type ''{1}''", record.getContext1(), record.getContext2());
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate(msg + " is not found in perspective %s ")
@@ -425,12 +472,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         SourceClause source = null;
         if(ctx.sourceRef().simpleSource() != null){
             source = SourceClause.convert((DataContainerDescriptor)visitSimpleSource(ctx.sourceRef().simpleSource()));
+            source.setParserContext(ctx.sourceRef().simpleSource());
         } else if(ctx.sourceRef().joinedSource() != null){
             source = SourceClause.convert((DataContainerDescriptor)visit(ctx.sourceRef().joinedSource()));
+            source.setParserContext(ctx.sourceRef().joinedSource());
         } else if(ctx.sourceRef().variable() != null){
             source = SourceClause.convert((DataContainerDescriptor)visitVariable(ctx.sourceRef().variable()));
+            source.setParserContext(ctx.sourceRef().variable());
         }
-        if(source != null) source.init();
+        //if(source != null) source.init();
         return source;
     }
 
@@ -523,7 +573,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         } else if(ctx.variable() != null){
             target = TargetClause.convert((DataContainerDescriptor)visitVariable(ctx.variable()));
         }
-        if(target != null) target.init();
+        //if(target != null) target.init();
         return target;
     }
 

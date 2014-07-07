@@ -36,6 +36,9 @@ public class DataContainerDescriptor extends ClauseDescriptor{
 
     public void setBinding(BindingDescriptor binding) {
         this.binding = binding;
+        // Id is et as the generic name of the container whetehr it is an external container or a variable
+        if(binding != null && binding.getScopes() != null && containerIndex != null && containerIndex >=0 )
+            this.id = binding.getScopes().get(containerIndex);
     }
 
     public Integer getContainerIndex() {
@@ -48,6 +51,8 @@ public class DataContainerDescriptor extends ClauseDescriptor{
 
     public void setContainerIndex(Integer container) {
         this.containerIndex = container;
+        if(binding != null && binding.getScopes() != null  && containerIndex != null && containerIndex >=0 )
+            this.id = binding.getScopes().get(containerIndex);
     }    
     
     public String getVariableName() {
@@ -56,6 +61,7 @@ public class DataContainerDescriptor extends ClauseDescriptor{
 
     public void setVariableName(String variableName) {
         this.variableName = variableName;
+        this.id = variableName;
     }            
     
 }

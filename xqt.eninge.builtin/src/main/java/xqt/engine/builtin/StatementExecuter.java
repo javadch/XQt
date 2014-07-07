@@ -38,6 +38,8 @@ public class StatementExecuter implements StatementVisitor{
         // return a pointer to the variable!
         //this.engine.setVariableValue("test", new Object());
         
+        // check the source clause to see where data is supposed to come from, if its a container, then pass the exeution to the adapater
+        // otherwise it should be a variable. if so pass the statement to the memory adapter.
         // check for the adapter type, name and etc. if the statement is accessing a variable, use the defualt MemoryAdapter
         String adapterId = selectStatement.getSourceClause().getBinding().getConnection().getAdapterName();
         DataAdapter adapter = getAdapter(adapterId); // create the adapter based on its registration info and the statement's bindinf info
