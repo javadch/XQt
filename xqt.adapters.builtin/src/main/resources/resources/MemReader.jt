@@ -1,0 +1,60 @@
+@import xqt.adapters.builtin.*
+@import com.vaiona.commons.data.*;
+@args() {
+    String namespace,
+    String BaseClassName,
+    String SourceRowNamespace,
+    String SourceRowType,
+    String TargetRowType,
+    String Where,
+    String rowHeader,
+    String linePattern,
+    Map<AttributeInfo, String> Ordering,
+    Integer skip,
+    Integer take,
+    boolean writeResultsToFile
+}
+
+package @(namespace);
+
+import @(namespace).*;
+import @(SourceRowNamespace).*;
+import com.vaiona.commons.data.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class @(BaseClassName)Reader implements DataReader {
+    BufferedWriter writer;
+
+    
+    String  source              = "";
+    String  target              = "";
+    
+    public List<Object> read(List<Object> source)  throws FileNotFoundException, IOException {
+            @(SourceRowType) src = new @(SourceRowType)(null);
+            List<Object> result = 
+            source.stream()
+                @if(skip > -1){
+                    .skip(@(skip))
+                }
+                @if(take > -1){
+                    .limit(@(take))
+                }
+                    .collect(Collectors.toList())
+                ;
+                return result;
+    }
+
+}
