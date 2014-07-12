@@ -1577,8 +1577,8 @@ public class XQtParser extends Parser {
 		public VariableContext hx;
 		public VariableContext vx;
 		public Token plotType;
-		public Token hxl;
-		public Token hvl;
+		public Token pxl;
+		public Token pvl;
 		public Token pll;
 		public List<TerminalNode> STRING() { return getTokens(XQtParser.STRING); }
 		public TerminalNode PLOT_V_LABEL() { return getToken(XQtParser.PLOT_V_LABEL, 0); }
@@ -1710,7 +1710,7 @@ public class XQtParser extends Parser {
 					}
 				}
 
-				setState(327); ((PlotContext)_localctx).hxl = match(STRING);
+				setState(327); ((PlotContext)_localctx).pxl = match(STRING);
 				}
 				break;
 			}
@@ -1727,7 +1727,7 @@ public class XQtParser extends Parser {
 					}
 				}
 
-				setState(334); ((PlotContext)_localctx).hvl = match(STRING);
+				setState(334); ((PlotContext)_localctx).pvl = match(STRING);
 				}
 				break;
 			}

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.InputMismatchException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RecognitionException;
@@ -20,6 +22,7 @@ import xqt.lang.parsing.GrammarVisitor;
 import xqt.model.ProcessModel;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.statements.StatementDescriptor;
 
 /**
  *
@@ -67,7 +70,15 @@ public class LanguageController {
         // also visit returns a T type that seems to be possible to use it to return ast/ e-ast
         GrammarVisitor gVisitor = new GrammarVisitor();
         gVisitor.visit(tree);
-        return (gVisitor.getProcessModel());
+        ProcessModel processModel = gVisitor.getProcessModel();
+        // detect and set inter statement dependencies
+        List<StatementDescriptor> stmts = processModel.getStatements().values().stream().collect(Collectors.toList());
+        for (Map.Entry<Integer, StatementDescriptor> en : processModel.getStatements().entrySet()) {
+            StatementDescriptor stmt = en.getValue();
+            stmt.checkDependencies(stmts);
+        }
+        
+        return (processModel);
     }
 
 }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
@@ -57,6 +58,7 @@ import xqt.model.statements.query.LimitClause;
 import xqt.model.statements.query.NullOrdering;
 import xqt.model.statements.query.OrderClause;
 import xqt.model.statements.query.OrderEntry;
+import xqt.model.statements.query.PlotClause;
 import xqt.model.statements.query.ProjectionClause;
 import xqt.model.statements.query.SelectDescriptor;
 import xqt.model.statements.query.SetQualifierClause;
@@ -258,19 +260,21 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             }
         }
         
-            // the source and target can not use a same container
-            if(target.getDataContainerType() == source.getDataContainerType() 
-                    && target.getId().toUpperCase().equals(source.getId().toUpperCase())){
-                source.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Using the same name '%s' for the source and target of a statement is not allowed! ")
-                            .setContextInfo1(source.getId())                            
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
-                            .build()
-                );                                                
-            }
+        // the source and target can not use a same container
+        if(target.getDataContainerType() == source.getDataContainerType() 
+                && target.getId().toUpperCase().equals(source.getId().toUpperCase())){
+            source.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate("Using the same name '%s' for the source and target of a statement is not allowed! ")
+                        .setContextInfo1(source.getId())                            
+                        .setLineNumber(ctx.getStart().getLine())
+                        .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                        .build()
+            );                                                
+        }
 
+        // if the target is going to be a plot, check whther h, v are pointing to the attributes of the associated perspective. also set the linked perspective
+        //if()
             // -> the target variable should point to its statement.
 //            if(target.getVariable() != null) // select may have no target
 //                target.getVariable().setStatement(selectDesc);
@@ -572,11 +576,41 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             target = TargetClause.convert((DataContainerDescriptor)visitSimpleSource(ctx.simpleSource()));
         } else if(ctx.variable() != null){
             target = TargetClause.convert((DataContainerDescriptor)visitVariable(ctx.variable()));
+        } else if (ctx.plot() != null){
+            target = (PlotClause)visitPlot(ctx.plot());
         }
         //if(target != null) target.init();
         return target;
     }
 
+    @Override
+    public Object visitPlot(@NotNull XQtParser.PlotContext ctx) { 
+        PlotClause plot = new PlotClause();
+        plot.setDataContainerType(DataContainerDescriptor.DataContainerType.Plot);
+        String plotName = ctx.id.getText();
+        if(plotName == null || plotName.isEmpty()){
+            plot.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Expecting a plot name, but not provided!")
+                    .setLineNumber(ctx.id.getStart().getLine())
+                    .setColumnNumber(ctx.id.getStart().getCharPositionInLine())
+                    .build()
+            );
+        }
+        // check duplicate variable names!!!
+        // it is not correct to check for duplicates here, as it is not clear whether the variable is used as source of target!
+        plot.setPlotName(plotName);
+        plot.setHax(ctx.hx.getText());
+        for(XQtParser.VariableContext v: ctx.variable().stream().skip(2).collect(Collectors.toList())) // ctx.variable should point to the v-ax 
+            plot.getVax().add(v.ID().getText());
+        plot.setPlotType(ctx.plotType == null? "l" : ctx.plotType.getText());
+        plot.sethLabel(ctx.pxl == null? "": ctx.pxl.getText());
+        plot.setvLabel(ctx.pvl == null? "": ctx.pxl.getText());
+        plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText());
+        
+        return plot;
+    }
+    
     @Override
     public Object visitAnchorClause(@NotNull XQtParser.AnchorClauseContext ctx) {
         try {
