@@ -9,3 +9,4 @@
 /xqt.lang/src/main/java/xqt/lang/grammar/source/
 *.g4
 *.class
+/xqt.adapters.builtin/target/
