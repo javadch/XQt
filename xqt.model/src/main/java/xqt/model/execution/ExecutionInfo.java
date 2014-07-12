@@ -6,8 +6,11 @@
 
 package xqt.model.execution;
 
+import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Variable;
 import xqt.model.statements.StatementDescriptor;
 
@@ -21,6 +24,32 @@ public class ExecutionInfo {
     private Boolean isExecuted = false;
     // add diagnostics here, start time, stop time, etc
     private List<String> issues = new ArrayList<>();
+    private DataAdapter adapter = null;
+    LinkedHashMap<String, InMemorySourceFile> sources = new LinkedHashMap<>();
+
+    public LinkedHashMap<String, InMemorySourceFile> getSources(){
+        return sources;
+    }
+
+    public void setSources(LinkedHashMap<String, InMemorySourceFile> sources){
+        this.sources = sources;
+    } 
+    
+    public DataAdapter getAdapter() {
+        return adapter;
+    }
+
+    public void setAdapter(DataAdapter adapter) {
+        this.adapter = adapter;
+    }
+
+    public Boolean isIsExecuted() {
+        return isExecuted;
+    }
+
+    public void setIsExecuted(Boolean isExecuted) {
+        this.isExecuted = isExecuted;
+    }
 
     public StatementDescriptor getStatement() {
         return statement;
@@ -57,4 +86,5 @@ public class ExecutionInfo {
     public void setIssues(List<String> issues) {
         this.issues = issues;
     }        
+
 }

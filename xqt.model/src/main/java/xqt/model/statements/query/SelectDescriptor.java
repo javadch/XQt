@@ -6,8 +6,10 @@
 package xqt.model.statements.query;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import xqt.model.ClauseDescriptor;
+import xqt.model.DataContainerDescriptor;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageException;
@@ -85,10 +87,9 @@ public class SelectDescriptor extends StatementDescriptor{
     }
 
     @Override
-    public ExecutionInfo accept(StatementVisitor visitor) {
+    public void accept(StatementVisitor visitor) {
         Resultset result = visitor.visit(this);
-        ExecutionInfo exInfo = new ExecutionInfo();
-        exInfo.setStatement(this);
+        ExecutionInfo exInfo = this.getExecutionInfo();
         exInfo.setExecuted(true);
         if(result != null && this.getTargetClause() != null && this.getTargetClause().getVariableName()!= null){
             Variable var = new Variable();
@@ -97,7 +98,32 @@ public class SelectDescriptor extends StatementDescriptor{
             var.setResult(result);
             exInfo.setVariable(var);
         }
-        this.executionInfo = exInfo;
-        return exInfo;
+    }
+
+    @Override
+    public void prepare(StatementVisitor visitor) {
+        visitor.prepare(this);
+        
+    }
+    
+    @Override
+    public void pass2(StatementVisitor visitor) {
+        visitor.prepare(this);
+    }
+
+    @Override
+    public void checkDependencies(List<StatementDescriptor> stmts) {        
+        for(StatementDescriptor stmt: stmts){
+            if(stmt instanceof SelectDescriptor){
+                SelectDescriptor stmtCasted = (SelectDescriptor)stmt;
+                if(this.getSourceClause().getDataContainerType() == stmtCasted.getTargetClause().getDataContainerType()
+                  && this.getSourceClause().getId().toUpperCase().equals(stmtCasted.getTargetClause().getId().toUpperCase())
+                        ){
+                    this.setDependsUpon(stmtCasted);
+                    // there should not be more than one dependecies!
+                    break;
+                }
+            }
+        }
     }
 }

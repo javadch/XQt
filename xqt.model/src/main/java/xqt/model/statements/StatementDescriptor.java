@@ -4,6 +4,7 @@
  */
 package xqt.model.statements;
 
+import java.util.List;
 import xqt.model.ElementDescriptor;
 import xqt.model.execution.ExecutionInfo;
 
@@ -13,9 +14,23 @@ import xqt.model.execution.ExecutionInfo;
  */
 public abstract class StatementDescriptor extends ElementDescriptor {    
     protected ExecutionInfo executionInfo = null;
+    protected StatementDescriptor dependsUpon;
+
+    public StatementDescriptor getDependsUpon() {
+        return dependsUpon;
+    }
+
+    public void setDependsUpon(StatementDescriptor dependsUpon) {
+        this.dependsUpon = dependsUpon;
+    }
 
     public Boolean isExecuted(){
         return executionInfo != null;
+    }
+
+    public void setExecutionInfo(ExecutionInfo executionInfo) {
+        this.executionInfo = executionInfo;
+        executionInfo.setStatement(this);
     }
 
     public Boolean hasResult(){
@@ -36,5 +51,12 @@ public abstract class StatementDescriptor extends ElementDescriptor {
 
     // in the case of an assignment statement, the result should be something like an attribute/value
     // so that the engine can put it in the process's memory
-    public abstract ExecutionInfo accept(StatementVisitor visitor);
+    public abstract void accept(StatementVisitor visitor);
+
+    // implementations should get and load a proper adapter, make the adapter to generate sources (to be compiled and executed later)
+    public abstract void prepare(StatementVisitor visitor);
+
+    public abstract void pass2(StatementVisitor visitor);
+
+    public abstract void checkDependencies(List<StatementDescriptor> stmts);
 }

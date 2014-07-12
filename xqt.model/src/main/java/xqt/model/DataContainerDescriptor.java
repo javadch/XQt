@@ -14,7 +14,7 @@ import xqt.model.configurations.BindingDescriptor;
  */
 public class DataContainerDescriptor extends ClauseDescriptor{
     public enum DataContainerType {
-        Simplecontainer, JoinedContainer, Variable
+        Simplecontainer, JoinedContainer, Variable, Plot
     }
     
     protected DataContainerType dataContainerType = DataContainerType.Simplecontainer;
@@ -61,7 +61,8 @@ public class DataContainerDescriptor extends ClauseDescriptor{
 
     public void setVariableName(String variableName) {
         this.variableName = variableName;
-        this.id = variableName;
+        if(dataContainerType == DataContainerType.Variable || dataContainerType == DataContainerType.Plot)
+            this.id = variableName;
     }            
     
 }

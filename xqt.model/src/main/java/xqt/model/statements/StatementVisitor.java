@@ -6,7 +6,9 @@
 
 package xqt.model.statements;
 
+import java.util.Map;
 import xqt.model.data.Resultset;
+import xqt.model.data.Variable;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -17,4 +19,6 @@ public interface StatementVisitor {
     // the visit method should return a pointer to the result set if there is any
     public Resultset visit(SelectDescriptor selectStatement);    
     // also visit other statement types
+
+    public void prepare(SelectDescriptor aThis);
 }
