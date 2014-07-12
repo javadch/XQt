@@ -4,11 +4,17 @@
  */
 package xqt.engine.builtin;
 
+import com.vaiona.commons.compilation.ClassCompiler;
+import com.vaiona.commons.compilation.InMemoryCompiledObject;
+import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
 import xqt.engine.QueryEngine;
 import xqt.model.ProcessModel;
 import xqt.model.data.Variable;
@@ -93,10 +99,10 @@ public class DefaultQueryEngine  implements QueryEngine{
             StatementDescriptor sd;
             sd = model.getStatement(statementDescriptorId);
             StatementVisitor visitor = new StatementExecuter(this); // 
-            ExecutionInfo exInfo = sd.accept(visitor);
-            if(exInfo.isExecuted() && exInfo.getVariable() != null)
-                this.memory.put(exInfo.getVariable().getName(), exInfo.getVariable());
-            return exInfo; //sd.getResult();
+            sd.accept(visitor);
+            if(sd.getExecutionInfo().isExecuted() && sd.getExecutionInfo().getVariable() != null)
+                this.memory.put(sd.getExecutionInfo().getVariable().getName(), sd.getExecutionInfo().getVariable());
+            return sd.getExecutionInfo(); //sd.getResult();
         }
         catch(Exception ex){
             // record, report error
@@ -114,17 +120,38 @@ public class DefaultQueryEngine  implements QueryEngine{
             // take a look at linked map, SortedMap
             // as the statementIds are ascending, unique and key of the map, maybe sortedmap solves the issue
             // but LinkedHashMap guarantees the insertion order without relying on the meaningfulness of the Ids
-            StatementVisitor visitor = new StatementExecuter(this); // 
+            StatementVisitor visitor = new StatementExecuter(this, memory); // 
+            LinkedHashMap<String, InMemorySourceFile> sourcesToBeCompiled = new LinkedHashMap<>();
             for(StatementDescriptor sm: model.getStatements().values()){
                 // pass the required information without binding too much to the structure of the statement
                 // or needing too much knowledge about the statement!
-                ExecutionInfo exInfo = sm.accept(visitor);
-                if(exInfo.isExecuted() && exInfo.getVariable() != null)
-                    this.memory.put(exInfo.getVariable().getName(), exInfo.getVariable());
+                
+                sm.prepare(visitor); // after this step, the sources are ready, if any. so add them to a collection and comiple all of them at once
+                // add the sources to the compilation unit
+                if(sm.getExecutionInfo().getSources().values().stream().count() > 0){
+                    sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());
+                }
             }
-            } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    //e.printStackTrace();
+            
+            ClassCompiler compiler = new ClassCompiler();
+            for (Map.Entry<String, InMemorySourceFile> entry : sourcesToBeCompiled.entrySet()) {
+                InMemorySourceFile source = entry.getValue();
+                compiler.addSource(source);
             }
+            JavaFileManager fileManager = compiler.compile(null);
+            //fileManager.getClassLoader
+            
+            for(StatementDescriptor sm: model.getStatements().values()){                
+                for(InMemorySourceFile source : sm.getExecutionInfo().getSources().values()){                    
+                    source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
+                }
+                sm.accept(visitor);
+                if(sm.getExecutionInfo().isExecuted() && sm.getExecutionInfo().getVariable() != null)
+                    this.memory.put(sm.getExecutionInfo().getVariable().getName(), sm.getExecutionInfo().getVariable());
+            }
+        } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+        }
     }    
 }
