@@ -42,7 +42,7 @@ import xqt.model.statements.query.SelectDescriptor;
 public class CsvDataAdapter implements DataAdapter {
 
     private ConvertSelectElement convertSelect = null;
-    private DataReaderBuilder builder = new DataReaderBuilder();
+    private DataReaderBuilder builder = null;
     private Boolean firstRowIsHeader = true;
     
     public CsvDataAdapter(){
@@ -181,6 +181,7 @@ public class CsvDataAdapter implements DataAdapter {
     @Override
     public void prepare(SelectDescriptor select) {
         try{
+            builder = new DataReaderBuilder();
             builder
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
