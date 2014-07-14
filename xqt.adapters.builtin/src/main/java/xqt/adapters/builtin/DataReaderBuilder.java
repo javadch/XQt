@@ -80,7 +80,7 @@ public class DataReaderBuilder {
         InMemorySourceFile rf = new InMemorySourceFile(baseClassName + "Reader", reader);
         rf.setEntryPoint(true);
         rf.setFullName(NAME_SPACE + "." + baseClassName + "Reader");
-        sources.put(baseClassName + "Reader", rf); // the reader must be added first
+        sources.put(rf.getFullName(), rf); // the reader must be added first
         
         return sources;        
     }

@@ -29,7 +29,7 @@ import xqt.model.statements.query.SelectDescriptor;
  */
 public class DefaultDataAdapter implements DataAdapter{
   
-    private DataReaderBuilder builder = new DataReaderBuilder();
+    private DataReaderBuilder builder = null;
     @Override
     public void setup(Map<String, Object> config) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -97,6 +97,7 @@ public class DefaultDataAdapter implements DataAdapter{
 
     @Override
     public void prepare(SelectDescriptor select) {
+        builder = new DataReaderBuilder();
         switch (select.getTargetClause().getDataContainerType()){
             case Plot:{
                 break;
