@@ -80,8 +80,11 @@ public class StatementExecuter implements StatementVisitor{
     private DataAdapter chooseAdapter(SelectDescriptor selectStatement) {
         if(selectStatement.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
             if(!loadedAdapters.containsKey("Default")) {
-                DataAdapter adapter = new DefaultDataAdapter();
-                loadedAdapters.put("Default", adapter);
+                // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
+                // this causes the second call to generate invalid files!! solve it first and the cache the adapters
+                DataAdapter adapter = new DefaultDataAdapter();                 
+                //loadedAdapters.put("Default", adapter);
+                return adapter; // when caching is enabled, remove this line
             }
             return loadedAdapters.get("Default");
         }
@@ -95,7 +98,7 @@ public class StatementExecuter implements StatementVisitor{
                 Constructor<?> ctor = cl.getConstructor();
                 ctor.setAccessible(true);
                 DataAdapter adapter = (DataAdapter)ctor.newInstance();
-                loadedAdapters.put("CSV", adapter);
+                //loadedAdapters.put("CSV", adapter);
                 return adapter;
             }
             return loadedAdapters.get("CSV");
