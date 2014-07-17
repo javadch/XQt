@@ -91,7 +91,7 @@ public class StatementExecuter implements StatementVisitor{
         try {
             if(!loadedAdapters.containsKey("CSV")) {// read the key from the select statement's associated connection
                 // read the adapter info from the adapters config file in the applications installation folder
-                String adapterJar = "file:D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/CsvAdapter-1.0-SNAPSHOT.jar";
+                String adapterJar = "file:D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/csv.adapter-1.0-SNAPSHOT.jar";
                 String adapterClass = "xqt.adapters.csv.CsvDataAdapter";
                 ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterJar)});
                 Class cl = classLoader.loadClass(adapterClass);
