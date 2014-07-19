@@ -21,6 +21,7 @@ import xqt.model.DataContainerDescriptor;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementVisitor;
 import xqt.model.statements.query.SelectDescriptor;
@@ -77,8 +78,8 @@ public class StatementExecuter implements StatementVisitor{
     
     private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
     
-    private DataAdapter chooseAdapter(SelectDescriptor selectStatement) {
-        if(selectStatement.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
+    private DataAdapter chooseAdapter(SelectDescriptor select) {
+        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
             if(!loadedAdapters.containsKey("Default")) {
                 // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
                 // this causes the second call to generate invalid files!! solve it first and the cache the adapters
@@ -104,8 +105,14 @@ public class StatementExecuter implements StatementVisitor{
             return loadedAdapters.get("CSV");
         }
         catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            //add a language exception to the model/ select
-            Logger.getLogger(StatementExecuter.class.getName()).log(Level.SEVERE, null, ex);
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Could not load the adapter for '" + "CSV" + "'. " + ex.getMessage())
+                    //.setContextInfo1(select.getId())
+                    .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+            );                        
         }  
         return null;
     }    
