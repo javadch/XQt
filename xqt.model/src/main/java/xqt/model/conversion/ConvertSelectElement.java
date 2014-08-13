@@ -70,7 +70,7 @@ public class ConvertSelectElement {
     public boolean shouldResultBeWrittenIntoFile(SelectDescriptor select) {
         return(
                 (
-                    select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Simplecontainer
+                    select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.SimpleContainer
                 ||  select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.JoinedContainer
                 )
         );
@@ -89,7 +89,7 @@ public class ConvertSelectElement {
     }
   
     public String getCompleteTargetName(SelectDescriptor select){ //may need a container index too!
-        if(select.getTargetClause().getDataContainerType() != DataContainerDescriptor.DataContainerType.Simplecontainer)
+        if(select.getTargetClause().getDataContainerType() != DataContainerDescriptor.DataContainerType.SimpleContainer)
             return null;
         String basePath = select.getTargetClause().getBinding().getConnection().getSourceUri();
         String container0 = select.getTargetClause().getContainer();

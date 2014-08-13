@@ -17,14 +17,23 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
 public class PerspectiveDescriptor extends DeclarationDescriptor{
     private PerspectiveDescriptor superPerspective;
     private Map<String, PerspectiveAttributeDescriptor> attributes = new LinkedHashMap<>(); // should keep the order
-    private Boolean explicit = false;
+    private PerspectiveType perspectiveType = PerspectiveType.Explicit;
 
-    public void setExplicit(Boolean explicit) {
-        this.explicit = explicit;
+    public PerspectiveType getPerspectiveType() {
+        return perspectiveType;
+    }
+
+    public void setPerspectiveType(PerspectiveType perspectiveType) {
+        this.perspectiveType = perspectiveType;
+    }
+
+    
+    public void setExplicit() {
+        this.perspectiveType = PerspectiveDescriptor.PerspectiveType.Explicit;
     }
 
     public Boolean isExplicit() {
-        return explicit;
+        return this.perspectiveType == PerspectiveDescriptor.PerspectiveType.Explicit;
     }
 
     public Map<String, PerspectiveAttributeDescriptor> getAttributes() {
@@ -63,4 +72,9 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         this.superPerspective = superPerspective;
     }
     
+    public enum PerspectiveType {
+        Explicit,
+        Implicit,
+        Inline
+    }
 }

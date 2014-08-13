@@ -5,6 +5,7 @@
 
 package xqt.model.statements.query;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +28,26 @@ public class SelectDescriptor extends StatementDescriptor{
     // key is the name of the phrase e.g. SOURCE, TARGET, FILTER, etc, 
     // may be its better to create an enum for it: use SelectClauseType enum. The clauses have their types set based on the SelectClauseType enum. t should be enough ...
     //
-    Map<String, ClauseDescriptor> clauses = new LinkedHashMap<>();
+    private Map<String, ClauseDescriptor> clauses = new LinkedHashMap<>();
+    private List<String> requiredCapabilities = new ArrayList<>();
+    private SelectDescriptor compensationStatement = null;
 
+    public SelectDescriptor getCompensationStatement() {
+        return compensationStatement;
+    }
+
+    public void setCompensationStatement(SelectDescriptor compensationStatement) {
+        this.compensationStatement = compensationStatement;
+    }
+
+    public List<String> getRequiredCapabilities() {
+        return requiredCapabilities;
+    }
+
+    public void setRequiredCapabilities(List<String> requiredCapabilities) {
+        this.requiredCapabilities = requiredCapabilities;
+    }
+    
     public Map<String, ClauseDescriptor> getClauses() {
         return clauses;
     }

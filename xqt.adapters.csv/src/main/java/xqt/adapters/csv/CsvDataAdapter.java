@@ -17,6 +17,7 @@ import com.vaiona.csv.reader.TestReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.Validate;
 import xqt.model.DataContainerDescriptor;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.conversion.ConvertSelectElement;
@@ -31,6 +33,7 @@ import xqt.model.conversion.ExpressionToJavaSource;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.SchemaItem;
+import xqt.model.data.Variable;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.SelectDescriptor;
@@ -107,7 +110,12 @@ public class CsvDataAdapter implements DataAdapter {
         return null;        
     }
 
-    //@Override
+    @Override
+    public Resultset compensate(SelectDescriptor select, Variable variable){
+        return null;
+    }
+    
+//@Override
     public Resultset run2(SelectDescriptor select) {
         try{
             Boolean firstRowIsHeader = true;            
@@ -137,10 +145,6 @@ public class CsvDataAdapter implements DataAdapter {
         return null;        
     }  
 
-    @Override
-    public void setup(Map<String, Object> config) {
-    }
-
     private Boolean prepareFields(DataReaderBuilder builder, SelectDescriptor select) throws IOException {
         String fileName = convertSelect.getCompleteSourceName(select);
         HeaderBuilder hb = new HeaderBuilder();
@@ -169,8 +173,14 @@ public class CsvDataAdapter implements DataAdapter {
     }
 
     private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
-        builder.skip(select.getLimitClause().getSkip())
-               .take(select.getLimitClause().getTake());
+        if(isSupported("select.limit")){
+            builder.skip(select.getLimitClause().getSkip())
+                   .take(select.getLimitClause().getTake());
+        }
+        else{
+            builder.skip(-1)
+                   .take(-1);
+        }
     }
 
     @Override
@@ -240,5 +250,51 @@ public class CsvDataAdapter implements DataAdapter {
         
     }
 
+    private HashMap<String, Boolean> capabilities = new HashMap<>();
+    
+    @Override
+    public boolean isSupported(String capability) {
+        if(capabilities.containsKey(capability) && capabilities.get(capability) == true)
+            return true;
+        return false;
+    }
+
+    @Override
+    public void registerCapability(String capabilityKey, boolean isSupported) {
+        capabilities.put(capabilityKey, isSupported);
+    }
+
+    @Override
+    public void setup(Map<String, Object> config) {
+        registerCapability("select.qualifier", false);
+        registerCapability("select.projection.perspective", true);
+//        registerCapability("select.projection.perspective.explicit", true);
+//        registerCapability("select.projection.perspective.implicit", true);
+//        registerCapability("select.projection.perspective.inline", true);
+        registerCapability("function", true);
+        registerCapability("function.default.Max", false); // add other functions, too.
+        registerCapability("expression", true);
+        
+        registerCapability("select.source.simplecontainer", true);
+        registerCapability("select.source.joinedcontainer", false);
+        registerCapability("select.source.variable", true);
+
+        registerCapability("select.target.simplecontainer", true);
+        registerCapability("select.target.joinedcontainer", false);
+        registerCapability("select.target.variable", true);
+        registerCapability("select.target.plot", false);
+        
+        registerCapability("select.anchor", false);
+        registerCapability("select.filter", true);
+        registerCapability("select.orderby", true);
+        registerCapability("select.groupby", false);
+        registerCapability("select.limit", false);
+    }
+
+    @Override
+    public boolean hasRequiredCapabilities(SelectDescriptor select) {
+        boolean allmatched = select.getRequiredCapabilities().stream().allMatch(p-> this.isSupported(p));
+        return allmatched;
+    }
 
 }

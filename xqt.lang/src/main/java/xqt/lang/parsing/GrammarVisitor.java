@@ -192,23 +192,73 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         SelectDescriptor select = SelectAnnotator.describeSelect(ctx, processModel);
         stack.push(select); // it would be better if there were no need for data communication :-(
         // process clauses, add new objects instead of null if the corresponding visitor returns null
-        SetQualifierClause setQuantifier  = ctx.setQualifierClause() == null? new SetQualifierClause(): (SetQualifierClause)visitSetQualifierClause(ctx.setQualifierClause());
-        ProjectionClause    projection  = ctx.projectionClause()== null? new ProjectionClause(): (ProjectionClause)visitProjectionClause(ctx.projectionClause());
-        SourceClause        source      = (SourceClause)visitSourceSelectionClause(ctx.sourceSelectionClause());
-        TargetClause        target      = ctx.targetSelectionClause() == null? new TargetClause(): (TargetClause)visitTargetSelectionClause(ctx.targetSelectionClause());
-        AnchorClause        anchor      = ctx.anchorClause() == null? new AnchorClause(): (AnchorClause)visitAnchorClause(ctx.anchorClause());
-        FilterClause        filter      = ctx.filterClause() == null? new FilterClause(): (FilterClause)visitFilterClause(ctx.filterClause());
-        OrderClause         order       = ctx.orderClause() == null? new OrderClause(): (OrderClause)visitOrderClause(ctx.orderClause());
-        LimitClause         limit       = ctx.limitClause() == null? new LimitClause(): (LimitClause)visitLimitClause(ctx.limitClause());
-        GroupClause         group       = ctx.groupClause() == null? new GroupClause(): (GroupClause)visitGroupClause(ctx.groupClause());
+        SetQualifierClause setQuantifier    = new SetQualifierClause();
+        if(ctx.setQualifierClause() != null){
+            setQuantifier = (SetQualifierClause)visitSetQualifierClause(ctx.setQualifierClause());
+            select.getRequiredCapabilities().add("select.qualifier");
+        }
+        ProjectionClause   projection       = new ProjectionClause();
+        if(ctx.projectionClause()!= null) {
+            projection = (ProjectionClause)visitProjectionClause(ctx.projectionClause());
+            select.getRequiredCapabilities().add("select.projection.perspective");
+            select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
+        }
+        SourceClause       source           = (SourceClause)visitSourceSelectionClause(ctx.sourceSelectionClause());
+        select.getRequiredCapabilities().add("select.source." + source.getDataContainerType().toString().toLowerCase());
+
+        TargetClause       target           = new TargetClause();
+        if( ctx.targetSelectionClause() != null){
+            target = (TargetClause)visitTargetSelectionClause(ctx.targetSelectionClause());
+            select.getRequiredCapabilities().add("select.target." + target.getDataContainerType().toString().toLowerCase());
+        }
+        
+        AnchorClause       anchor           = new AnchorClause();
+        if(ctx.anchorClause() != null){
+            anchor = (AnchorClause)visitAnchorClause(ctx.anchorClause());
+            select.getRequiredCapabilities().add("select.anchor");
+        }
+        
+        FilterClause       filter           = new FilterClause();
+        if(ctx.filterClause() != null){
+            filter = (FilterClause)visitFilterClause(ctx.filterClause());
+            select.getRequiredCapabilities().add("select.filter");
+        }
+        
+        OrderClause        order            = new OrderClause();
+        if(ctx.orderClause() != null){
+            order = (OrderClause)visitOrderClause(ctx.orderClause());
+            select.getRequiredCapabilities().add("select.orderby");
+        }
+        
+        LimitClause        limit            = new LimitClause();
+        if(ctx.limitClause() != null) {
+            limit = (LimitClause)visitLimitClause(ctx.limitClause());
+            if (limit.getSkip() > -1){
+                select.getRequiredCapabilities().add("select.limit");
+                select.getRequiredCapabilities().add("select.limit.skip");
+            }
+            if (limit.getTake()> -1){
+                select.getRequiredCapabilities().add("select.limit");
+                select.getRequiredCapabilities().add("select.limit.take");
+            }
+        }
+        
+        GroupClause        group            = new GroupClause();
+        if(ctx.groupClause() != null){
+            group = (GroupClause)visitGroupClause(ctx.groupClause());
+            select.getRequiredCapabilities().add("select.groupby");
+        }
 
         // -> when all the clauses are described perform the second round validation to interconnect and validate them
         if(projection.getPerspective() == null) {
             // the projection may not be defined by the source clause, so there is an implicit perspective to be extracted
             PerspectiveDescriptor implicitPerspective = extractPerspective(source);
-            implicitPerspective.setExplicit(false);
+            implicitPerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
             projection.setPerspective(implicitPerspective);
+            select.getRequiredCapabilities().removeIf(p-> p.startsWith("select.projection.perspective.")); // remove the previous perspective type
+            select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
         }
+        // check for inline perspective and try to build it, like extractPerspective
         // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
         if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
@@ -260,7 +310,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             }
         }
         
-        // the source and target can not use a same container
+        // the source and the target can not use a same container
         if(target.getDataContainerType() == source.getDataContainerType() 
                 && target.getId().toUpperCase().equals(source.getId().toUpperCase())){
             source.getLanguageExceptions().add(
@@ -420,8 +470,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         return qualifier;
     }
 
-    @Override
-    public Object visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) {
+    @Override 
+    public Object visitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { 
+        
         // if this method is not called (visited), means that the statement is porbably using an implicit
         //perpsective defined in the source clause
         // after visiting all the clauses, try to determine the perspective again.
@@ -450,8 +501,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             );
         }
         else {
-            if(perspective instanceof PerspectiveDescriptor){
+            if(perspective instanceof PerspectiveDescriptor){                        
                 projection.setPerspective((PerspectiveDescriptor)perspective);
+                projection.getPerspective().setExplicit();// .setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Explicit);                
             }
             else{
                  projection.getLanguageExceptions().add(
@@ -469,6 +521,26 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         //stack.pop();
 
         return projection;
+
+    }
+    
+    @Override 
+    public Object visitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { 
+        // see the issue #1 (https://github.com/javadch/XQt/issues/1) description and comments for the solution outline
+        // currently just perspective attributes are supported, not physical fields. The fields need the modeler to access the source/ container
+        // to obtain the data types.
+        ProjectionClause projection = new ProjectionClause();
+        projection.getPerspective().setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Inline);
+        return projection;
+    }
+
+    public Object visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) {
+        if(ctx instanceof XQtParser.ProjectionClause_PerspectiveContext){
+            return(visitProjectionClause_Perspective((XQtParser.ProjectionClause_PerspectiveContext)ctx));
+        } else if(ctx instanceof XQtParser.ProjectionClause_InlineContext){
+            return(visitProjectionClause_Inline((XQtParser.ProjectionClause_InlineContext)ctx));
+        }
+        return null;
     }
 
     @Override
@@ -491,7 +563,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     @Override
     public Object visitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx) {
         DataContainerDescriptor item = new DataContainerDescriptor();
-        item.setDataContainerType(DataContainerDescriptor.DataContainerType.Simplecontainer);
+        item.setDataContainerType(DataContainerDescriptor.DataContainerType.SimpleContainer);
         
         String bindingName = ctx.bindingRef().getText();
         BindingDescriptor b = null;
@@ -998,7 +1070,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
 
     private PerspectiveDescriptor extractPerspective(SourceClause source) {
-        // try to extract as mush field information as possible fron the source clause.
+        // try to extract as mush field information as possible from the source clause.
         return new PerspectiveDescriptor();
     }
 

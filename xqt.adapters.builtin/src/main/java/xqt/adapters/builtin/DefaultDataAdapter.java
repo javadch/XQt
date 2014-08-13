@@ -9,6 +9,7 @@ package xqt.adapters.builtin;
 import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,66 +31,31 @@ import xqt.model.statements.query.SelectDescriptor;
 public class DefaultDataAdapter implements DataAdapter{
   
     private DataReaderBuilder builder = null;
-    @Override
-    public void setup(Map<String, Object> config) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
+    
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
         Map<String, Variable> memory = (Map<String, Variable>)context;
-        try{
-            if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){ // the data source must be a variable
-                ////         READER AREA
+        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){ // the data source must be a variable
+            ////         READER AREA
 
-                // check whether the data is tabular!
-                Variable sourceData = (Variable)memory.get(select.getSourceClause().getVariableName());
-                // do something with the source data using the select definition
-
-                List<Object> source = (List<Object>)sourceData.getResult().getTabularData(); // for testing purpose, it just returns the source
-                //Stream<Object> stream = source.stream();
-
-                //// END OF READER AREA
-
-                //// MAPPER AREA: maps the result of the reading part, which is a collection, to the specified output type. it can be a plot or a collection with another row object.
-                //// maybe they get mixed over time :-(
-                switch (select.getTargetClause().getDataContainerType()){
-                    case Plot:{
-                        Resultset resultSet = new Resultset(ResultsetType.Image); 
-//                        resultSet.setData(result);
-//                        resultSet.setSchema(sourceData.getResult().getSchema());
-//                        //resultSet.setSchema(prepareSchema(select));
-                        return resultSet;
-                    }
-                    case JoinedContainer:
-                        break;
-                    case Simplecontainer:
-                        break;
-                    case Variable:{
-                        Resultset resultSet = new Resultset(ResultsetType.Tabular); 
-                        if(source == null || source.stream().count() <=0){                    
-                            resultSet.setData(null);
-                            resultSet.setSchema(sourceData.getResult().getSchema());
-                        } else {
-                            Class entryPoint = select.getExecutionInfo().getSources().values().stream()
-                                .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
-                            DataReader reader = builder.build(entryPoint);
-                            List<Object> result = reader.read(source);
-                            resultSet.setData(result);
-                            resultSet.setSchema(sourceData.getResult().getSchema());                               
-                        }
-                        //resultSet.setSchema(prepareSchema(select));
-                        return resultSet;
-                    }
-                }
-                //// END OF MAPPER AREA
+            // check whether the data is tabular!
+            Variable sourceVariable = (Variable)memory.get(select.getSourceClause().getVariableName());
+            // do something with the source data using the select definition
+            Resultset resultSet = internalRun(select, sourceVariable);
+            return resultSet;
         }
-        } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-            
-        }       
         return null;
     }
 
+    @Override
+    public Resultset compensate(SelectDescriptor select, Variable variable){
+        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){ // the data source must be a variable
+            Resultset resultSet = internalRun(select, variable);
+            return resultSet;
+        }
+        return null;
+    }
+    
     @Override
     public boolean needsMemory() {
         return true;
@@ -98,13 +64,13 @@ public class DefaultDataAdapter implements DataAdapter{
     @Override
     public void prepare(SelectDescriptor select) {
         builder = new DataReaderBuilder();
-        switch (select.getTargetClause().getDataContainerType()){
+        switch (select.getSourceClause().getDataContainerType()){
             case Plot:{
                 break;
             }
             case JoinedContainer:
                 break;
-            case Simplecontainer:
+            case SimpleContainer:
                 break;
             case Variable:{
             try {
@@ -120,11 +86,96 @@ public class DefaultDataAdapter implements DataAdapter{
                 //List<Object> result = reader.read(source);
                 //resultSet.setData(result);
                 //resultSet.setSchema(sourceData.getResult().getSchema());
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 // return a language exception
                 Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
             }
             }
         }       
     }    
+    
+    private HashMap<String, Boolean> capabilities = new HashMap<>();
+    
+    @Override
+    public boolean isSupported(String capability) {
+        if(capabilities.containsKey(capability) && capabilities.get(capability) == true)
+            return true;
+        return false;
+    }
+
+    @Override
+    public void registerCapability(String capabilityKey, boolean isSupported) {
+        capabilities.put(capabilityKey, isSupported);
+    }    
+
+    @Override
+    public void setup(Map<String, Object> config) {
+        registerCapability("select.qualifier", false);
+        registerCapability("function", true);
+        registerCapability("function.default.Max", true);
+        registerCapability("expression", true);
+        registerCapability("select.source.simple", true);
+        registerCapability("select.source.join", false);
+        registerCapability("select.target.persist", false);
+        registerCapability("select.target.plot", true);
+        //registerCapability("select.target.memory", true);
+        registerCapability("select.anchor", false);
+        registerCapability("select.filter", true);
+        registerCapability("select.orderby", true);
+        registerCapability("select.groupby", true);
+        registerCapability("select.limit", true);
+    }
+    
+    @Override
+    public boolean hasRequiredCapabilities(SelectDescriptor select) {
+        boolean allmatched = select.getRequiredCapabilities().stream().allMatch(p-> this.isSupported(p));
+        return allmatched;
+    }
+
+    private Resultset internalRun(SelectDescriptor select, Variable sourceVariable) {
+        try{
+            // check whether the data is tabular!
+            // do something with the source data using the select definition
+            List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
+            //Stream<Object> stream = source.stream();
+
+            //// END OF READER AREA
+
+            //// MAPPER AREA: maps the result of the reading part, which is a collection, to the specified output type. it can be a plot or a collection with another row object.
+            //// maybe they get mixed over time :-(
+            switch (select.getTargetClause().getDataContainerType()){
+                case Plot:{
+                    Resultset resultSet = new Resultset(ResultsetType.Image); 
+//                        resultSet.setData(result);
+//                        resultSet.setSchema(sourceData.getResult().getSchema());
+//                        //resultSet.setSchema(prepareSchema(select));
+                    return resultSet;
+                }
+                case JoinedContainer:
+                    break;
+                case SimpleContainer:
+                    break;
+                case Variable:{
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular); 
+                    if(source == null || source.stream().count() <= 0){                    
+                        resultSet.setData(null);
+                        resultSet.setSchema(sourceVariable.getResult().getSchema());
+                    } else {
+                        Class entryPoint = select.getExecutionInfo().getSources().values().stream()
+                            .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+                        DataReader reader = builder.build(entryPoint);
+                        List<Object> result = reader.read(source);
+                        resultSet.setData(result);
+                        resultSet.setSchema(sourceVariable.getResult().getSchema());                               
+                    }
+                    //resultSet.setSchema(prepareSchema(select));
+                    return resultSet;
+                }
+                //// END OF MAPPER AREA
+            }
+        } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            
+        }       
+        return null;    
+    }
 }

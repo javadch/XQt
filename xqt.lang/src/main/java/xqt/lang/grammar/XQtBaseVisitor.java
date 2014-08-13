@@ -258,6 +258,14 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitSourceRef(@NotNull XQtParser.SourceRefContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -322,7 +330,7 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { return visitChildren(ctx); }
+	@Override public T visitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -330,7 +338,7 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}

@@ -14,14 +14,27 @@ import xqt.model.configurations.BindingDescriptor;
  */
 public class DataContainerDescriptor extends ClauseDescriptor{
     public enum DataContainerType {
-        Simplecontainer, JoinedContainer, Variable, Plot
+        SimpleContainer, JoinedContainer, Variable, Plot
     }
     
-    protected DataContainerType dataContainerType = DataContainerType.Simplecontainer;
+    public enum ContinaerLifeTime{
+        Long, Short
+    }
+    
+    protected ContinaerLifeTime lifeTime = ContinaerLifeTime.Long;
+    protected DataContainerType dataContainerType = DataContainerType.SimpleContainer;
     protected BindingDescriptor binding;
     protected Integer containerIndex; //shoud be an index to one of the scopes defined in the linked binding
     protected String variableName;
 
+    public ContinaerLifeTime getLifeTime() {
+        return lifeTime;
+    }
+
+    public void setLifeTime(ContinaerLifeTime lifeTime) {
+        this.lifeTime = lifeTime;
+    }
+    
     public DataContainerType getDataContainerType() {
         return dataContainerType;
     }

@@ -20,7 +20,7 @@ public class PerspectiveAnnotator {
     public static PerspectiveDescriptor describePerspective(XQtParser.PerspectiveContext ctx, ProcessModel processModel) {
         PerspectiveDescriptor perspective = new PerspectiveDescriptor();
         perspective.setId(ctx.name.getText());
-        perspective.setExplicit(Boolean.TRUE);
+        perspective.setExplicit();
         //perspective.setName(perspective.getId());
         if(ctx.superPerspective != null){
             PerspectiveDescriptor sup = (PerspectiveDescriptor)processModel.getDeclarations().get(ctx.superPerspective.getText());

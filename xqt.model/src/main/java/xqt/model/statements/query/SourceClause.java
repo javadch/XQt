@@ -56,4 +56,13 @@ public class SourceClause extends DataContainerDescriptor{
         source.setVariableName(base.getVariableName());
         return source;
     } 
+
+    public static SourceClause createVariableSource(String variableName){
+        SourceClause source = new SourceClause();
+        source.setLifeTime(ContinaerLifeTime.Short);
+        source.setDataContainerType(DataContainerType.Variable);
+        source.setVariableName(variableName);
+        return source;
+    } 
+
 }

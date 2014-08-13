@@ -24,7 +24,15 @@ import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementVisitor;
+import xqt.model.statements.query.AnchorClause;
+import xqt.model.statements.query.FilterClause;
+import xqt.model.statements.query.GroupClause;
+import xqt.model.statements.query.LimitClause;
+import xqt.model.statements.query.OrderClause;
 import xqt.model.statements.query.SelectDescriptor;
+import xqt.model.statements.query.SetQualifierClause;
+import xqt.model.statements.query.SourceClause;
+import xqt.model.statements.query.TargetClause;
 
 /**
  *
@@ -46,14 +54,11 @@ public class StatementExecuter implements StatementVisitor{
     public Resultset visit(SelectDescriptor select) {
         // get the adapter object
         // call its run statement with the statement object, currently there is no capability matching
-        // get the result set back and assign it to the variable named in the atrget caluse
-        // put the result set in the engine's memory
-        // return a pointer to the variable!
+        // if the adapater had reported any lack of functionlity, there is a compensation query attached to it.
+        // in this case, first execute the master statement and then pass its result to the compensation query. The correct result
+        // is the return value from the compensation query.
         //this.engine.setVariableValue("test", new Object());
-        
-        // check the source clause to see where data is supposed to come from, if its a container, then pass the exeution to the adapater
-        // otherwise it should be a variable. if so pass the statement to the memory adapter.
-        // check for the adapter type, name and etc. if the statement is accessing a variable, use the defualt MemoryAdapter
+        // the adapater has been chosen in the prepare phase and is assigned to the statement's execution info.
         //String adapterId = selectStatement.getSourceClause().getBinding().getConnection().getAdapterName();
         
         DataAdapter adapter = select.getExecutionInfo().getAdapter();
@@ -62,6 +67,18 @@ public class StatementExecuter implements StatementVisitor{
             result = adapter.run(select, memory);
         } else {
             result = adapter.run(select, null);
+        }
+        if(select.getCompensationStatement() != null){
+            Variable var = new Variable();
+            var.setExecutionInfo(select.getExecutionInfo());
+            var.setName(select.getTargetClause().getVariableName());
+            var.setResult(result);
+
+            DataAdapter compensationAdapter = select.getCompensationStatement().getExecutionInfo().getAdapter();
+            result = compensationAdapter.compensate(select.getCompensationStatement(), var);
+            var.setExecutionInfo(null); // remove the variable, its temporary and not needed anymore
+            select.getClauses().remove(select.getTargetClause().getType());
+            select.addClause(select.getCompensationStatement().getTargetClause());
         }
         return result;
     }
@@ -73,7 +90,11 @@ public class StatementExecuter implements StatementVisitor{
         eix.setExecuted(false);
         DataAdapter adapter = chooseAdapter(select); // create the adapter based on its registration info and the statement's bindinf info
         eix.setAdapter(adapter);
-        adapter.prepare(select); // creates the source files but does not compile them           
+        adapter.prepare(select); // creates the source files but does not compile them 
+        if(!adapter.hasRequiredCapabilities(select)){
+            SelectDescriptor comp = buildCompensationStatement(select);
+            comp.getExecutionInfo().getAdapter().prepare(comp);
+        }
     }
     
     private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
@@ -83,7 +104,8 @@ public class StatementExecuter implements StatementVisitor{
             if(!loadedAdapters.containsKey("Default")) {
                 // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
                 // this causes the second call to generate invalid files!! solve it first and the cache the adapters
-                DataAdapter adapter = new DefaultDataAdapter();                 
+                DataAdapter adapter = new DefaultDataAdapter();  
+                adapter.setup(null);
                 loadedAdapters.put("Default", adapter);
                 //return adapter; // when caching is enabled, remove this line
             }
@@ -99,6 +121,7 @@ public class StatementExecuter implements StatementVisitor{
                 Constructor<?> ctor = cl.getConstructor();
                 ctor.setAccessible(true);
                 DataAdapter adapter = (DataAdapter)ctor.newInstance();
+                adapter.setup(null);
                 loadedAdapters.put("CSV", adapter);
                 //return adapter;
             }
@@ -117,5 +140,49 @@ public class StatementExecuter implements StatementVisitor{
         return null;
     }    
 
+    private SelectDescriptor buildCompensationStatement(SelectDescriptor select) {
+        // check which capabilities are missing and chech whether they are suppotrted by the compensation adapter?
+        // check the dependecies between the missing capabilities
+        // build a compensation query
+        // adopt the main query to the changes.
+        
+        // for now just the LIMIT clause is compensated. later the PLOT should be considered and so on.
+        
+        SelectDescriptor comp = new SelectDescriptor();
+        comp.setDependsUpon(select);
+        select.setCompensationStatement(comp);
+        
+        comp.addClause(new SetQualifierClause());
+        comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
+        
+        // create a source of type variable and name it as "Tempvar"+select.id+ time.ticks
+        String variableName = "TempVar_" + select.getId() +  "_" + System.currentTimeMillis();
+        comp.addClause(SourceClause.createVariableSource(variableName));
+        comp.addClause(select.getTargetClause());
+        //replace the main's target clause with the temp var, so that the main query puts the result in the tempvar.
+        // the temp var should be deleted after the query is executed.
+        select.getClauses().remove(select.getTargetClause().getType());
+        select.addClause(TargetClause.createVariableTarget(variableName));
+        
+        comp.addClause(new AnchorClause());
+        comp.addClause(new FilterClause());
+        comp.addClause(new OrderClause());
+        comp.addClause(new GroupClause());
+        
+        ExecutionInfo eix = new ExecutionInfo();
+        comp.setExecutionInfo(eix);
+        eix.setExecuted(false);
+        DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause
+        eix.setAdapter(adapter);
+        
+        if(!select.getExecutionInfo().getAdapter().isSupported("select.limit")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
+                comp.addClause(select.getLimitClause());
+                select.getClauses().remove(select.getLimitClause().getType());
+                select.addClause(new LimitClause());                
+            }
+        }
+        return comp;
+    }
 
 }

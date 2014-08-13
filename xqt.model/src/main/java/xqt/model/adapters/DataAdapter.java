@@ -10,6 +10,7 @@ import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import xqt.model.data.Resultset;
+import xqt.model.data.Variable;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -20,7 +21,13 @@ public interface DataAdapter {
     boolean needsMemory();
     void setup(Map<String, Object> config);
     Resultset run(SelectDescriptor select, Object conext);
+    Resultset compensate(SelectDescriptor select, Variable variable);
 
     void prepare(SelectDescriptor select);
+    
+    boolean isSupported(String capability);
+    void registerCapability(String capabilityKey, boolean isSupported);
+
+    boolean hasRequiredCapabilities(SelectDescriptor select);
 
 }

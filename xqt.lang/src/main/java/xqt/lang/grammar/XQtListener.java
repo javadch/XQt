@@ -339,6 +339,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitSemanticKey(@NotNull XQtParser.SemanticKeyContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#projectionClause_Inline}.
+	 * @param ctx the parse tree
+	 */
+	void enterProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#projectionClause_Inline}.
+	 * @param ctx the parse tree
+	 */
+	void exitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#sourceRef}.
 	 * @param ctx the parse tree
 	 */
@@ -427,6 +438,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitLabelVersionSelector(@NotNull XQtParser.LabelVersionSelectorContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#projectionClause_Perspective}.
+	 * @param ctx the parse tree
+	 */
+	void enterProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#projectionClause_Perspective}.
+	 * @param ctx the parse tree
+	 */
+	void exitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#attribute_def}.
 	 * @param ctx the parse tree
 	 */
@@ -436,17 +458,6 @@ public interface XQtListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx);
-
-	/**
-	 * Enter a parse tree produced by {@link XQtParser#projectionClause}.
-	 * @param ctx the parse tree
-	 */
-	void enterProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#projectionClause}.
-	 * @param ctx the parse tree
-	 */
-	void exitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link XQtParser#sortSpecification}.

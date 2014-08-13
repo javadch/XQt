@@ -21,6 +21,7 @@ import xqt.model.data.Variable;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementDescriptor;
 import xqt.model.statements.StatementVisitor;
+import xqt.model.statements.query.SelectDescriptor;
 
 /**
  *
@@ -63,6 +64,11 @@ public class DefaultQueryEngine  implements QueryEngine{
     @Override
     public void deleteVariable(String variableName){
         this.memory.remove(variableName);
+    }
+    
+    @Override
+    public void addVariable(Variable variable){
+        this.memory.put(variable.getName(), variable);
     }
     
     @Override
@@ -130,6 +136,12 @@ public class DefaultQueryEngine  implements QueryEngine{
                 // add the sources to the compilation unit
                 if(sm.getExecutionInfo().getSources().values().stream().count() > 0){
                     sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());
+                    if(sm instanceof SelectDescriptor){ // do it also for the other types
+                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getCompensationStatement();
+                        if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
+                            sourcesToBeCompiled.putAll(compensationStatement.getExecutionInfo().getSources());
+                        }
+                    }
                 }
             }
             
@@ -144,8 +156,19 @@ public class DefaultQueryEngine  implements QueryEngine{
             for(StatementDescriptor sm: model.getStatements().values()){                
                 for(InMemorySourceFile source : sm.getExecutionInfo().getSources().values()){                    
                     source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
+                    if(sm instanceof SelectDescriptor){ // do it also for the other types
+                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getCompensationStatement();
+                        if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
+                            for(InMemorySourceFile compSource : compensationStatement.getExecutionInfo().getSources().values()){
+                                compSource.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource.getFullName()));                                
+                            }
+                        }
+                    }
                 }
                 sm.accept(visitor);
+                // get the result set back and assign it to the variable named in the target caluse
+                // put the result set in the engine's memory
+                // return a pointer to the variable!
                 if(sm.getExecutionInfo().isExecuted() && sm.getExecutionInfo().getVariable() != null)
                     this.memory.put(sm.getExecutionInfo().getVariable().getName(), sm.getExecutionInfo().getVariable());
             }

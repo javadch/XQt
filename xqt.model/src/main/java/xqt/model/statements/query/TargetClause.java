@@ -31,4 +31,13 @@ public class TargetClause extends DataContainerDescriptor{
         target.setVariableName(base.getVariableName());
         return target;
     }     
+    
+    public static TargetClause createVariableTarget(String variableName){
+        TargetClause target = new TargetClause();
+        target.setDataContainerType(DataContainerType.Variable);
+        target.setLifeTime(ContinaerLifeTime.Short);
+        target.setVariableName(variableName);
+        return target;
+    }     
+    
 }

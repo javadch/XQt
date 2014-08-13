@@ -39,6 +39,8 @@ public interface QueryEngine {
 
     // deletes the specified variable and its data from the engine's memory
     void deleteVariable(String variableName);
+    
+    void addVariable(Variable variable);
 
 //executes all the statements in the process.
     void execute();

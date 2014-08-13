@@ -222,6 +222,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitSemanticKey(@NotNull XQtParser.SemanticKeyContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#projectionClause_Inline}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#sourceRef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -278,18 +285,18 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitLabelVersionSelector(@NotNull XQtParser.LabelVersionSelectorContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#projectionClause_Perspective}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#attribute_def}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx);
-
-	/**
-	 * Visit a parse tree produced by {@link XQtParser#projectionClause}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link XQtParser#sortSpecification}.

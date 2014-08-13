@@ -407,6 +407,19 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSourceRef(@NotNull XQtParser.SourceRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -511,6 +524,19 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -518,19 +544,6 @@ public class XQtBaseListener implements XQtListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
