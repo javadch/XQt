@@ -17,7 +17,7 @@ import xqt.model.declarations.PerspectiveDescriptor;
 public class PlotClause extends TargetClause{
     private PerspectiveDescriptor linkedPerspective;
     private String hax;
-    private List<String> vax = new ArrayList<>();
+    private List<String> vaxes = new ArrayList<>();
     private String plotType;
     private String hLabel;
     private String vLabel;
@@ -47,12 +47,12 @@ public class PlotClause extends TargetClause{
         this.hax = hax;
     }
 
-    public List<String> getVax() {
-        return vax;
+    public List<String> getVaxes() {
+        return vaxes;
     }
 
-    public void setVax(List<String> vax) {
-        this.vax = vax;
+    public void setVax(List<String> vaxes) {
+        this.vaxes = vaxes;
     }
 
     public String getPlotType() {

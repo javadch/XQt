@@ -1692,7 +1692,8 @@ public class XQtParser extends Parser {
 		public VariableContext id;
 		public VariableContext hx;
 		public VariableContext vx1;
-		public VariableContext vxs2;
+		public VariableContext variable;
+		public List<VariableContext> vxs2 = new ArrayList<VariableContext>();
 		public Token plotType;
 		public Token pxl;
 		public Token pvl;
@@ -1784,7 +1785,8 @@ public class XQtParser extends Parser {
 				{
 				{
 				setState(327); match(COMMA);
-				setState(328); ((PlotContext)_localctx).vxs2 = variable();
+				setState(328); ((PlotContext)_localctx).variable = variable();
+				((PlotContext)_localctx).vxs2.add(((PlotContext)_localctx).variable);
 				}
 				}
 				setState(333);
@@ -3192,7 +3194,8 @@ public class XQtParser extends Parser {
 	public static class Function_packageContext extends FunctionContext {
 		public PackagedIdentifierContext functionName;
 		public ArgumentContext arg1;
-		public ArgumentContext args2;
+		public ArgumentContext argument;
+		public List<ArgumentContext> args2 = new ArrayList<ArgumentContext>();
 		public List<TerminalNode> COMMA() { return getTokens(XQtParser.COMMA); }
 		public PackagedIdentifierContext packagedIdentifier() {
 			return getRuleContext(PackagedIdentifierContext.class,0);
@@ -3226,7 +3229,8 @@ public class XQtParser extends Parser {
 	public static class Function_simpleContext extends FunctionContext {
 		public SimpleIdentifierContext functionName;
 		public ArgumentContext arg1;
-		public ArgumentContext args2;
+		public ArgumentContext argument;
+		public List<ArgumentContext> args2 = new ArrayList<ArgumentContext>();
 		public SimpleIdentifierContext simpleIdentifier() {
 			return getRuleContext(SimpleIdentifierContext.class,0);
 		}
@@ -3283,7 +3287,8 @@ public class XQtParser extends Parser {
 						{
 						{
 						setState(475); match(COMMA);
-						setState(476); ((Function_simpleContext)_localctx).args2 = argument();
+						setState(476); ((Function_simpleContext)_localctx).argument = argument();
+						((Function_simpleContext)_localctx).args2.add(((Function_simpleContext)_localctx).argument);
 						}
 						}
 						setState(481);
@@ -3315,7 +3320,8 @@ public class XQtParser extends Parser {
 						{
 						{
 						setState(489); match(COMMA);
-						setState(490); ((Function_packageContext)_localctx).args2 = argument();
+						setState(490); ((Function_packageContext)_localctx).argument = argument();
+						((Function_packageContext)_localctx).args2.add(((Function_packageContext)_localctx).argument);
 						}
 						}
 						setState(495);

@@ -673,12 +673,23 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // it is not correct to check for duplicates here, as it is not clear whether the variable is used as source of target!
         plot.setPlotName(plotName);
         plot.setHax(ctx.hx.getText());
-        for(XQtParser.VariableContext v: ctx.variable().stream().skip(2).collect(Collectors.toList())) // ctx.variable should point to the v-ax 
-            plot.getVax().add(v.ID().getText());
+        if(ctx.vx1 != null)
+            plot.getVaxes().add(ctx.vx1.getText()); // the first vertical axis, if exists!
+        else{
+            plot.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Expecting at least one vertical axis!")
+                    .setLineNumber(ctx.getStart().getLine())
+                    .setColumnNumber(ctx.getStart().getCharPositionInLine())
+                    .build()
+            );            
+        }
+        for(XQtParser.VariableContext v: ctx.vxs2) // the second and more vertical axes 
+            plot.getVaxes().add(v.ID().getText());
         plot.setPlotType(ctx.plotType == null? "l" : ctx.plotType.getText());
-        plot.sethLabel(ctx.pxl == null? "": ctx.pxl.getText());
-        plot.setvLabel(ctx.pvl == null? "": ctx.pxl.getText());
-        plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText());
+        plot.sethLabel(ctx.pxl == null? plot.getHax(): ctx.pxl.getText().replaceAll("\"", ""));
+        plot.setvLabel(ctx.pvl == null? plot.getVaxes().get(0): ctx.pvl.getText().replaceAll("\"", ""));
+        plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText().replaceAll("\"", ""));
         
         return plot;
     }
