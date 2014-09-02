@@ -35,17 +35,24 @@ import java.util.stream.Collectors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class @(BaseClassName)Reader implements DataReader {
+public class @(BaseClassName)Reader implements DataReader<@(TargetRowType), @(SourceRowType)> {
     BufferedWriter writer;
 
     
     String  source              = "";
     String  target              = "";
     
-    public List<Object> read(List<Object> source)  throws FileNotFoundException, IOException {
-            @(SourceRowType) src = new @(SourceRowType)(null);
-            List<Object> result = 
+    public List<@(TargetRowType)> read(List<@(SourceRowType)> source)  throws FileNotFoundException, IOException {
+            //@(SourceRowType) src = new @(SourceRowType)(null);
+            List<@(TargetRowType)> result = 
             source.stream()
+                @if(Where!= null && !Where.isEmpty()) {
+                    .filter(p -> (p.isValid == true) && (@Where))
+                }
+                else{
+                    .filter(p -> (p.isValid == true) )
+                }
+
                 @if(skip > -1){
                     .skip(@(skip))
                 }

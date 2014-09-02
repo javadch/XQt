@@ -268,7 +268,7 @@ public class CsvDataAdapter implements DataAdapter {
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", false);
         registerCapability("select.projection.perspective", true);
-//        registerCapability("select.projection.perspective.explicit", true);
+        registerCapability("select.projection.perspective.explicit", true);
 //        registerCapability("select.projection.perspective.implicit", true);
 //        registerCapability("select.projection.perspective.inline", true);
         registerCapability("function", true);

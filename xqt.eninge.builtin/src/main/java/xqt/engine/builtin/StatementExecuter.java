@@ -164,24 +164,54 @@ public class StatementExecuter implements StatementVisitor{
         select.getClauses().remove(select.getTargetClause().getType());
         select.addClause(TargetClause.createVariableTarget(variableName));
         
-        comp.addClause(new AnchorClause());
-        comp.addClause(new FilterClause());
-        comp.addClause(new OrderClause());
-        comp.addClause(new GroupClause());
-        
         ExecutionInfo eix = new ExecutionInfo();
         comp.setExecutionInfo(eix);
         eix.setExecuted(false);
         DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause
         eix.setAdapter(adapter);
+
+        if(!select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){
+                comp.addClause(select.getAnchorClause());
+                select.getClauses().remove(select.getAnchorClause().getType());
+                select.addClause(new AnchorClause());  // added an empty/neutral clause              
+            }
+        }
+
+        if(!select.getExecutionInfo().getAdapter().isSupported("select.filter")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.filter")){
+                comp.addClause(select.getFilterClause());
+                select.getClauses().remove(select.getFilterClause().getType());
+                select.addClause(new FilterClause());  // added an empty/neutral clause              
+            }
+        }
         
+        if(!select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.orderby")){
+                comp.addClause(select.getOrderClause());
+                select.getClauses().remove(select.getOrderClause().getType());
+                select.addClause(new OrderClause());  // added an empty/neutral clause              
+            }
+        }
+
+        if(!select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.groupby")){
+                comp.addClause(select.getGroupClause());
+                select.getClauses().remove(select.getGroupClause().getType());
+                select.addClause(new GroupClause());  // added an empty/neutral clause              
+            }
+        }
+                
         if(!select.getExecutionInfo().getAdapter().isSupported("select.limit")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
                 comp.addClause(select.getLimitClause());
                 select.getClauses().remove(select.getLimitClause().getType());
-                select.addClause(new LimitClause());                
+                select.addClause(new LimitClause());  // added an empty/neutral clause              
             }
         }
+        
+        // compensate the target clause, too. consider all target types.
+        // update/ enhance MemReader.it
         return comp;
     }
 

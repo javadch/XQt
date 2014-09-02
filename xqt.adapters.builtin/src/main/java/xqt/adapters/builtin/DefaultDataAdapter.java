@@ -139,6 +139,7 @@ public class DefaultDataAdapter implements DataAdapter{
         registerCapability("select.projection.perspective.inline", true);
         registerCapability("select.source.simple", true);
         registerCapability("select.source.join", false);
+        registerCapability("select.target.variable", true);
         registerCapability("select.target.persist", false);
         registerCapability("select.target.plot", true);
         registerCapability("select.source.variable", true);
@@ -147,6 +148,8 @@ public class DefaultDataAdapter implements DataAdapter{
         registerCapability("select.orderby", true);
         registerCapability("select.groupby", true);
         registerCapability("select.limit", true);
+        registerCapability("select.limit.take", true);
+        registerCapability("select.limit.skip", true);
     }
     
     @Override

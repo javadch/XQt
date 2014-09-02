@@ -35,7 +35,7 @@ public class DataReaderBuilder {
 
     DataReader build(Class classObject) throws NoSuchMethodException, InstantiationException, IllegalAccessException,
             IllegalArgumentException, InvocationTargetException  {
-        DataReader instance = (DataReader)ObjectCreator.load(classObject);
+        DataReader<Object, Object> instance = (DataReader)ObjectCreator.load(classObject);
         return instance;
     }
 

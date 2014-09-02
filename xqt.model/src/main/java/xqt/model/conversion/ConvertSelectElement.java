@@ -51,6 +51,8 @@ public class ConvertSelectElement {
     }
 
     public String prepareWhere(SelectDescriptor select) {
+        if(select.getFilterClause() == null || select.getFilterClause().getPredicate() == null)
+            return "";
         convertor.reset();
         convertor.visit(select.getFilterClause().getPredicate()); // visit returns empty predicate string on null expressions
         String filterString = convertor.getSource();
@@ -59,11 +61,16 @@ public class ConvertSelectElement {
 
     public Map<String, String> prepareOrdering(SelectDescriptor select) {
         Map<String, String> ordering = new LinkedHashMap<>();
-        select.getOrderClause().getOrderItems().entrySet().stream()
-                .map((entry) -> entry.getValue())
-                .forEach((orderItem) -> {
-                        ordering.put(orderItem.getSortKey(), orderItem.getSortOrder().toString());
-        });
+        try {
+            select.getOrderClause().getOrderItems().entrySet().stream()
+                    .map((entry) -> entry.getValue())
+                    .forEach((orderItem) -> {
+                            ordering.put(orderItem.getSortKey(), orderItem.getSortOrder().toString());
+            });
+        }
+        catch (Exception ex){            
+        }
+        
         return ordering;
     }
 

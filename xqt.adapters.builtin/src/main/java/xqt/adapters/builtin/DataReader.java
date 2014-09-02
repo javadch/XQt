@@ -17,6 +17,6 @@ import java.util.List;
  * @param <T>
  * @param <S>
  */
-public interface DataReader {
-    List<Object> read(List<Object> source) throws FileNotFoundException, IOException;
+public interface DataReader<T, S> {
+    List<T> read(List<S> source) throws FileNotFoundException, IOException;
 }
