@@ -161,6 +161,10 @@ public class StatementExecuter implements StatementVisitor{
         comp.addClause(select.getTargetClause());
         //replace the main's target clause with the temp var, so that the main query puts the result in the tempvar.
         // the temp var should be deleted after the query is executed.
+        
+        // if there is any non supprted capability, the target clause will be compensated automatically. this includes the case when only the target clause 
+        // is not supported.
+        // speciall care is needed for the target clauses that persist resultsets into an external media! the default adapter may not know how to perform it.
         select.getClauses().remove(select.getTargetClause().getType());
         select.addClause(TargetClause.createVariableTarget(variableName));
         
@@ -170,47 +174,56 @@ public class StatementExecuter implements StatementVisitor{
         DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause
         eix.setAdapter(adapter);
 
-        if(!select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){
+        if(select.getAnchorClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
+            if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){                
                 comp.addClause(select.getAnchorClause());
                 select.getClauses().remove(select.getAnchorClause().getType());
                 select.addClause(new AnchorClause());  // added an empty/neutral clause              
             }
+        } else { // add default clauses to the compensation query
+            comp.addClause(new AnchorClause());
         }
 
-        if(!select.getExecutionInfo().getAdapter().isSupported("select.filter")){
+        if(select.getFilterClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.filter")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.filter")){
                 comp.addClause(select.getFilterClause());
                 select.getClauses().remove(select.getFilterClause().getType());
                 select.addClause(new FilterClause());  // added an empty/neutral clause              
             }
+        } else {
+            comp.addClause(new FilterClause());
         }
         
-        if(!select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
+        if(select.getOrderClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.orderby")){
                 comp.addClause(select.getOrderClause());
                 select.getClauses().remove(select.getOrderClause().getType());
                 select.addClause(new OrderClause());  // added an empty/neutral clause              
             }
+        } else {
+            comp.addClause(new OrderClause());
         }
 
-        if(!select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
+        if(select.getGroupClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.groupby")){
                 comp.addClause(select.getGroupClause());
                 select.getClauses().remove(select.getGroupClause().getType());
                 select.addClause(new GroupClause());  // added an empty/neutral clause              
             }
+        } else {
+            comp.addClause(new GroupClause());
         }
                 
-        if(!select.getExecutionInfo().getAdapter().isSupported("select.limit")){
+        if(select.getLimitClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.limit")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
                 comp.addClause(select.getLimitClause());
                 select.getClauses().remove(select.getLimitClause().getType());
                 select.addClause(new LimitClause());  // added an empty/neutral clause              
             }
+        } else {
+            comp.addClause(new LimitClause());
         }
         
-        // compensate the target clause, too. consider all target types.
         // update/ enhance MemReader.it
         return comp;
     }

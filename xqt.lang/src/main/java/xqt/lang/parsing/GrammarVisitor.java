@@ -195,11 +195,13 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         SetQualifierClause setQuantifier    = new SetQualifierClause();
         if(ctx.setQualifierClause() != null){
             setQuantifier = (SetQualifierClause)visitSetQualifierClause(ctx.setQualifierClause());
+            setQuantifier.setIsPresent(true);
             select.getRequiredCapabilities().add("select.qualifier");
         }
         ProjectionClause   projection       = new ProjectionClause();
         if(ctx.projectionClause()!= null) {
             projection = (ProjectionClause)visitProjectionClause(ctx.projectionClause());
+            projection.setIsPresent(true);
             select.getRequiredCapabilities().add("select.projection.perspective");
             select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
         }
@@ -209,30 +211,35 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         TargetClause       target           = new TargetClause();
         if( ctx.targetSelectionClause() != null){
             target = (TargetClause)visitTargetSelectionClause(ctx.targetSelectionClause());
+            target.setIsPresent(true);
             select.getRequiredCapabilities().add("select.target." + target.getDataContainerType().toString().toLowerCase());
         }
         
         AnchorClause       anchor           = new AnchorClause();
         if(ctx.anchorClause() != null){
             anchor = (AnchorClause)visitAnchorClause(ctx.anchorClause());
+            anchor.setIsPresent(true);
             select.getRequiredCapabilities().add("select.anchor");
         }
         
         FilterClause       filter           = new FilterClause();
         if(ctx.filterClause() != null){
             filter = (FilterClause)visitFilterClause(ctx.filterClause());
+            filter.setIsPresent(true);
             select.getRequiredCapabilities().add("select.filter");
         }
         
         OrderClause        order            = new OrderClause();
         if(ctx.orderClause() != null){
             order = (OrderClause)visitOrderClause(ctx.orderClause());
+            order.setIsPresent(true);
             select.getRequiredCapabilities().add("select.orderby");
         }
         
         LimitClause        limit            = new LimitClause();
         if(ctx.limitClause() != null) {
             limit = (LimitClause)visitLimitClause(ctx.limitClause());
+            limit.setIsPresent(true);
             if (limit.getSkip() > -1){
                 select.getRequiredCapabilities().add("select.limit");
                 select.getRequiredCapabilities().add("select.limit.skip");
@@ -246,6 +253,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         GroupClause        group            = new GroupClause();
         if(ctx.groupClause() != null){
             group = (GroupClause)visitGroupClause(ctx.groupClause());
+            group.setIsPresent(true);
             select.getRequiredCapabilities().add("select.groupby");
         }
 

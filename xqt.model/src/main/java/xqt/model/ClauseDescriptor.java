@@ -14,5 +14,15 @@ package xqt.model;
  * @project SciQuest
  */
 public class ClauseDescriptor extends BaseDescriptor {
+    protected boolean isPresent = false;
 
+    // determines whether the clause exists in the statement. if not an empty/ defalt clause is added which its isPresent is false.
+    public boolean isIsPresent() {
+        return isPresent;
+    }
+
+    public void setIsPresent(boolean isPresent) {
+        this.isPresent = isPresent;
+    }
+    
 }
