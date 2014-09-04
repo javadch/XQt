@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -40,6 +41,7 @@ import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.PlotClause;
 import xqt.model.statements.query.SelectDescriptor;
 
@@ -92,23 +94,40 @@ public class DefaultDataAdapter implements DataAdapter{
             case SimpleContainer:
                 break;
             case Variable:{
-            try {
-                // the statement should depend on another, because the source is a variable!
-                SelectDescriptor master = (SelectDescriptor)select.getDependsUpon();
-                String sourceRowType = master.getExecutionInfo().getSources().values().stream()
-                        .filter(p->p.getFullName().endsWith("Entity")).findFirst().get().getFullName();
-                      
-                LinkedHashMap<String, InMemorySourceFile> rs = builder.createSources(select, sourceRowType);
-                select.getExecutionInfo().setSources(rs);
-                
-                //DataReader reader = createReader(select, sourceRowType);
-                //List<Object> result = reader.read(source);
-                //resultSet.setData(result);
-                //resultSet.setSchema(sourceData.getResult().getSchema());
-            } catch (Exception ex) {
-                // return a language exception
-                Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                try {
+                    // the statement should depend on another, because the source is a variable!
+                    String sourceRowType = "";
+                    SelectDescriptor master = select;
+                    do{ // the source maybe associated to the direct parent or one of the upper level ancestors.
+                        master = master.getDependsUpon()!= null? (SelectDescriptor)master.getDependsUpon(): null;
+                        if(master != null){
+                            Optional<InMemorySourceFile> source = master.getExecutionInfo().getSources().values().stream()
+                                .filter(p->p.getFullName().endsWith("Entity")).findFirst();
+                            if(source.isPresent()){
+                                sourceRowType = source.get().getFullName();
+                            }
+                        }                        
+                    } while(master != null && sourceRowType.isEmpty());   
+                    if(sourceRowType.isEmpty())
+                        throw new Exception("No dependecy trace is found"); // is caught by the next catch block
+                    LinkedHashMap<String, InMemorySourceFile> rs = builder.createSources(select, sourceRowType);
+                    select.getExecutionInfo().setSources(rs);
+
+                    //DataReader reader = createReader(select, sourceRowType);
+                    //List<Object> result = reader.read(source);
+                    //resultSet.setData(result);
+                    //resultSet.setSchema(sourceData.getResult().getSchema());
+                } catch (Exception ex) {
+                    // return a language exception
+                    select.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("A depenedent statement has encountered but no dependency information found!")
+                            .setContextInfo1(select.getId())
+                            .setLineNumber(select.getParserContext().getStart().getLine())
+                            .setColumnNumber(-1)
+                            .build()
+                        );                        
+                }
             }
         }       
     }    

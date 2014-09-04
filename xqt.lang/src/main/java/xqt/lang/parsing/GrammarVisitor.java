@@ -258,35 +258,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         }
 
         // -> when all the clauses are described perform the second round validation to interconnect and validate them
-        if(projection.getPerspective() == null) {
-            // the projection may not be defined by the source clause, so there is an implicit perspective to be extracted
-            PerspectiveDescriptor implicitPerspective = extractPerspective(source);
-            implicitPerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
-            projection.setPerspective(implicitPerspective);
-            select.getRequiredCapabilities().removeIf(p-> p.startsWith("select.projection.perspective.")); // remove the previous perspective type
-            select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
-        }
-        // check for inline perspective and try to build it, like extractPerspective
-        // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
-        if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
-            if(variablesUsedAsTarget.keySet().contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
-                target.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Target variable %s is already in use! "
-                                + "Using one variable as the target of more than one statement is not allowed. ")
-                            .setContextInfo1(target.getVariableName())
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                            .build()
-                );
-            } else {                
-                variablesUsedAsTarget.put(target.getVariableName(), projection.getPerspective());
-            }
-        }
-
-            // when the source is a variable it is not possible to change the perspective. 
-            // So there should be an error message here if the perspective clause is present in the statement
+        // when the source is a variable it is not possible to change the perspective. 
+        // So there should be an error message here if the perspective clause is present in the statement
         if(source.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
             if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
                 source.getLanguageExceptions().add(
@@ -317,6 +291,35 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 }
             }
         }
+        // check for inline perspective and try to build it, like extractPerspective
+
+        // check for implicit perspective if there is still no perspective detected/ determined
+        if(projection.getPerspective() == null) {
+            // the projection may not be defined by the source clause, so there is an implicit perspective to be extracted
+            PerspectiveDescriptor implicitPerspective = extractPerspective(source);
+            implicitPerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+            projection.setPerspective(implicitPerspective);
+            select.getRequiredCapabilities().removeIf(p-> p.startsWith("select.projection.perspective.")); // remove the previous perspective type
+            select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
+        }
+        // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
+
+        if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
+            if(variablesUsedAsTarget.keySet().contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
+                target.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Target variable %s is already in use! "
+                                + "Using one variable as the target of more than one statement is not allowed. ")
+                            .setContextInfo1(target.getVariableName())
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                );
+            } else {                
+                variablesUsedAsTarget.put(target.getVariableName(), projection.getPerspective());
+            }
+        }
+
         
         // the source and the target can not use a same container
         if(target.getDataContainerType() == source.getDataContainerType() 

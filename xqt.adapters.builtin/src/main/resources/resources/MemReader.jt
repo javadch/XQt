@@ -44,6 +44,52 @@ public class @(BaseClassName)Reader implements DataReader<@(TargetRowType), @(So
     
     public List<@(TargetRowType)> read(List<@(SourceRowType)> source)  throws FileNotFoundException, IOException {
             //@(SourceRowType) src = new @(SourceRowType)(null);
+        @if(Ordering!= null && Ordering.size() > 0) {
+        Comparator<@(SourceRowType)> sorter = new Comparator<@(SourceRowType)>() {
+                    @@Override
+                    public int compare(@(SourceRowType) left, @(SourceRowType) right){
+                    @for (Map.Entry<AttributeInfo, String> entry : Ordering.entrySet()) {
+                        @{
+                            DataTypeInfo dti = TypeSystem.getTypes().get(entry.getKey().formalDataType);
+                            AttributeInfo ad = entry.getKey();
+                        }
+                        @if(Ordering.size() == 1) {                            
+                            @if(entry.getValue().toUpperCase().equals("ASC")){
+                                return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                            } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                            }
+                        } else {
+                            @if(entry_isFirst){
+                                if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (!entry_isFirst && !entry_isLast) { 
+                                else if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (entry_isLast) {
+                                else {
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+               }
+              };
+            }
             List<@(TargetRowType)> result = 
             source.stream()
                 @if(Where!= null && !Where.isEmpty()) {
@@ -51,6 +97,10 @@ public class @(BaseClassName)Reader implements DataReader<@(TargetRowType), @(So
                 }
                 else{
                     .filter(p -> (p.isValid == true) )
+                }
+
+		@if(Ordering!= null && Ordering.size() > 0) {
+                   .sorted(sorter)
                 }
 
                 @if(skip > -1){
