@@ -244,10 +244,10 @@ public class DefaultDataAdapter implements DataAdapter{
                         //modelA.addPoint(170, 200);
                         TableModel tableModel = new DefaultTableModel(data, axes.stream().map(p->p.getName()).collect(Collectors.toList()).toArray());
                         SortableTable table = new SortableTable(tableModel);
-                        
+                        String vLabel = plotModel.getVaxes().stream().map(p->p).collect(Collectors.joining(", "));
                         Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
                         xAxis.setRange(0, 400);
-                        Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel()));
+                        Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel()));
                         yAxis.setRange(0, 200);
                         
                         Chart chart = new Chart(); 
@@ -267,7 +267,7 @@ public class DefaultDataAdapter implements DataAdapter{
                             chart.addModel(adapter, style); // and the style
                         }
                         updateXRange(adapters, plotModel.gethLabel(), chart);
-                        updateYRange(adapters, plotModel.getvLabel(), chart);
+                        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);
     
                         //ChartStyle styleA = new ChartStyle(Color.blue, false, true); 
                         //chart.addModel(modelA, styleA); 
@@ -308,7 +308,7 @@ public class DefaultDataAdapter implements DataAdapter{
     private void updateXRange(List<TableToChartAdapter> adapters, String hLabel, Chart chart) {
         // check the axis variable type and based on the type decise on the Axis type: Category, Numeric, etc.
         Range<?> xRange = (Range) adapters.get(0).getXRange();
-        Axis xAxis = new NumericAxis(xRange, hLabel);
+        Axis xAxis = new NumericAxis(xRange.minimum()*0.95, xRange.maximum()*1.05, hLabel);
         chart.setXAxis(xAxis);
     }
 
@@ -325,7 +325,7 @@ public class DefaultDataAdapter implements DataAdapter{
             yAxis = new NumericAxis(nRange.getMin(), nRange.getMax() + 1, vLabel);
         }
         else {
-            yAxis = new NumericAxis(nRange, vLabel);
+            yAxis = new NumericAxis(nRange.minimum()*0.95, nRange.maximum()*1.05, vLabel);
         }
         chart.setYAxis(yAxis);
     }

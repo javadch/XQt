@@ -699,7 +699,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             plot.getVaxes().add(v.ID().getText());
         plot.setPlotType(ctx.plotType == null? "l" : ctx.plotType.getText());
         plot.sethLabel(ctx.pxl == null? plot.getHax(): ctx.pxl.getText().replaceAll("\"", ""));
-        plot.setvLabel(ctx.pvl == null? plot.getVaxes().get(0): ctx.pvl.getText().replaceAll("\"", ""));
+        plot.setvLabel(ctx.pvl == null? "" /*plot.getVaxes().get(0)*/: ctx.pvl.getText().replaceAll("\"", ""));
         plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText().replaceAll("\"", ""));
         
         return plot;

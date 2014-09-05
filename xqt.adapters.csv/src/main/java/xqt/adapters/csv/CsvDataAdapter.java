@@ -286,7 +286,7 @@ public class CsvDataAdapter implements DataAdapter {
         
         registerCapability("select.anchor", false);
         registerCapability("select.filter", true);
-        registerCapability("select.orderby", true);
+        registerCapability("select.orderby", false);
         registerCapability("select.groupby", false);
         registerCapability("select.limit", false);
     }
