@@ -647,6 +647,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitFilterClause(@NotNull XQtParser.FilterClauseContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#inlineAttribute}.
+	 * @param ctx the parse tree
+	 */
+	void enterInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#inlineAttribute}.
+	 * @param ctx the parse tree
+	 */
+	void exitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#searchPhrase}.
 	 * @param ctx the parse tree
 	 */

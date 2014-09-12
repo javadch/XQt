@@ -418,6 +418,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitFilterClause(@NotNull XQtParser.FilterClauseContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#inlineAttribute}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#searchPhrase}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

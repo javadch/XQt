@@ -771,6 +771,19 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx) { }
 	/**
 	 * {@inheritDoc}

@@ -482,6 +482,14 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx) { return visitChildren(ctx); }
 
 	/**

@@ -18,7 +18,15 @@ public abstract class Expression extends ElementDescriptor {
 
     protected String body;
     protected ExpressionType expressionType;
-    protected String inferredDataType;
+    protected String returnType = "Unknown"; // link it the conceptual types
+
+    public String getReturnType() {
+        return returnType;
+    }
+
+    public void setReturnType(String returnType) {
+        this.returnType = returnType;
+    }
     
     public String getBody() {
         return body;
@@ -37,110 +45,174 @@ public abstract class Expression extends ElementDescriptor {
     public abstract String toString();
     
     public static BinaryExpression Add(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Add);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Add);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static BinaryExpression Subtract(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Subtract);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Subtract);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static BinaryExpression Multiply(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Multiply);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Multiply);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static BinaryExpression Divide(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Divide);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Divide);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static BinaryExpression Modulo(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Modulo);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Modulo);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static BinaryExpression And(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.And);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.And);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression Or(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Or);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Or);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression ArithmeticAnd(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.ArithmeticAnd);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticAnd);
+        // check the types of the left and right expressiosns and merge them
+        // it may be always INT
+        return ex;
     }
 
     public static BinaryExpression ArithmeticOr(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.ArithmeticOr);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticOr);
+        // check the types of the left and right expressiosns and merge them
+        // it may be always INT
+        return ex;
     }
 
     public static BinaryExpression ArithmeticXor(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.ArithmeticXor);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticXor);
+        // check the types of the left and right expressiosns and merge them
+        // it may be always INT
+        return ex;
     }
 
     public static BinaryExpression GreaterThan(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.GreaterThan);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.GreaterThan);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression GreaterThanOrEqual(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.GreaterThanOrEqual);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.GreaterThanOrEqual);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression LessThan(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.LessThan);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.LessThan);
+        ex.returnType = "Boolean";
+        return ex;
     }
     
     public static BinaryExpression LessThanOrEqual(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.LessThanOrEqual);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.LessThanOrEqual);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression Equal(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Equal);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Equal);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression Like(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.Like);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Like);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression NotEqual(Expression left, Expression right){
-        return new BinaryExpression(left, right, ExpressionType.NotEqual);
+        BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.NotEqual);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static BinaryExpression Power(Expression x, Expression y) {
-        return new BinaryExpression(x, y, ExpressionType.Power);
+        BinaryExpression ex = new BinaryExpression(x, y, ExpressionType.Power);
+        // check the types of the left and right expressiosns and merge them
+        return ex;
     }
 
     public static UnaryExpression Not(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.Not);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.Not);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static UnaryExpression Negate(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.Negate);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.Negate);
+        ex.returnType = operand.getReturnType();        
+        return ex;
     }
 
     public static UnaryExpression IsNull(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.IsNull);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsNull);
+        ex.returnType = "Boolean";
+        return ex;
     }
     
     public static UnaryExpression IsNumber(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.IsNumber);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsNumber);
+        ex.returnType = "Boolean";
+        return ex;
     }
 
     public static UnaryExpression IsDate(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.IsDate);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsDate);
+        ex.returnType = "Boolean";
+        return ex;
     }
     
     public static UnaryExpression IsEmpty(Expression operand){
-        return new UnaryExpression(operand, ExpressionType.IsEmpty);
+        UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsEmpty);
+        ex.returnType = "Boolean";
+        return ex;
     }
     
     public static MemberExpression Member(String name) {        
-        return new MemberExpression(name);
+        MemberExpression ex = new MemberExpression(name);
+        // the caller must merge it with the effective surrounding expression elements.
+        // i.e. if its a parameter to a function, its type would be of the type of that parameter, ...
+        ex.returnType = "Unknown"; 
+        return ex;
     }
     
+    public static MemberExpression CompoundMember(List<String> nameComponents) {        
+        MemberExpression ex = new MemberExpression(nameComponents);
+        ex.returnType = "Unknown";
+        return ex;
+    }
     public static ValueExpression Value(String value, String type) {        
-        return new ValueExpression(value, type);
+        ValueExpression ex = new ValueExpression(value, type);
+        ex.returnType = type; //check if the type is of conceptual type
+        return ex;
     }
 
     public static FunctionExpression Function(String packageId, String id, List<Expression> parameters) {
-        return new FunctionExpression(packageId, id, ExpressionType.Function, parameters);
+        FunctionExpression ex = new FunctionExpression(packageId, id, ExpressionType.Function, parameters);
+        // check the function specifications, loaded by the language service provider, and determine the return type.
+        return ex;
     }
 }

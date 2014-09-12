@@ -24,6 +24,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
@@ -201,6 +202,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         ProjectionClause   projection       = new ProjectionClause();
         if(ctx.projectionClause()!= null) {
             projection = (ProjectionClause)visitProjectionClause(ctx.projectionClause());
+            if(projection.getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
+                projection.getPerspective().setId("Inline_Perspective_" + select.getId());                
+            }
             projection.setIsPresent(true);
             select.getRequiredCapabilities().add("select.projection.perspective");
             select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
@@ -345,7 +349,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The WHERE clause is using attribute '%s' that is not defined in perspective '%s'.")
+                       .setMessageTemplate("The WHERE clause is using attribute '%s' that is not defined in the associated perspective '%s'.")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -358,7 +362,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' that is not defined in perspective '%s'")
+                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' that is not defined in the associated perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -371,7 +375,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' that is not defined in perspective '%s'")
+                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' that is not defined in the associated perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -385,7 +389,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
                 select.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' that is not defined in associated perspective '%s'")
+                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' that is not defined in the associated perspective '%s'")
                         .setContextInfo1(orderItem.getSortKey())
                         .setContextInfo2(projection.getPerspective().getId())
                         .setLineNumber(orderItem.getParserContext().getStart().getLine())
@@ -481,6 +485,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         return qualifier;
     }
 
+    public Object visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) {
+        if(ctx instanceof XQtParser.ProjectionClause_PerspectiveContext){
+            return(visitProjectionClause_Perspective((XQtParser.ProjectionClause_PerspectiveContext)ctx));
+        } else if(ctx instanceof XQtParser.ProjectionClause_InlineContext){
+            return(visitProjectionClause_Inline((XQtParser.ProjectionClause_InlineContext)ctx));
+        }
+        return null;
+    }
+
     @Override 
     public Object visitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { 
         
@@ -541,17 +554,30 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // currently just perspective attributes are supported, not physical fields. The fields need the modeler to access the source/ container
         // to obtain the data types.
         ProjectionClause projection = new ProjectionClause();
-        projection.getPerspective().setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Inline);
-        return projection;
-    }
-
-    public Object visitProjectionClause(@NotNull XQtParser.ProjectionClauseContext ctx) {
-        if(ctx instanceof XQtParser.ProjectionClause_PerspectiveContext){
-            return(visitProjectionClause_Perspective((XQtParser.ProjectionClause_PerspectiveContext)ctx));
-        } else if(ctx instanceof XQtParser.ProjectionClause_InlineContext){
-            return(visitProjectionClause_Inline((XQtParser.ProjectionClause_InlineContext)ctx));
+        PerspectiveDescriptor perspective = new PerspectiveDescriptor();
+        perspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Inline);
+        projection.setPerspective(perspective);
+        
+        int index = 0;
+        for(XQtParser.InlineAttributeContext inlineAttribute: ctx.inlineAttribute()){
+            if(inlineAttribute.att != null){
+                PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+                if(inlineAttribute.alias != null){
+                    attribute.setId(inlineAttribute.alias.getText());                    
+                } else {
+                    attribute.setId("Attribute" + index++);
+                }
+                Expression exp = (Expression)visit(inlineAttribute.att);
+                // check for simple id, perspective.attribute id, aggregate function, general expression (not containing aggregate functions), ...
+                // AND try setting the data type!
+                
+                attribute.setForwardExpression(exp);
+                perspective.addAttribute(attribute);
+            } else {
+                // Add an exception to the perspective/ projection.
+            }           
         }
-        return null;
+        return projection;
     }
 
     @Override
@@ -992,7 +1018,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         exp.setParserContext(ctx);        
         return exp; 
     }
-
+    @Override
+    public Object visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx) { 
+        List<String> idComponents = new ArrayList<>();
+        idComponents.add(ctx.qualifiedIdentifier().firstId.getText());
+        for(Token cmpnt: ctx.qualifiedIdentifier().otherIds){
+            idComponents.add(cmpnt.getText());
+        }
+        MemberExpression exp = Expression.CompoundMember(idComponents);
+        exp.setParserContext(ctx);        
+        return exp; 
+    }
     @Override
     public Object visitExpression_smart(@NotNull XQtParser.Expression_smartContext ctx) { 
         return visitChildren(ctx); 
