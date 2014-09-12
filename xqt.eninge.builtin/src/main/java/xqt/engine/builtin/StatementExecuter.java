@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 import xqt.adapters.builtin.DefaultDataAdapter;
 import xqt.engine.QueryEngine;
 import xqt.model.DataContainerDescriptor;
+import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
@@ -41,6 +43,7 @@ import xqt.model.statements.query.TargetClause;
 public class StatementExecuter implements StatementVisitor{
     private QueryEngine engine;
     private Map<String, Variable> memory;
+    private AdapterInfoContainer adapterInfoContainer = null;
     public StatementExecuter(QueryEngine engine){
         this.engine = engine;
     }
@@ -48,8 +51,9 @@ public class StatementExecuter implements StatementVisitor{
     StatementExecuter(DefaultQueryEngine engine, Map<String, Variable> memory) {
         this.engine = engine;
         this.memory = memory;
+        adapterInfoContainer = AdapterInfoContainer.getInstance();
     }
-    // keeps connections, binding and adapters alive for later use!
+
     @Override
     public Resultset visit(SelectDescriptor select) {
         // get the adapter object
@@ -100,32 +104,32 @@ public class StatementExecuter implements StatementVisitor{
     private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
     
     private DataAdapter chooseAdapter(SelectDescriptor select) {
+        // use the AdpaterInfo.getRegisteredAdapterInfos to access the information about the registered adapters
         if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
-            if(!loadedAdapters.containsKey("Default")) {
+            //if(!loadedAdapters.containsKey("Default")) {
                 // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
                 // this causes the second call to generate invalid files!! solve it first and the cache the adapters
                 DataAdapter adapter = new DefaultDataAdapter();  
                 adapter.setup(null);
-                loadedAdapters.put("Default", adapter);
-                //return adapter; // when caching is enabled, remove this line
-            }
-            return loadedAdapters.get("Default");
+                //loadedAdapters.put("Default", adapter);
+                return adapter; // when caching is enabled, remove this line
+            //}
+            //return loadedAdapters.get("Default"); // caching of the adapters currently works but the internal builder of the adpater is not in a proper state.
         }
         try {
-            if(!loadedAdapters.containsKey("CSV")) {// read the key from the select statement's associated connection
+            //if(!loadedAdapters.containsKey("CSV")) {// read the key from the select statement's associated connection
                 // read the adapter info from the adapters config file in the applications installation folder
-                String adapterJar = "file:D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/csv.adapter-1.0-SNAPSHOT.jar";
-                String adapterClass = "xqt.adapters.csv.CsvDataAdapter";
-                ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterJar)});
-                Class cl = classLoader.loadClass(adapterClass);
+                AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdapterInfos().stream().filter(p->p.getId().equals("CSV")).findFirst().get(); // hande not found exception
+                ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
+                Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
                 Constructor<?> ctor = cl.getConstructor();
                 ctor.setAccessible(true);
                 DataAdapter adapter = (DataAdapter)ctor.newInstance();
-                adapter.setup(null);
-                loadedAdapters.put("CSV", adapter);
-                //return adapter;
-            }
-            return loadedAdapters.get("CSV");
+                adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
+                //loadedAdapters.put("CSV", adapter);
+                return adapter;
+            //}
+            //return loadedAdapters.get("CSV");
         }
         catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             select.getLanguageExceptions().add(

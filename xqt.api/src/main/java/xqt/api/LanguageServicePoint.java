@@ -60,6 +60,11 @@ public class LanguageServicePoint {
         // every statement should have an ID
         // create dependencies of each element to the others especiallay statements.
         //dstNode.getDependsUponElements(ElementType.Statement ...)
+        
+        // Load the function specifications from the packs
+        loadFunctionSpecifications();
+        // Load the jars of the adapters. maybe it can be deffered to the time they actually requested!
+        
         this.inputStream = processScript;
         runtime = new RuntimeSystem();
         try{
@@ -112,6 +117,10 @@ public class LanguageServicePoint {
         if(this.exceptions.stream().count() > 0)
             return true;
         return false;
+    }
+
+    private void loadFunctionSpecifications() {
+        // use the function specification bean, read the function pack folder, list the packages, read them all, add them to the function list.
     }
     
 }
