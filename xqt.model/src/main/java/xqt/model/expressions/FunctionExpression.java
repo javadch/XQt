@@ -8,6 +8,7 @@ package xqt.model.expressions;
 
 import java.util.ArrayList;
 import java.util.List;
+import xqt.model.functions.FunctionInfo;
 
 /**
  *
@@ -16,6 +17,7 @@ import java.util.List;
 public class FunctionExpression extends Expression{
     private String packageId;
     private List<Expression> parameters = new ArrayList<>();
+    private FunctionInfo functionSpecification = null;
     
     public String getPackageId() {
         return packageId;
@@ -31,6 +33,14 @@ public class FunctionExpression extends Expression{
         this.id = id;
         this.expressionType = expressionType;
         this.parameters = parameters;
+    }
+
+    public FunctionInfo getFunctionSpecification() {
+        return functionSpecification;
+    }
+
+    public void setFunctionSpecification(FunctionInfo functionSpecification) {
+        this.functionSpecification = functionSpecification;
     }
 
     

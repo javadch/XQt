@@ -33,5 +33,6 @@ public enum ExpressionType {
         IsNull,
         IsNumber,
         IsDate,
-        IsEmpty
+        IsEmpty, 
+        Invalid
 }

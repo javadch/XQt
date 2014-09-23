@@ -20,6 +20,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +33,7 @@ import xqt.lang.annotation.PerspectiveAnnotator;
 import xqt.lang.annotation.SelectAnnotator;
 import xqt.lang.grammar.XQtBaseVisitor;
 import xqt.lang.grammar.XQtParser;
+import xqt.lang.grammar.XQtParser.FunctionContext;
 import xqt.model.DataContainerDescriptor;
 import xqt.model.ElementDescriptor;
 import xqt.model.ProcessModel;
@@ -48,9 +50,13 @@ import xqt.model.expressions.BinaryExpression;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.ExpressionType;
 import xqt.model.expressions.FunctionExpression;
+import xqt.model.expressions.InvalidExpression;
 import xqt.model.expressions.MemberExpression;
 import xqt.model.expressions.UnaryExpression;
 import xqt.model.expressions.ValueExpression;
+import xqt.model.functions.FunctionInfo;
+import xqt.model.functions.FunctionInfoContainer;
+import xqt.model.functions.FunctionParameterInfo;
 import xqt.model.statements.query.AnchorClause;
 import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.GroupClause;
@@ -349,7 +355,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The WHERE clause is using attribute '%s' that is not defined in the associated perspective '%s'.")
+                       .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -362,7 +368,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' that is not defined in the associated perspective '%s'")
+                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -375,7 +381,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         if(faultyAttribute != null){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' that is not defined in the associated perspective '%s'")
+                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
                        .setContextInfo1(faultyAttribute.getId())
                        .setContextInfo2(projection.getPerspective().getId())
                        .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
@@ -389,7 +395,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
                 select.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' that is not defined in the associated perspective '%s'")
+                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
                         .setContextInfo1(orderItem.getSortKey())
                         .setContextInfo2(projection.getPerspective().getId())
                         .setLineNumber(orderItem.getParserContext().getStart().getLine())
@@ -572,6 +578,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 // AND try setting the data type!
                 
                 attribute.setForwardExpression(exp);
+                projection.getLanguageExceptions().addAll(exp.getLanguageExceptions());
                 perspective.addAttribute(attribute);
             } else {
                 // Add an exception to the perspective/ projection.
@@ -947,32 +954,66 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitFunction_simple(@NotNull XQtParser.Function_simpleContext ctx) { 
         //get the function name, and set the package id as Default
         // iterate over the parameters by visiting the expression again
-        String pId="Default";
-        String id = ctx.simpleIdentifier().ID().getText();
-        List<Expression> parameters = new ArrayList<>();
-        ctx.argument().stream().forEach((arg) -> {
-            Expression pa = (Expression)visit(arg.expression());
-            pa.setExpressionType(ExpressionType.Parameter);
-            parameters.add(pa);
-        });
-        // if all the parameters are value expressions, then it is possible to compute the function and return the result of the function
-        // as a value expression!
-        FunctionExpression exp = Expression.Function(pId, id, parameters);
-        return exp; 
+        String pId="default";
+        String id = ctx.simpleIdentifier().ID().getText().toLowerCase();
+        return createFunction(id, pId, ctx.argument(), ctx); // change the argument to arg1 and args2 and keep them in order!
     }
     
     @Override
     public Object visitFunction_package(@NotNull XQtParser.Function_packageContext ctx) { 
         //get package id, function name
         // iterate over the parameters by visiting the expression again
-        String pId=ctx.packagedIdentifier().packageId.getText();
-        String id = ctx.packagedIdentifier().id.getText();
+        String pId=ctx.packagedIdentifier().packageId.getText().toLowerCase();
+        String id = ctx.packagedIdentifier().id.getText().toLowerCase();
+        return createFunction(id, pId, ctx.argument(), ctx);
+    }
+    
+    private Expression createFunction(String id, String packageId, List<XQtParser.ArgumentContext> arguments, FunctionContext ctx){
+        FunctionInfoContainer functionContainer = FunctionInfoContainer.getInstance();
+        Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
+                .filter(p-> p.getPackageName().equals(packageId) && p.getName().equals(id)).findFirst();
+        if(!fInfo.isPresent()){
+            InvalidExpression exp = Expression.Invalid();
+            exp.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
+                            .setContextInfo1(id)
+                            .setContextInfo2(packageId)
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                    ); 
+            return exp;
+        } 
+        
         List<Expression> parameters = new ArrayList<>();
-        ctx.argument().stream().forEach((arg) -> {
-            parameters.add((Expression)visit(arg.expression()));
-        });
-        FunctionExpression exp = Expression.Function(pId, id, parameters);
+        int paramIndex=0;
+        for(XQtParser.ArgumentContext arg: arguments){
+            Expression pa = (Expression)visit(arg.expression());
+            pa.setExpressionType(ExpressionType.Parameter);
+            // check whether the parameters are of proper types as described in the function specification.
+            FunctionParameterInfo paramInfo = fInfo.get().getParameters().get(paramIndex);
+            if(!paramInfo.getPermittedDataTypes().contains(pa.getReturnType())){
+                pa.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Parameter \'%s\' returns an object of type \'%s\' which does not match its function's specification.")
+                                .setContextInfo1(arg.expression().getText())
+                                .setContextInfo2(pa.getReturnType())
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                                .build()
+                        ); 
+                
+            }
+            paramIndex++;
+            parameters.add(pa);                        
+        }
+        FunctionExpression exp = Expression.Function(packageId, id, parameters);
+        exp.setReturnType(fInfo.get().getReturnType());
+        exp.setFunctionSpecification(fInfo.get());
+        
         return exp; 
+        
     }
     
     @Override

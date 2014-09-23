@@ -34,19 +34,21 @@ import org.xml.sax.XMLReader;
  * @author standard
  */
 
-@XmlRootElement(name="Container")
+@XmlRootElement(name="Adapters")
 public class AdapterInfoContainer {
     
     private static AdapterInfoContainer instance = null; // its a singleton object
+    private List<AdapterInfo> registeredAdapterInfos = new ArrayList<>();
+
     private AdapterInfoContainer(){
         
     }
     
     public static AdapterInfoContainer getInstance(){
         if(instance == null){
-            instance = new AdapterInfoContainer();
+            //instance = new AdapterInfoContainer();
             try {
-                instance.loadRegisteredAdapterInfos();
+                instance = AdapterInfoContainer.loadRegisteredAdapterInfos();
             } catch (Exception ex) {
                 Logger.getLogger(AdapterInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -54,13 +56,12 @@ public class AdapterInfoContainer {
         return instance;
     }
     
-    private List<AdapterInfo> registeredAdapterInfos = new ArrayList<>();
 
     public void setRegisteredAdapterInfos(List<AdapterInfo> registeredAdapterInfos) {
         this.registeredAdapterInfos = registeredAdapterInfos;
     }
 
-    @XmlElement(name="RegisteredAdapter")
+    @XmlElement(name="Adapter")
     public List<AdapterInfo> getRegisteredAdapterInfos() {
 //        if(registeredAdapterInfos == null){
 //            loadRegisteredAdapterInfos();
@@ -68,7 +69,7 @@ public class AdapterInfoContainer {
         return registeredAdapterInfos;
     }
 
-    private void loadRegisteredAdapterInfos() throws Exception {
+    private static AdapterInfoContainer loadRegisteredAdapterInfos() throws Exception {
         // read the adapters info from the config/adapters.xml
         // the default location for adpater jars is the adapters folder but they can be anywhere
         // populate registeredAdapterInfos
@@ -86,7 +87,7 @@ public class AdapterInfoContainer {
             xr.parse(inputSource);
         }
 
-        instance = (AdapterInfoContainer)unmarshallerHandler.getResult();
+        return (AdapterInfoContainer)unmarshallerHandler.getResult();
 
 //        Marshaller marshaller = jc.createMarshaller();
 //        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);

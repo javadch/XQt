@@ -51,7 +51,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
             } else { // the attribute is an illegal duplicate
                 this.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("There is a duplicate attribute named %s defined in perspective %s.")
+                        .setMessageTemplate("There is a duplicate attribute named \'%s\' defined in perspective \'%s\'.")
                         .setContextInfo1(attribute.getId())
                         .setContextInfo2(id)
                         .setLineNumber(attribute.getParserContext().getStart().getLine())

@@ -13,6 +13,7 @@ import java.util.InputMismatchException;
 import java.util.List;
 import xqt.engine.QueryEngine;
 import xqt.model.exceptions.LanguageException;
+import xqt.model.functions.FunctionInfoContainer;
 import xqt.model.statements.StatementDescriptor;
 import xqt.runtime.RuntimeSystem;
 
@@ -119,8 +120,10 @@ public class LanguageServicePoint {
         return false;
     }
 
+    FunctionInfoContainer functionContainer = null;
     private void loadFunctionSpecifications() {
         // use the function specification bean, read the function pack folder, list the packages, read them all, add them to the function list.
+        functionContainer = FunctionInfoContainer.getInstance();
     }
     
 }
