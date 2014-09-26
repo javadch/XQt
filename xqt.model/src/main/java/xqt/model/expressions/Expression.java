@@ -49,6 +49,7 @@ public abstract class Expression extends ElementDescriptor {
         // check the types of the left and right expressiosns and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
+        ex.setReturnType(determineDataType(left.getReturnType(), right.getReturnType(), ExpressionType.Add));
         return ex;
     }
 
@@ -252,6 +253,11 @@ public abstract class Expression extends ElementDescriptor {
         return ex;
     }
 
+    public static ParameterExpression Parameter(Expression value) {        
+        ParameterExpression ex = new ParameterExpression(value);
+        return ex;
+    }
+
     public static FunctionExpression Function(String packageId, String id, List<Expression> parameters) {
         FunctionExpression ex = new FunctionExpression(packageId, id, ExpressionType.Function, parameters);
         parameters.stream().forEach(p-> ex.getLanguageExceptions().addAll(p.getLanguageExceptions()));
@@ -264,5 +270,12 @@ public abstract class Expression extends ElementDescriptor {
         ex.returnType = "Unknown";
         return ex;
     }
-  
+
+    // its better to move it to a more public area, so that it may be used by other classes
+    // based on the provided types and the operator, decide what should be the data type of the result of applying the operation on data of 
+    // priovided types. for example the return type of adding a real and an integer should be a real
+    private static String determineDataType(String type1, String type2, ExpressionType expressionType) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+   
 }

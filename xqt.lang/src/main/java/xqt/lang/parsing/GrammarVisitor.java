@@ -52,6 +52,7 @@ import xqt.model.expressions.ExpressionType;
 import xqt.model.expressions.FunctionExpression;
 import xqt.model.expressions.InvalidExpression;
 import xqt.model.expressions.MemberExpression;
+import xqt.model.expressions.ParameterExpression;
 import xqt.model.expressions.UnaryExpression;
 import xqt.model.expressions.ValueExpression;
 import xqt.model.functions.FunctionInfo;
@@ -121,6 +122,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         PerspectiveAttributeDescriptor attribute = PerspectiveAnnotator.describePerspectiveAttribute(ctx, perspective.getId());
         if(ctx.fwd != null){ //these items will be moved to expression visitor/ descriptor methds
             Expression fwd = (Expression)visit(ctx.fwd);
+            fwd.setReturnType(attribute.getDataType());
             attribute.setForwardExpression(fwd);
             //attribute.getForwardExpression().setBody(ctx.fwd.getText()); // to be removed
         }
@@ -538,7 +540,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             else{
                  projection.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                         .setMessageTemplate("The statement is pointing to declaration %s that is not a perspective")
+                         .setMessageTemplate("\'%s\' is not a perspective.")
                          .setContextInfo1(perspectiveName)
                          .setLineNumber(ctx.getStart().getLine())
                          .setColumnNumber(ctx.getStart().getCharPositionInLine())
@@ -554,6 +556,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     }
     
+    private String parsingContext = "";
     @Override 
     public Object visitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { 
         // see the issue #1 (https://github.com/javadch/XQt/issues/1) description and comments for the solution outline
@@ -563,7 +566,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         PerspectiveDescriptor perspective = new PerspectiveDescriptor();
         perspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Inline);
         projection.setPerspective(perspective);
-        
+        parsingContext = "Inline_Perspective";
         int index = 0;
         for(XQtParser.InlineAttributeContext inlineAttribute: ctx.inlineAttribute()){
             if(inlineAttribute.att != null){
@@ -574,6 +577,36 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     attribute.setId("Attribute" + index++);
                 }
                 Expression exp = (Expression)visit(inlineAttribute.att);
+//                if(exp.getExpressionType() == ExpressionType.Member){
+//                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
+//                        projection.getLanguageExceptions().add(
+//                           LanguageExceptionBuilder.builder()
+//                                .setMessageTemplate("Standalone identifier \'%s\' reffers to a physical field, which is not supported.")
+//                                .setContextInfo1(exp.getId())
+//                                .setLineNumber(ctx.getStart().getLine())
+//                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
+//                                .build()
+//                        );                        
+//                    }
+//                }
+                if(exp.getExpressionType() == ExpressionType.Function){
+                    FunctionExpression fExp = (FunctionExpression)exp;
+                    // chack all the parameters to see whether they are ferrefing to a physical field.
+                    
+                    // the following block should be removed when the aggregate functions are supported!
+                    if(fExp.getFunctionSpecification().getAppliesTo().toLowerCase().equals("column")){ // this is an aggregate function
+                        projection.getLanguageExceptions().add(
+                           LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Aggregate function \'%s.%s\' is not supported.")
+                                .setContextInfo1(fExp.getPackageId())
+                                .setContextInfo2(fExp.getId())
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
+                                .build()
+                        );                        
+                    }
+                    
+                }
                 // check for simple id, perspective.attribute id, aggregate function, general expression (not containing aggregate functions), ...
                 // AND try setting the data type!
                 
@@ -584,6 +617,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 // Add an exception to the perspective/ projection.
             }           
         }
+        parsingContext = "";
         return projection;
     }
 
@@ -989,9 +1023,13 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         List<Expression> parameters = new ArrayList<>();
         int paramIndex=0;
         for(XQtParser.ArgumentContext arg: arguments){
-            Expression pa = (Expression)visit(arg.expression());
-            pa.setExpressionType(ExpressionType.Parameter);
+            //ParameterExpression pa = Expression.Parameter((Expression)visit(arg.expression()));
+            //pa.setExpressionType(ExpressionType.Parameter);
+            Expression pa = (Expression)visit(arg.expression());            
             // check whether the parameters are of proper types as described in the function specification.
+//            if(pa instanceof MemberExpression && ((MemberExpression)pa).getMemberType() == MemberExpression.MemberType.Simple){
+//                
+//            }
             FunctionParameterInfo paramInfo = fInfo.get().getParameters().get(paramIndex);
             if(!paramInfo.getPermittedDataTypes().contains(pa.getReturnType())){
                 pa.getLanguageExceptions().add(
@@ -1048,8 +1086,13 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx) { 
+        if(parsingContext == "Inline_Perspective"){
+            Expression exp = (Expression)visit(ctx.operand);
+            //exp.setParserContext(ctx); // is set during the visit, replacing it may cause in accurate error reporting
+            return exp; 
+        }
         MemberExpression exp = (MemberExpression)visit(ctx.operand);
-        exp.setParserContext(ctx);
+        //exp.setParserContext(ctx);
         return exp; 
     }
     
@@ -1059,6 +1102,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         exp.setParserContext(ctx);        
         return exp; 
     }
+    
     @Override
     public Object visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx) { 
         List<String> idComponents = new ArrayList<>();
@@ -1066,7 +1110,37 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         for(Token cmpnt: ctx.qualifiedIdentifier().otherIds){
             idComponents.add(cmpnt.getText());
         }
-        MemberExpression exp = Expression.CompoundMember(idComponents);
+        Expression exp = Expression.Invalid();
+        if(parsingContext == "Inline_Perspective"){ // check wheteher the id is reffering to a previously defined perspective attribute
+            if(idComponents.size()== 2) { // the perspective name and the attribute name
+                PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
+                PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1), null): null;
+                if(att != null){
+                    exp = Expression.CompoundMember(idComponents);
+                    exp.setReturnType(att.getDataType());
+                } else { // no such a perspective / attribute
+                    exp.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Either perspective \'%s\' or attribute \'%s\' not found!")
+                            .setContextInfo1(idComponents.get(0))
+                            .setContextInfo2(idComponents.get(1))    
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                    );
+                }                
+            } else { // exception
+                exp.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate("\'%s\' should refer to a perspective/ attribute cmbination, but only one of them is provided.")
+                        .setContextInfo1(idComponents.get(0))                        
+                        .setLineNumber(ctx.getStart().getLine())
+                        .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                        .build()
+                );
+            }
+            
+        }
         exp.setParserContext(ctx);        
         return exp; 
     }
