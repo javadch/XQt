@@ -172,11 +172,11 @@ public class StatementExecuter implements StatementVisitor{
         select.getClauses().remove(select.getTargetClause().getType());
         select.addClause(TargetClause.createVariableTarget(variableName));
         
-        ExecutionInfo eix = new ExecutionInfo();
-        comp.setExecutionInfo(eix);
-        eix.setExecuted(false);
-        DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause
-        eix.setAdapter(adapter);
+        ExecutionInfo executionInfo = new ExecutionInfo();
+        comp.setExecutionInfo(executionInfo);
+        executionInfo.setExecuted(false);
+        DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause, because the choose adpater function needs to know the source clause
+        executionInfo.setAdapter(adapter);
 
         if(select.getAnchorClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){                

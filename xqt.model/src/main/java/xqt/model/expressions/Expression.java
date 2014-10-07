@@ -49,7 +49,7 @@ public abstract class Expression extends ElementDescriptor {
         // check the types of the left and right expressiosns and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        ex.setReturnType(determineDataType(left.getReturnType(), right.getReturnType(), ExpressionType.Add));
+        //ex.setReturnType(determineDataType(left.getReturnType(), right.getReturnType(), ExpressionType.Add));
         return ex;
     }
 
@@ -275,7 +275,7 @@ public abstract class Expression extends ElementDescriptor {
     // based on the provided types and the operator, decide what should be the data type of the result of applying the operation on data of 
     // priovided types. for example the return type of adding a real and an integer should be a real
     private static String determineDataType(String type1, String type2, ExpressionType expressionType) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        throw new UnsupportedOperationException("data Type determination is Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
    
 }
