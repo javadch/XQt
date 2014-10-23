@@ -17,6 +17,7 @@ import xqt.model.functions.FunctionInfo;
 public class FunctionExpression extends Expression{
     private String packageId;
     private List<Expression> parameters = new ArrayList<>();
+
     private FunctionInfo functionSpecification = null;
     
     public String getPackageId() {
@@ -27,6 +28,10 @@ public class FunctionExpression extends Expression{
         return parameters;
     }
 
+    public void setParameters(List<Expression> parameters) {
+        this.parameters.clear();
+        this.parameters = parameters;
+    }
     
     public FunctionExpression(String packageId, String id, ExpressionType expressionType, List<Expression> parameters){
         this.packageId = packageId;
@@ -48,5 +53,4 @@ public class FunctionExpression extends Expression{
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
 }

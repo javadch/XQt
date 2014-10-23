@@ -119,7 +119,7 @@ public class StatementExecuter implements StatementVisitor{
         try {
             //if(!loadedAdapters.containsKey("CSV")) {// read the key from the select statement's associated connection
                 // read the adapter info from the adapters config file in the applications installation folder
-                AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdapterInfos().stream().filter(p->p.getId().equals("CSV")).findFirst().get(); // hande not found exception
+                AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream().filter(p->p.getId().equals("CSV")).findFirst().get(); // hande not found exception
                 ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
                 Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
                 Constructor<?> ctor = cl.getConstructor();

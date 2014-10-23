@@ -16,6 +16,7 @@ package xqt.lang.parsing;
  * Visit http://www.pragmaticprogrammer.com/titles/tpantlr2 for more book information.
 ***/
 
+import com.vaiona.commons.types.TypeSystem;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -577,6 +578,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     attribute.setId("Attribute" + index++);
                 }
                 Expression exp = (Expression)visit(inlineAttribute.att);
+                // go through the expression and se whether there are any references to other perspectives' attributes
+                // if so replace the forward and reverse mappings of the sub/ expression with their counterparts
+                //exp = replaceReferencedAttributes(exp);
 //                if(exp.getExpressionType() == ExpressionType.Member){
 //                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
 //                        projection.getLanguageExceptions().add(
@@ -589,12 +593,12 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 //                        );                        
 //                    }
 //                }
-                if(exp.getExpressionType() == ExpressionType.Function){
+                if(exp.getExpressionType() == ExpressionType.Function){ // temprary check, because aggregate functions are not supported yet.
                     FunctionExpression fExp = (FunctionExpression)exp;
                     // chack all the parameters to see whether they are ferrefing to a physical field.
                     
                     // the following block should be removed when the aggregate functions are supported!
-                    if(fExp.getFunctionSpecification().getAppliesTo().toLowerCase().equals("column")){ // this is an aggregate function
+                    if(fExp.getFunctionSpecification().getAppliesTo().equalsIgnoreCase("column")){ // this is an aggregate function
                         projection.getLanguageExceptions().add(
                            LanguageExceptionBuilder.builder()
                                 .setMessageTemplate("Aggregate function \'%s.%s\' is not supported.")
@@ -611,6 +615,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 // AND try setting the data type!
                 
                 attribute.setForwardExpression(exp);
+                attribute.setDataType(exp.getReturnType());
                 projection.getLanguageExceptions().addAll(exp.getLanguageExceptions());
                 perspective.addAttribute(attribute);
             } else {
@@ -1026,32 +1031,31 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             //ParameterExpression pa = Expression.Parameter((Expression)visit(arg.expression()));
             //pa.setExpressionType(ExpressionType.Parameter);
             Expression pa = (Expression)visit(arg.expression());            
-            // check whether the parameters are of proper types as described in the function specification.
-//            if(pa instanceof MemberExpression && ((MemberExpression)pa).getMemberType() == MemberExpression.MemberType.Simple){
-//                
-//            }
+            // check whether the parameter is of proper type as described in the function specification.
             FunctionParameterInfo paramInfo = fInfo.get().getParameters().get(paramIndex);
-            if(!paramInfo.getPermittedDataTypes().contains(pa.getReturnType())){
+            
+            // the paramter type should be compatible with its specification as defined by the function spec.
+            // there is an exception: when the parameter is a member, its a field of the physical data which its type is not defined yet. 
+            // so I do trust it for the time being and wait to enouncter a possible type conversion exection later during the statement execution by the adapter.
+            // enhancement: I will consider type determination at this stage when everything works as designed.
+            if(!((pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.Unknown)) 
+                || (paramInfo.getPermittedDataTypes().contains(pa.getReturnType())))){                
                 pa.getLanguageExceptions().add(
-                            LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Parameter \'%s\' returns an object of type \'%s\' which does not match its function's specification.")
-                                .setContextInfo1(arg.expression().getText())
-                                .setContextInfo2(pa.getReturnType())
-                                .setLineNumber(ctx.getStart().getLine())
-                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                                .build()
-                        ); 
-                
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Parameter \'%s\' is of type \'%s\' which does not match its function's specification.")
+                            .setContextInfo1(arg.expression().getText())
+                            .setContextInfo2(pa.getReturnType())
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                    );                
             }
+            parameters.add(pa);              
             paramIndex++;
-            parameters.add(pa);                        
         }
-        FunctionExpression exp = Expression.Function(packageId, id, parameters);
-        exp.setReturnType(fInfo.get().getReturnType());
-        exp.setFunctionSpecification(fInfo.get());
-        
-        return exp; 
-        
+        FunctionExpression exp = Expression.Function(packageId, id, fInfo.get().getReturnType(), parameters);
+        exp.setFunctionSpecification(fInfo.get());        
+        return exp;         
     }
     
     @Override
@@ -1063,22 +1067,22 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitExpression_value(@NotNull XQtParser.Expression_valueContext ctx) { 
         ValueExpression exp = null;
         if(ctx.operand.UINT()!= null){
-            exp = Expression.Value(ctx.operand.getText(), "Integer");
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.INT() != null){
-            exp = Expression.Value(ctx.operand.getText(), "Integer");
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.FLOAT() != null){
-            exp = Expression.Value(ctx.operand.getText(), "Real");            
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Real);            
             exp.setParserContext(ctx);
         } else if(ctx.operand.BOOLEAN() != null){
-            exp = Expression.Value(ctx.operand.getText(), "Boolean");
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Boolean);
             exp.setParserContext(ctx);
         } else if(ctx.operand.STRING() != null){
-            exp = Expression.Value(ctx.operand.getText(), "String");
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.String);
             exp.setParserContext(ctx);
         } else if(ctx.operand.DATE() != null){
-            exp = Expression.Value(ctx.operand.getText(), "Date");
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Date);
             exp.setParserContext(ctx);
         }        
         return exp; 
@@ -1116,7 +1120,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
                 PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1), null): null;
                 if(att != null){
-                    exp = Expression.CompoundMember(idComponents);
+                    //exp = Expression.CompoundMember(idComponents);
+                    exp = att.getForwardExpression(); // replace the compound member to its counterpart attribute's forward mapping
                     exp.setReturnType(att.getDataType());
                 } else { // no such a perspective / attribute
                     exp.getLanguageExceptions().add(
@@ -1292,4 +1297,48 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         return null;
     }
 
+//    private Expression replaceReferencedAttributes(Expression expression) {
+//        if(expression instanceof BinaryExpression){
+//            BinaryExpression exp = (BinaryExpression)expression;
+//            exp.setLeft(replaceReferencedAttributes(exp.getLeft()));
+//            exp.setRight(replaceReferencedAttributes(exp.getRight()));
+//            return exp;            
+//        } else if(expression instanceof FunctionExpression){
+//            FunctionExpression exp = (FunctionExpression)expression;
+//            List<Expression> tempParams = new ArrayList<>();
+//            for(Expression parameter: exp.getParameters()){
+//                tempParams.add(replaceReferencedAttributes(parameter));
+//            }
+//            exp.setParameters(tempParams);
+//            return exp;
+//        } else if(expression instanceof MemberExpression){
+//            MemberExpression exp = (MemberExpression)expression;
+//            // if its a compund type and has two components, it should be a reference to another perspective attribute.
+//            if(exp.getMemberType() == MemberExpression.MemberType.Compound && exp.getComponents().size() == 2){
+//                String perspectiveName = exp.getComponents().get(0);
+//                String attributeName = exp.getComponents().get(1);
+//                if(this.getProcessModel().getDeclarations().containsKey(perspectiveName)){
+//                    PerspectiveDescriptor pers = (PerspectiveDescriptor)this.getProcessModel().getDeclarations().get(perspectiveName);
+//                    if(pers.getAttributes().containsKey(attributeName)){
+//                        PerspectiveAttributeDescriptor attribute = pers.getAttributes().get(attributeName);
+//                        return attribute.getForwardExpression(); // it is replaced here
+//                    } else {
+//                        // no attribute in the perspective
+//                        // add the exception to exp
+//                    }
+//                } else {
+//                    // no such a perspective. add a language exception to exp
+//                }
+//            }
+//            return exp;
+//        } else if(expression instanceof UnaryExpression){
+//            UnaryExpression exp = (UnaryExpression)expression;
+//            exp.setOperand(replaceReferencedAttributes(exp.getOperand()));
+//            return exp;
+//        } else if(expression instanceof ValueExpression){
+//            return expression;
+//        } else {
+//            return expression;
+//        }
+//    }
 }

@@ -8,7 +8,7 @@ package xqt.adapters.csv;
 
 import com.vaiona.commons.compilation.InMemorySourceFile;
 import com.vaiona.commons.data.FieldInfo;
-import com.vaiona.commons.data.TypeSystem;
+import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
 import com.vaiona.csv.reader.HeaderBuilder;

@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import xqt.model.expressions.BinaryExpression;
 import xqt.model.expressions.Expression;
@@ -80,27 +81,34 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
     }
 
     private String visitAll(Expression expression){
-        if(expression.getClass().equals(BinaryExpression.class)){
+        if(expression instanceof BinaryExpression){
             BinaryExpression exp = (BinaryExpression)expression;
             String left = visitAll(exp.getLeft());
             String right = visitAll(exp.getRight());
             String pattern = patterns.get(exp.getExpressionType());
             return MessageFormat.format(pattern, left, right); 
             
-        } else if(expression.getClass().equals(FunctionExpression.class)){
+        } else if(expression instanceof FunctionExpression){
             FunctionExpression exp = (FunctionExpression)expression;
-            StringBuilder paramStringBuilder = new StringBuilder();
-            for (Expression p: exp.getParameters()) {
-                String pa = visitAll(p);
-                String pattern = patterns.get(p.getExpressionType());
-                paramStringBuilder.append(MessageFormat.format(pattern, pa));
-                paramStringBuilder.append(",");
-            }
-            paramStringBuilder.deleteCharAt(paramStringBuilder.lastIndexOf(","));
+            //StringBuilder paramStringBuilder = new StringBuilder();
+            String parameterPart = exp.getParameters().stream().map(p->visitAll(p)).collect(Collectors.joining(","));
+//            for (Expression p: exp.getParameters()) {
+//                String pa = visitAll(p);
+//                String pattern = patterns.get(p.getExpressionType());
+//                paramStringBuilder.append(MessageFormat.format(pattern, pa));
+//                paramStringBuilder.append(",");
+//            }
+//            paramStringBuilder.deleteCharAt(paramStringBuilder.lastIndexOf(","));
             String funcPattern = patterns.get(exp.getExpressionType());
-            return MessageFormat.format(funcPattern, exp.getId(), paramStringBuilder.toString()); // packageId is not considered
             
-        } else if(expression.getClass().equals(MemberExpression.class)){
+            // function implementation should be static
+            String functionPart = MessageFormat.format("{0}.{1}.{2}", 
+                    exp.getFunctionSpecification().getImplementation().getNamespace(), 
+                    exp.getFunctionSpecification().getImplementation().getClassName(),
+                    exp.getFunctionSpecification().getImplementation().getMethodName());
+            return MessageFormat.format(funcPattern, functionPart, parameterPart);
+            
+        } else if(expression instanceof MemberExpression){
             MemberExpression exp = (MemberExpression)expression;
             //put memebr names in a list for later use by the Csv Reader.It needs them for prepopulation
             if(!memeberNames.contains(exp.getId())){
@@ -109,17 +117,16 @@ public class ExpressionToJavaSource implements ExpressionVisitor{
             String pattern = patterns.get(exp.getExpressionType());
             return MessageFormat.format(pattern, exp.getId());
             
-        } else if(expression.getClass().equals(UnaryExpression.class)){
+        } else if(expression instanceof UnaryExpression){
             UnaryExpression exp = (UnaryExpression)expression;
             String operand = visitAll(exp.getOperand());
             String pattern = patterns.get(exp.getExpressionType());
             return MessageFormat.format(pattern, operand); 
             
-        } else if(expression.getClass().equals(ValueExpression.class)){
+        } else if(expression instanceof ValueExpression){
             ValueExpression exp = (ValueExpression)expression;
             String pattern = patterns.get(exp.getExpressionType());
-            return MessageFormat.format(pattern, exp.getValue()); // type conversion to be considered
-            
+            return MessageFormat.format(pattern, exp.getValue()); // type conversion to be considered            
         }
         return "";
     }   

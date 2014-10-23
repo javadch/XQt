@@ -7,7 +7,7 @@
 package xqt.model.conversion;
 
 import com.vaiona.commons.data.AttributeInfo;
-import com.vaiona.commons.data.TypeSystem;
+import com.vaiona.commons.types.TypeSystem;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

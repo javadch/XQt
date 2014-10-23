@@ -26,17 +26,18 @@ public class FunctionInfo {
     private String returnType;
     private String packageName;
     private List<FunctionParameterInfo> parameters = new ArrayList<>();
-
-    public FunctionInfo(){
-        
+    private FunctionImplementation implementation;
+    
+    public FunctionInfo(){        
     }
     
-    public FunctionInfo(String name, String appleisTo, String returnType, String packageName, List<FunctionParameterInfo> parameters){
+    public FunctionInfo(String name, String appleisTo, String returnType, String packageName, List<FunctionParameterInfo> parameters, FunctionImplementation implementation){
         this.name = name;
         this.appliesTo = appleisTo;
         this.returnType = returnType;
         this.packageName = packageName;
         this.parameters = parameters;
+        this.implementation = implementation;
     }
     
     @XmlAttribute(name="name")
@@ -84,7 +85,13 @@ public class FunctionInfo {
     public void setParameters(List<FunctionParameterInfo> parameters) {
         this.parameters = parameters;
     }
-    
-    
-    
+
+    @XmlElement(name="Implementation")
+    public FunctionImplementation getImplementation() {
+        return implementation;
+    }
+
+    public void setImplementation(FunctionImplementation implementation) {
+        this.implementation = implementation;
+    }
 }

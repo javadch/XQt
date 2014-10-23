@@ -109,7 +109,7 @@ public class FunctionInfoContainer {
         List<FunctionParameterInfo> parameters = new ArrayList<>();
         parameters.add(p1);
         parameters.add(p2);
-        FunctionInfo f1 = new FunctionInfo("count", "column", "Long", "default", parameters);
+        FunctionInfo f1 = new FunctionInfo("count", "column", "Long", "default", parameters, null);
         
         instance = new FunctionInfoContainer();
         instance.registeredFunctions.add(f1);

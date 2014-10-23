@@ -62,7 +62,7 @@ public class AdapterInfoContainer {
     }
 
     @XmlElement(name="Adapter")
-    public List<AdapterInfo> getRegisteredAdapterInfos() {
+    public List<AdapterInfo> getRegisteredAdaptersInfo() {
 //        if(registeredAdapterInfos == null){
 //            loadRegisteredAdapterInfos();
 //        }
