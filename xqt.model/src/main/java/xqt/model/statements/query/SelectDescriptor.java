@@ -10,10 +10,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import xqt.model.ClauseDescriptor;
-import xqt.model.DataContainerDescriptor;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
-import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementDescriptor;
@@ -110,10 +108,10 @@ public class SelectDescriptor extends StatementDescriptor{
         Resultset result = visitor.visit(this);
         ExecutionInfo exInfo = this.getExecutionInfo();
         exInfo.setExecuted(true);
-        if(result != null && this.getTargetClause() != null && this.getTargetClause().getVariableName()!= null){
+        if(result != null && this.getTargetClause() != null && this.getTargetClause().getContainer().getId() /*.getVariableName() */!= null){
             Variable var = new Variable();
             var.setExecutionInfo(exInfo);
-            var.setName(this.getTargetClause().getVariableName());
+            var.setName(this.getTargetClause().getContainer().getId() /*.getVariableName() */);
             var.setResult(result);
             exInfo.setVariable(var);
         }
@@ -135,8 +133,8 @@ public class SelectDescriptor extends StatementDescriptor{
         for(StatementDescriptor stmt: stmts){
             if(stmt instanceof SelectDescriptor){
                 SelectDescriptor stmtCasted = (SelectDescriptor)stmt;
-                if(this.getSourceClause().getDataContainerType() == stmtCasted.getTargetClause().getDataContainerType()
-                  && this.getSourceClause().getId().toUpperCase().equals(stmtCasted.getTargetClause().getId().toUpperCase())
+                if(this.getSourceClause().getContainer().getDataContainerType() == stmtCasted.getTargetClause().getContainer().getDataContainerType()
+                  && this.getSourceClause().getContainer().getId().equalsIgnoreCase(stmtCasted.getTargetClause().getContainer().getId())
                         ){
                     this.setDependsUpon(stmtCasted);
                     // there should not be more than one dependecies!

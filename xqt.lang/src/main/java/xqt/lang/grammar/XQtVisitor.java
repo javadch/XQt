@@ -173,6 +173,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitExpression_power(@NotNull XQtParser.Expression_powerContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#singleContainer}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#groupClause}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -472,13 +479,6 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx);
-
-	/**
-	 * Visit a parse tree produced by {@link XQtParser#simpleSource}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link XQtParser#containerRef}.

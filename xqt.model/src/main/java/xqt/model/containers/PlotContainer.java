@@ -3,8 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
-package xqt.model.statements.query;
+package xqt.model.containers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +11,9 @@ import xqt.model.declarations.PerspectiveDescriptor;
 
 /**
  *
- * @author standard
+ * @author Javad Chamanara <chamanara@gmail.com>
  */
-public class PlotClause extends TargetClause{
+public class PlotContainer extends DataContainer {
     private PerspectiveDescriptor linkedPerspective;
     private String hax;
     private List<String> vaxes = new ArrayList<>();
@@ -23,6 +22,10 @@ public class PlotClause extends TargetClause{
     private String vLabel;
     private String plotLabel;
 
+    public PlotContainer(){
+        this.dataContainerType = DataContainerType.Plot;
+    }
+    
     public PerspectiveDescriptor getLinkedPerspective() {
         return linkedPerspective;
     }
@@ -32,11 +35,11 @@ public class PlotClause extends TargetClause{
     }
 
     public String getPlotName() {
-        return variableName;
+        return id;
     }
 
     public void setPlotName(String plotName) {
-        this.variableName = plotName;
+        this.id = plotName;
     }
 
     public String getHax() {
@@ -85,5 +88,5 @@ public class PlotClause extends TargetClause{
 
     public void setPlotLabel(String plotLabel) {
         this.plotLabel = plotLabel;
-    }        
+    }           
 }

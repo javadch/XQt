@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
@@ -35,12 +34,16 @@ import xqt.lang.annotation.SelectAnnotator;
 import xqt.lang.grammar.XQtBaseVisitor;
 import xqt.lang.grammar.XQtParser;
 import xqt.lang.grammar.XQtParser.FunctionContext;
-import xqt.model.DataContainerDescriptor;
 import xqt.model.ElementDescriptor;
 import xqt.model.ProcessModel;
 import xqt.model.configurations.BindingDescriptor;
 import xqt.model.configurations.ConnectionDescriptor;
 import xqt.model.configurations.ConnectionParameterDescriptor;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.JoinedContainer;
+import xqt.model.containers.PlotContainer;
+import xqt.model.containers.SingleContainer;
+import xqt.model.containers.VariableContainer;
 import xqt.model.data.PostponedValidationRecord;
 import xqt.model.declarations.DeclarationDescriptor;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
@@ -53,7 +56,6 @@ import xqt.model.expressions.ExpressionType;
 import xqt.model.expressions.FunctionExpression;
 import xqt.model.expressions.InvalidExpression;
 import xqt.model.expressions.MemberExpression;
-import xqt.model.expressions.ParameterExpression;
 import xqt.model.expressions.UnaryExpression;
 import xqt.model.expressions.ValueExpression;
 import xqt.model.functions.FunctionInfo;
@@ -67,7 +69,6 @@ import xqt.model.statements.query.LimitClause;
 import xqt.model.statements.query.NullOrdering;
 import xqt.model.statements.query.OrderClause;
 import xqt.model.statements.query.OrderEntry;
-import xqt.model.statements.query.PlotClause;
 import xqt.model.statements.query.ProjectionClause;
 import xqt.model.statements.query.SelectDescriptor;
 import xqt.model.statements.query.SetQualifierClause;
@@ -218,17 +219,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             select.getRequiredCapabilities().add("select.projection.perspective");
             select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
         }
-        SourceClause       source           = (SourceClause)visitSourceSelectionClause(ctx.sourceSelectionClause());
-        select.getRequiredCapabilities().add("select.source." + source.getDataContainerType().toString().toLowerCase());
+        SourceClause source = (SourceClause)visitSourceSelectionClause(ctx.sourceSelectionClause());
+        select.getRequiredCapabilities().add("select.source." + source.getContainer().getDataContainerType().toString().toLowerCase());
 
-        TargetClause       target           = new TargetClause();
+        TargetClause target = new TargetClause();
         if( ctx.targetSelectionClause() != null){
             target = (TargetClause)visitTargetSelectionClause(ctx.targetSelectionClause());
             target.setIsPresent(true);
-            select.getRequiredCapabilities().add("select.target." + target.getDataContainerType().toString().toLowerCase());
+            select.getRequiredCapabilities().add("select.target." + target.getContainer().getDataContainerType().toString().toLowerCase());
         }
         
-        AnchorClause       anchor           = new AnchorClause();
+        AnchorClause anchor = new AnchorClause();
         if(ctx.anchorClause() != null){
             anchor = (AnchorClause)visitAnchorClause(ctx.anchorClause());
             anchor.setIsPresent(true);
@@ -274,28 +275,28 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
         // when the source is a variable it is not possible to change the perspective. 
         // So there should be an error message here if the perspective clause is present in the statement
-        if(source.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
+        if(source.getContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
             if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
                 source.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared "
                                     + " variable '%s' and perspective '%s'")
-                            .setContextInfo1(source.getVariableName())
+                            .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
                             .setContextInfo2(projection.getPerspective().getId())
                             .setLineNumber(ctx.getStart().getLine())
                             .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
                             .build()
                 );                
             } else { // the source variable should have already been defined as target in a previous statement
-                PerspectiveDescriptor pers = variablesUsedAsTarget.get(source.getVariableName());
+                PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)source.getContainer()).getVariableName());
                 if(pers != null){
                     projection.setPerspective(pers);
-                    variablesUsedAsTarget.put(source.getVariableName(), pers); // replace the previouslly set perspective
+                    variablesUsedAsTarget.put(((VariableContainer)source.getContainer()).getVariableName(), pers); 
                 } else {
                     source.getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
                                 .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
-                                .setContextInfo1(source.getVariableName())
+                                .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
                                 //.setContextInfo2(projection.getPerspective().getId())
                                 .setLineNumber(ctx.getStart().getLine())
                                 .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
@@ -317,29 +318,29 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         }
         // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
-        if(target.getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
-            if(variablesUsedAsTarget.keySet().contains(target.getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
+        if(target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
+            if(variablesUsedAsTarget.keySet().contains(((VariableContainer)target.getContainer()).getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
                 target.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("Target variable %s is already in use! "
                                 + "Using one variable as the target of more than one statement is not allowed. ")
-                            .setContextInfo1(target.getVariableName())
+                            .setContextInfo1(((VariableContainer)target.getContainer()).getVariableName())
                             .setLineNumber(ctx.getStart().getLine())
                             .setColumnNumber(ctx.getStop().getCharPositionInLine())
                             .build()
                 );
             } else {                
-                variablesUsedAsTarget.put(target.getVariableName(), projection.getPerspective());
+                variablesUsedAsTarget.put(((VariableContainer)target.getContainer()).getVariableName(), projection.getPerspective());
             }
         }
 
         
         // the source and the target can not use a same container
-        if(target.getDataContainerType() == source.getDataContainerType() 
-                && target.getId().toUpperCase().equals(source.getId().toUpperCase())){
+        if(target.getContainer().getDataContainerType() == source.getContainer().getDataContainerType() 
+                && target.getId().equalsIgnoreCase(source.getId())){
             source.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("Using the same name '%s' for the source and target of a statement is not allowed! ")
+                        .setMessageTemplate("Using the same name '%s' for the source and the target of a statement is not allowed! ")
                         .setContextInfo1(source.getId())                            
                         .setLineNumber(ctx.getStart().getLine())
                         .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
@@ -628,15 +629,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     @Override
     public Object visitSourceSelectionClause(@NotNull XQtParser.SourceSelectionClauseContext ctx) {
-        SourceClause source = null;
-        if(ctx.sourceRef().simpleSource() != null){
-            source = SourceClause.convert((DataContainerDescriptor)visitSimpleSource(ctx.sourceRef().simpleSource()));
-            source.setParserContext(ctx.sourceRef().simpleSource());
+        SourceClause source = new SourceClause();
+        if(ctx.sourceRef().singleContainer()!= null){
+            source.setContainer((SingleContainer)visitSingleContainer(ctx.sourceRef().singleContainer()));
+            source.setParserContext(ctx.sourceRef().singleContainer());
         } else if(ctx.sourceRef().joinedSource() != null){
-            source = SourceClause.convert((DataContainerDescriptor)visit(ctx.sourceRef().joinedSource()));
+            source.setContainer((JoinedContainer)visit(ctx.sourceRef().joinedSource()));
             source.setParserContext(ctx.sourceRef().joinedSource());
         } else if(ctx.sourceRef().variable() != null){
-            source = SourceClause.convert((DataContainerDescriptor)visitVariable(ctx.sourceRef().variable()));
+            source.setContainer((VariableContainer)visitVariable(ctx.sourceRef().variable()));
             source.setParserContext(ctx.sourceRef().variable());
         }
         //if(source != null) source.init();
@@ -644,9 +645,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx) {
-        DataContainerDescriptor item = new DataContainerDescriptor();
-        item.setDataContainerType(DataContainerDescriptor.DataContainerType.SimpleContainer);
+    public Object visitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) {
+        SingleContainer item = new SingleContainer();
         
         String bindingName = ctx.bindingRef().getText();
         BindingDescriptor b = null;
@@ -706,8 +706,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitVariable(@NotNull XQtParser.VariableContext ctx) { 
-        DataContainerDescriptor item = new DataContainerDescriptor();
-        item.setDataContainerType(DataContainerDescriptor.DataContainerType.Variable);
+        VariableContainer item = new VariableContainer();
         String varName = ctx.ID().getText();
         if(varName == null || varName.isEmpty()){
             item.getLanguageExceptions().add(
@@ -725,14 +724,19 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
     
     @Override
+    public Object visitJoinedSource(@NotNull XQtParser.JoinedSourceContext ctx){
+        return null;
+    }
+    
+    @Override
     public Object visitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx) {
-        TargetClause target = null;
-        if(ctx.simpleSource() != null){
-            target = TargetClause.convert((DataContainerDescriptor)visitSimpleSource(ctx.simpleSource()));
+        TargetClause target = new TargetClause();
+        if(ctx.singleContainer() != null){
+            target.setContainer((SingleContainer)visitSingleContainer(ctx.singleContainer()));
         } else if(ctx.variable() != null){
-            target = TargetClause.convert((DataContainerDescriptor)visitVariable(ctx.variable()));
+            target.setContainer((VariableContainer)visitVariable(ctx.variable()));
         } else if (ctx.plot() != null){
-            target = (PlotClause)visitPlot(ctx.plot());
+            target.setContainer((PlotContainer)visitPlot(ctx.plot()));
         }
         //if(target != null) target.init();
         return target;
@@ -740,8 +744,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     @Override
     public Object visitPlot(@NotNull XQtParser.PlotContext ctx) { 
-        PlotClause plot = new PlotClause();
-        plot.setDataContainerType(DataContainerDescriptor.DataContainerType.Plot);
+        PlotContainer plot = new PlotContainer();
+
         String plotName = ctx.id.getText();
         if(plotName == null || plotName.isEmpty()){
             plot.getLanguageExceptions().add(

@@ -316,6 +316,19 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) { }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterGroupClause(@NotNull XQtParser.GroupClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -869,19 +882,6 @@ public class XQtBaseListener implements XQtListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

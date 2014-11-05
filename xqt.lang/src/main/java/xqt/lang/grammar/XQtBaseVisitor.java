@@ -202,6 +202,14 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitGroupClause(@NotNull XQtParser.GroupClauseContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -539,14 +547,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}

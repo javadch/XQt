@@ -13,14 +13,13 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import xqt.adapters.builtin.DefaultDataAdapter;
 import xqt.engine.QueryEngine;
-import xqt.model.DataContainerDescriptor;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.containers.SingleContainer;
+import xqt.model.containers.VariableContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageExceptionBuilder;
@@ -75,7 +74,8 @@ public class StatementExecuter implements StatementVisitor{
         if(select.getCompensationStatement() != null){
             Variable var = new Variable();
             var.setExecutionInfo(select.getExecutionInfo());
-            var.setName(select.getTargetClause().getVariableName());
+            //because of the compensation query, the target of the main one is a variable
+            var.setName(((VariableContainer)select.getTargetClause().getContainer()).getVariableName());
             var.setResult(result);
 
             DataAdapter compensationAdapter = select.getCompensationStatement().getExecutionInfo().getAdapter();
@@ -104,44 +104,49 @@ public class StatementExecuter implements StatementVisitor{
     private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
     
     private DataAdapter chooseAdapter(SelectDescriptor select) {
+        DataAdapter adapter = null;
         // use the AdpaterInfo.getRegisteredAdapterInfos to access the information about the registered adapters
-        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){
-            //if(!loadedAdapters.containsKey("Default")) {
-                // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
-                // this causes the second call to generate invalid files!! solve it first and the cache the adapters
-                DataAdapter adapter = new DefaultDataAdapter();  
-                adapter.setup(null);
-                //loadedAdapters.put("Default", adapter);
-                return adapter; // when caching is enabled, remove this line
-            //}
-            //return loadedAdapters.get("Default"); // caching of the adapters currently works but the internal builder of the adpater is not in a proper state.
+        switch (select.getSourceClause().getContainer().getDataContainerType()) {
+            case Variable:
+                //if(!loadedAdapters.containsKey("Default")) {
+                    // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
+                    // this causes the second call to generate invalid files!! solve it first and the cache the adapters
+                    adapter = new DefaultDataAdapter();  
+                    adapter.setup(null);
+                    //loadedAdapters.put("Default", adapter);
+                    return adapter; // when caching is enabled, remove this line
+                //}
+                //return loadedAdapters.get("Default"); // caching of the adapters currently works but the internal builder of the adpater is not in a proper state.
+            case Single:
+                String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();;
+                try {
+                    AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream()
+                            .filter(p->p.getId().equalsIgnoreCase(adapterType)).findFirst().get(); // hande not found exception
+                    ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
+                    Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
+                    Constructor<?> ctor = cl.getConstructor();
+                    ctor.setAccessible(true);
+                    adapter = (DataAdapter)ctor.newInstance();
+                    adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
+                    //loadedAdapters.put("CSV", adapter);
+                    return adapter;
+                //}
+                //return loadedAdapters.get("CSV");
+                }
+                catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 
+                        | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                    select.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Could not load the adapter for '" + adapterType + "'. " + ex.getMessage())
+                            //.setContextInfo1(select.getId())
+                            .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
+                            .setColumnNumber(-1)
+                            .build()
+                    );                        
+                }
+            default: // joined is not yet supported
+                return null;
         }
-        try {
-            //if(!loadedAdapters.containsKey("CSV")) {// read the key from the select statement's associated connection
-                // read the adapter info from the adapters config file in the applications installation folder
-                AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream().filter(p->p.getId().equals("CSV")).findFirst().get(); // hande not found exception
-                ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
-                Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
-                Constructor<?> ctor = cl.getConstructor();
-                ctor.setAccessible(true);
-                DataAdapter adapter = (DataAdapter)ctor.newInstance();
-                adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
-                //loadedAdapters.put("CSV", adapter);
-                return adapter;
-            //}
-            //return loadedAdapters.get("CSV");
-        }
-        catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("Could not load the adapter for '" + "CSV" + "'. " + ex.getMessage())
-                    //.setContextInfo1(select.getId())
-                    .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
-                    .setColumnNumber(-1)
-                    .build()
-            );                        
-        }  
-        return null;
     }    
 
     private SelectDescriptor buildCompensationStatement(SelectDescriptor select) {
@@ -161,7 +166,9 @@ public class StatementExecuter implements StatementVisitor{
         
         // create a source of type variable and name it as "Tempvar"+select.id+ time.ticks
         String variableName = "TempVar_" + select.getId() +  "_" + System.currentTimeMillis();
-        comp.addClause(SourceClause.createVariableSource(variableName));
+        SourceClause source = new SourceClause();
+        source.setContainer(new VariableContainer(variableName));
+        comp.addClause(source);
         comp.addClause(select.getTargetClause());
         //replace the main's target clause with the temp var, so that the main query puts the result in the tempvar.
         // the temp var should be deleted after the query is executed.
@@ -170,7 +177,9 @@ public class StatementExecuter implements StatementVisitor{
         // is not supported.
         // speciall care is needed for the target clauses that persist resultsets into an external media! the default adapter may not know how to perform it.
         select.getClauses().remove(select.getTargetClause().getType());
-        select.addClause(TargetClause.createVariableTarget(variableName));
+        TargetClause target = new TargetClause();
+        target.setContainer(new VariableContainer(variableName));
+        select.addClause(target);
         
         ExecutionInfo executionInfo = new ExecutionInfo();
         comp.setExecutionInfo(executionInfo);

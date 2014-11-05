@@ -262,6 +262,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitExpression_power(@NotNull XQtParser.Expression_powerContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#singleContainer}.
+	 * @param ctx the parse tree
+	 */
+	void enterSingleContainer(@NotNull XQtParser.SingleContainerContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#singleContainer}.
+	 * @param ctx the parse tree
+	 */
+	void exitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#groupClause}.
 	 * @param ctx the parse tree
 	 */
@@ -733,17 +744,6 @@ public interface XQtListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx);
-
-	/**
-	 * Enter a parse tree produced by {@link XQtParser#simpleSource}.
-	 * @param ctx the parse tree
-	 */
-	void enterSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#simpleSource}.
-	 * @param ctx the parse tree
-	 */
-	void exitSimpleSource(@NotNull XQtParser.SimpleSourceContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link XQtParser#containerRef}.

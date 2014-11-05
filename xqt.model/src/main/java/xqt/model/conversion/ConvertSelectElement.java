@@ -13,7 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import xqt.model.DataContainerDescriptor;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.statements.query.SelectDescriptor;
 
@@ -77,36 +78,48 @@ public class ConvertSelectElement {
     public boolean shouldResultBeWrittenIntoFile(SelectDescriptor select) {
         return(
                 (
-                    select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.SimpleContainer
-                ||  select.getTargetClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.JoinedContainer
+                    select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single
+                ||  select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined
                 )
         );
     }
     
     public String getCompleteSourceName(SelectDescriptor select){ //may need a container index too!
-        String basePath = select.getSourceClause().getBinding().getConnection().getSourceUri();
-        String container0 = select.getSourceClause().getContainer();
-        String fileExtention = "csv";
-        String fileName = "";
-        try{
-            fileExtention = select.getSourceClause().getBinding().getConnection().getParameters().get("fileExtension").getValue();
-        } catch (Exception ex){}
-        fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-        return fileName;
+        // see whether the source is a simple one or a joined!
+        if(select.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
+            SingleContainer container = (SingleContainer)select.getSourceClause().getContainer();
+            String basePath = container.getBinding().getConnection().getSourceUri();
+            String container0 = container.getContainerName();
+            String fileExtention = "csv";
+            String fileName = "";
+            try{
+                fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
+            } catch (Exception ex){}
+            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+            return fileName;
+            }
+        else if(select.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
+            return null;
+        }
+        return null;
     }
   
     public String getCompleteTargetName(SelectDescriptor select){ //may need a container index too!
-        if(select.getTargetClause().getDataContainerType() != DataContainerDescriptor.DataContainerType.SimpleContainer)
+        if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
+            SingleContainer container = (SingleContainer)select.getTargetClause().getContainer();
+            String basePath = container.getBinding().getConnection().getSourceUri();
+            String container0 = container.getContainerName();
+            String fileExtention = "csv";
+            String fileName = "";
+            try{
+                fileExtention = ((SingleContainer)select.getSourceClause().getContainer())
+                        .getBinding().getConnection().getParameters().get("fileExtension").getValue();
+            } catch (Exception ex){}
+            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+            return fileName;
+        } else {
             return null;
-        String basePath = select.getTargetClause().getBinding().getConnection().getSourceUri();
-        String container0 = select.getTargetClause().getContainer();
-        String fileExtention = "csv";
-        String fileName = "";
-        try{
-            fileExtention = select.getSourceClause().getBinding().getConnection().getParameters().get("fileExtension").getValue();
-        } catch (Exception ex){}
-        fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-        return fileName;
+        }
     }
     
     public String prepareExpression(SelectDescriptor select, String expression) {

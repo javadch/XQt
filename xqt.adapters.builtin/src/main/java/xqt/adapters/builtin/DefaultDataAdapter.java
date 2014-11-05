@@ -9,14 +9,11 @@ package xqt.adapters.builtin;
 import com.jidesoft.chart.Chart;
 import com.jidesoft.chart.annotation.AutoPositionedLabel;
 import com.jidesoft.chart.axis.Axis;
-import com.jidesoft.chart.axis.CategoryAxis;
 import com.jidesoft.chart.axis.NumericAxis;
 import com.jidesoft.chart.model.DefaultChartModel;
 import com.jidesoft.chart.model.TableToChartAdapter;
 import com.jidesoft.chart.style.ChartStyle;
-import com.jidesoft.grid.BeanTableModel;
 import com.jidesoft.grid.SortableTable;
-import com.jidesoft.range.CategoryRange;
 import com.jidesoft.range.NumericRange;
 import com.jidesoft.range.Range;
 import com.vaiona.commons.compilation.InMemorySourceFile;
@@ -33,16 +30,16 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-import xqt.model.DataContainerDescriptor;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.containers.PlotContainer;
+import xqt.model.containers.SingleContainer;
+import xqt.model.containers.VariableContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-import xqt.model.statements.query.PlotClause;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -56,25 +53,23 @@ public class DefaultDataAdapter implements DataAdapter{
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
         Map<String, Variable> memory = (Map<String, Variable>)context;
-        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){ // the data source must be a variable
-            ////         READER AREA
-
-            // check whether the data is tabular!
-            Variable sourceVariable = (Variable)memory.get(select.getSourceClause().getVariableName());
-            // do something with the source data using the select definition
-            Resultset resultSet = internalRun(select, sourceVariable);
-            return resultSet;
+        switch (select.getSourceClause().getContainer().getDataContainerType()) {
+            case Variable:
+                return runForSingleContainer(select, memory);
+            default:
+                return null;
         }
-        return null;
     }
 
     @Override
     public Resultset compensate(SelectDescriptor select, Variable variable){
-        if(select.getSourceClause().getDataContainerType() == DataContainerDescriptor.DataContainerType.Variable){ // the data source must be a variable
-            Resultset resultSet = internalRun(select, variable);
-            return resultSet;
+        switch (select.getSourceClause().getContainer().getDataContainerType()) {
+            case Variable:
+                Resultset resultSet = internalRun(select, variable);
+                return resultSet;
+            default:
+                return null;
         }
-        return null;
     }
     
     @Override
@@ -85,13 +80,13 @@ public class DefaultDataAdapter implements DataAdapter{
     @Override
     public void prepare(SelectDescriptor select) {
         builder = new DataReaderBuilder();
-        switch (select.getSourceClause().getDataContainerType()){
+        switch (select.getSourceClause().getContainer().getDataContainerType()){
             case Plot:{
                 break;
             }
-            case JoinedContainer:
+            case Joined:
                 break;
-            case SimpleContainer:
+            case Single:
                 break;
             case Variable:{
                 try {
@@ -121,7 +116,7 @@ public class DefaultDataAdapter implements DataAdapter{
                     // return a language exception
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("A depenedent statement has encountered but no dependency information found!")
+                            .setMessageTemplate("A depenedent statement is encountered but no dependency information found!")
                             .setContextInfo1(select.getId())
                             .setLineNumber(select.getParserContext().getStart().getLine())
                             .setColumnNumber(-1)
@@ -150,14 +145,14 @@ public class DefaultDataAdapter implements DataAdapter{
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", false);
         registerCapability("function", true);
-        registerCapability("function.default.Max", true);
+        registerCapability("function.default.max", true);
         registerCapability("expression", true);
         registerCapability("select.projection.perspective", true);
         registerCapability("select.projection.perspective.implicit", true);
         registerCapability("select.projection.perspective.explicit", true);
         registerCapability("select.projection.perspective.inline", true);
-        registerCapability("select.source.simple", true);
-        registerCapability("select.source.join", false);
+        registerCapability("select.source.single", true);
+        registerCapability("select.source.joined", false);
         registerCapability("select.source.variable", true);
         registerCapability("select.target.variable", true);
         registerCapability("select.target.persist", false);
@@ -188,14 +183,14 @@ public class DefaultDataAdapter implements DataAdapter{
 
             //// MAPPER AREA: maps the result of the reading part, which is a collection, to the specified output type. it can be a plot or a collection with another row object.
             //// maybe they get mixed over time :-(
-            switch (select.getTargetClause().getDataContainerType()){
+            switch (select.getTargetClause().getContainer().getDataContainerType()){
                 case Plot:{
                     Resultset resultSet = new Resultset(ResultsetType.Image); 
                     // create a reader, much like the Variable case.
                     // get data from the reader
                     // draw data into a plot. drawing here makes the template easier!
                     // return the plot
-                    PlotClause plotModel = (PlotClause)select.getTargetClause();
+                    PlotContainer plotModel = (PlotContainer)select.getTargetClause().getContainer();
                     if(source == null || source.stream().count() <= 0){                    
                         resultSet.setData(null);
                         resultSet.setSchema(sourceVariable.getResult().getSchema());
@@ -276,9 +271,9 @@ public class DefaultDataAdapter implements DataAdapter{
                     
                     return resultSet;
                 }
-                case JoinedContainer:
+                case Joined:
                     break;
-                case SimpleContainer:
+                case Single:
                     break;
                 case Variable:{
                     Resultset resultSet = new Resultset(ResultsetType.Tabular); 
@@ -335,5 +330,13 @@ public class DefaultDataAdapter implements DataAdapter{
         for (int i = 0; i < palletSize; i++)
             pallet.add(Color.getHSBColor((float) i / palletSize, 1, 1));    
         return pallet;
+    }
+
+    private Resultset runForSingleContainer(SelectDescriptor select, Map<String, Variable> memory) {
+        // check whether the data is tabular!
+        Variable sourceVariable = (Variable)memory.get(((VariableContainer)select.getSourceClause().getContainer()).getVariableName());
+        // do something with the source data using the select definition
+        Resultset resultSet = internalRun(select, sourceVariable);
+        return resultSet;
     }
 }

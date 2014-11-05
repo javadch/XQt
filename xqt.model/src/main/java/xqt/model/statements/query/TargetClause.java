@@ -5,39 +5,27 @@
 package xqt.model.statements.query;
 
 import java.util.UUID;
-import xqt.model.DataContainerDescriptor;
+import xqt.model.ClauseDescriptor;
+import xqt.model.containers.DataContainer;
 
 /**
  *
  * @author Javad Chamanara
  */
-public class TargetClause extends DataContainerDescriptor{
-    public final void init(){
-        id = UUID.randomUUID().toString();
-        type = SelectClauseType.Target.toString();        
-    }
+public class TargetClause extends ClauseDescriptor{
+    private DataContainer container;
+   
     public TargetClause(){
-        init();
+        id = UUID.randomUUID().toString();
+        type = SelectClauseType.Target.toString();     
     }
-    
-    public static TargetClause convert(DataContainerDescriptor base){
-        TargetClause target = new TargetClause();
-        target.setBinding(base.getBinding());
-        target.setContainerIndex(base.getContainerIndex());
-        target.setDataContainerType(base.getDataContainerType());
-        target.setLanguageExceptions(base.getLanguageExceptions());
-        target.setOrderInParent(base.getOrderInParent());
-        target.setParserContext(base.getParserContext());
-        target.setVariableName(base.getVariableName());
-        return target;
-    }     
-    
-    public static TargetClause createVariableTarget(String variableName){
-        TargetClause target = new TargetClause();
-        target.setDataContainerType(DataContainerType.Variable);
-        target.setLifeTime(ContinaerLifeTime.Short);
-        target.setVariableName(variableName);
-        return target;
-    }     
+
+    public DataContainer getContainer() {
+        return container;
+    }
+
+    public void setContainer(DataContainer container) {
+        this.container = container;
+    }
     
 }
