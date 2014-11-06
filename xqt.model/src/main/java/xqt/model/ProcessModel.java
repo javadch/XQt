@@ -72,6 +72,7 @@ public class ProcessModel {
         // satatement id is the id aasigned to the statement during the annotation/ parsin, not its index in the list
         return statements.get(statementId);
     }
+  
     public void addDeclaration(DeclarationDescriptor declaration) {
         //check whether all types of declarations should have unique ids or each type of them ...
         if(this.declarations.containsKey(declaration.getId()) || this.declarations.containsValue(declaration))

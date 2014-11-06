@@ -304,7 +304,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     );                      
                 }
             }
-        }
+        } 
         // check for inline perspective and try to build it, like extractPerspective
 
         // check for implicit perspective if there is still no perspective detected/ determined
@@ -332,6 +332,10 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             } else {                
                 variablesUsedAsTarget.put(((VariableContainer)target.getContainer()).getVariableName(), projection.getPerspective());
             }
+        } else if((target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Single) &&
+                    (projection.getPerspective() != null)){
+            //set the perspective of the statement also for the target
+            ((SingleContainer)target.getContainer()).setPerspective(projection.getPerspective());
         }
 
         
@@ -634,7 +638,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             source.setContainer((SingleContainer)visitSingleContainer(ctx.sourceRef().singleContainer()));
             source.setParserContext(ctx.sourceRef().singleContainer());
         } else if(ctx.sourceRef().joinedSource() != null){
-            source.setContainer((JoinedContainer)visit(ctx.sourceRef().joinedSource()));
+            source.setContainer((JoinedContainer)visitJoinedSource(ctx.sourceRef().joinedSource()));
             source.setParserContext(ctx.sourceRef().joinedSource());
         } else if(ctx.sourceRef().variable() != null){
             source.setContainer((VariableContainer)visitVariable(ctx.sourceRef().variable()));
@@ -706,10 +710,10 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitVariable(@NotNull XQtParser.VariableContext ctx) { 
-        VariableContainer item = new VariableContainer();
+        VariableContainer container = new VariableContainer();
         String varName = ctx.ID().getText();
         if(varName == null || varName.isEmpty()){
-            item.getLanguageExceptions().add(
+            container.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Expecting a variable name, but not provided!")
                     .setLineNumber(ctx.getStart().getLine())
@@ -719,13 +723,94 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         }
         // check duplicate variable names!!!
         // it is not correct to check for duplicates here, as it is not clear whether the variable is used as source of target!
-        item.setVariableName(varName);
-        return item;
+        container.setVariableName(varName);
+        return container;
     }
     
     @Override
     public Object visitJoinedSource(@NotNull XQtParser.JoinedSourceContext ctx){
-        return null;
+        JoinedContainer container = new JoinedContainer();
+        //process the left container
+        if(ctx.leftVariable != null){
+            container.setLeftContainer((DataContainer)visitVariable(ctx.leftVariable));
+            // in later phases, the variable should be checked against a source variable and its perspective should be determined
+        } else if(ctx.leftSource != null) {
+            container.setLeftContainer((DataContainer)visitSingleContainer(ctx.leftSource));
+            if(ctx.leftPerspectiveName != null){
+                // set the lefts perspective intsance using the name
+                String perspectiveName = ctx.leftPerspectiveName.ID().getText();
+                DeclarationDescriptor perspective = processModel.getDeclarations().get(perspectiveName);
+                if(perspective == null || !(perspective instanceof PerspectiveDescriptor)){
+                    container.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("The left container expects perspective %s, which is not defined!")
+                            .setContextInfo1(perspectiveName)
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                    );
+                } else {
+                    ((SingleContainer)container.getLeftContainer()).setPerspective((PerspectiveDescriptor)perspective);
+                }                
+            }
+        }
+        // process the join type
+        if(ctx.joinDescription().INNER() != null) {
+            container.setJoinType(JoinedContainer.JoinType.InnerJoin);
+        } else if(ctx.joinDescription().OUTER()!= null){
+            container.setJoinType(JoinedContainer.JoinType.OuterJoin);
+            if(ctx.joinDescription().LEFT()!= null){
+                container.setJoinType(JoinedContainer.JoinType.LeftOuterJoin);
+            } else if(ctx.joinDescription().RIGHT()!= null){
+                container.setJoinType(JoinedContainer.JoinType.RightOuterJoin);
+            }
+        }
+        // process the join operation and keys
+        if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().EQ().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.EQ);
+        } else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().NotEQ().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.NotEQ);
+        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GT().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.GT);
+        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GTEQ().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.GTEQ);
+        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LIKE().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.LIKE);
+        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LT().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.LT);
+        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LTEQ().getText())){
+            container.setJoinOperator(JoinedContainer.JoinOperator.LTEQ);
+        }
+
+        container.setLeftKey(ctx.joinSpecification().leftKey.getText());
+        container.setRightKey(ctx.joinSpecification().rightKey.getText());
+        
+        // process the right container
+        if(ctx.rightVariable != null){
+            container.setRightContainer((DataContainer)visitVariable(ctx.rightVariable));
+            // in later phases, the variable should be checked against a source variable and its perspective should be determined
+        } else if(ctx.rightSource != null) {
+            container.setRightContainer((DataContainer)visitSingleContainer(ctx.rightSource));
+            if(ctx.rightPerspectiveName != null){
+                // set the lefts perspective intsance using the name
+                String perspectiveName = ctx.rightPerspectiveName.ID().getText();
+                DeclarationDescriptor perspective = processModel.getDeclarations().get(perspectiveName);
+                if(perspective == null || !(perspective instanceof PerspectiveDescriptor)){
+                    container.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("The right container expects perspective %s, which is not defined!")
+                            .setContextInfo1(perspectiveName)
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .build()
+                    );
+                } else {
+                    ((SingleContainer)container.getRightContainer()).setPerspective((PerspectiveDescriptor)perspective);
+                }                
+            }
+        }
+        
+        return container;
     }
     
     @Override

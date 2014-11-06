@@ -11,19 +11,19 @@ package xqt.model.containers;
  */
 public class JoinedContainer extends DataContainer {
     public enum JoinOperator {
-        EQ
+        EQ, NotEQ, GT, GTEQ,  LT, LTEQ, LIKE
     }
     
     public enum JoinType {
-        InnerJoin,
-        OurJoin,
-        LeftOuterJoin,
-        RightOuterJoin
+        InnerJoin, OuterJoin, LeftOuterJoin, RightOuterJoin
     }
+    
     private JoinOperator joinOperator = JoinOperator.EQ;
     private JoinType joinType = JoinType.InnerJoin;
     private DataContainer leftContainer;
     private DataContainer rightContainer;
+    private String leftKey; // butter to be an attribute pointer
+    private String rightKey;
     
     public JoinedContainer(){
         this.dataContainerType = DataContainerType.Joined;
@@ -59,6 +59,22 @@ public class JoinedContainer extends DataContainer {
 
     public void setRightContainer(DataContainer rightContainer) {
         this.rightContainer = rightContainer;
+    }
+
+    public String getLeftKey() {
+        return leftKey;
+    }
+
+    public void setLeftKey(String leftKey) {
+        this.leftKey = leftKey;
+    }
+
+    public String getRightKey() {
+        return rightKey;
+    }
+
+    public void setRightKey(String rightLey) {
+        this.rightKey = rightLey;
     }
 
     

@@ -6,14 +6,19 @@
 package xqt.model.containers;
 
 import xqt.model.configurations.BindingDescriptor;
+import xqt.model.declarations.PerspectiveDescriptor;
 
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
  */
 public class SingleContainer extends DataContainer {
-    protected BindingDescriptor binding;
-    protected Integer containerIndex; //shoud be an index to one of the scopes defined in the linked binding
+    private BindingDescriptor binding;
+    private Integer containerIndex; //shoud be an index to one of the scopes defined in the linked binding
+    // when the container is used in a joined container, it needs to now its perspective.
+    // in these cases the perspective is set on the container itself not on the statement.
+    // it is also set for the target clause of single source containers during the visitation, but currently not used.
+    private PerspectiveDescriptor perspective; 
 
     public SingleContainer(){
         this.dataContainerType = DataContainerType.Single;
@@ -43,5 +48,13 @@ public class SingleContainer extends DataContainer {
         if(binding != null && binding.getScopes() != null  && containerIndex != null && containerIndex >=0 )
             this.id = binding.getScopes().get(containerIndex);
     }    
+
+    public PerspectiveDescriptor getPerspective() {
+        return perspective;
+    }
+
+    public void setPerspective(PerspectiveDescriptor perspective) {
+        this.perspective = perspective;
+    }
     
 }

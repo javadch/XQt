@@ -1534,7 +1534,9 @@ public class XQtParser extends Parser {
 	}
 
 	public static class JoinSpecificationContext extends ParserRuleContext {
+		public Token leftKey;
 		public Token op;
+		public Token rightKey;
 		public List<TerminalNode> ID() { return getTokens(XQtParser.ID); }
 		public TerminalNode NotEQ() { return getToken(XQtParser.NotEQ, 0); }
 		public TerminalNode LTEQ() { return getToken(XQtParser.LTEQ, 0); }
@@ -1572,7 +1574,7 @@ public class XQtParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(316); match(ID);
+			setState(316); ((JoinSpecificationContext)_localctx).leftKey = match(ID);
 			setState(317);
 			((JoinSpecificationContext)_localctx).op = _input.LT(1);
 			_la = _input.LA(1);
@@ -1580,7 +1582,7 @@ public class XQtParser extends Parser {
 				((JoinSpecificationContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 			}
 			consume();
-			setState(318); match(ID);
+			setState(318); ((JoinSpecificationContext)_localctx).rightKey = match(ID);
 			}
 		}
 		catch (RecognitionException re) {
