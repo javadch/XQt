@@ -30,7 +30,7 @@ public class SelectDescriptor extends StatementDescriptor{
     private List<String> requiredCapabilities = new ArrayList<>();
     private SelectDescriptor compensationStatement = null;
 
-    public SelectDescriptor getCompensationStatement() {
+    public SelectDescriptor getComplementingStatement() {
         return compensationStatement;
     }
 

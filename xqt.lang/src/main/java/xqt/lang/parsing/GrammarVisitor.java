@@ -7,15 +7,6 @@
  */
 package xqt.lang.parsing;
 
-/***
- * Excerpted from "The Definitive ANTLR 4 Reference",
- * published by The Pragmatic Bookshelf.
- * Copyrights apply to this code. It may not be used to create training material, 
- * courses, books, articles, and the like. Contact us if you are in doubt.
- * We make no guarantees that this code is fit for any purpose. 
- * Visit http://www.pragmaticprogrammer.com/titles/tpantlr2 for more book information.
-***/
-
 import com.vaiona.commons.types.TypeSystem;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -94,6 +85,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     /** 
      * visit each and every rule starting from the root and create a ProcessModel object which holds abstract
      * representation of all the process elements i.e. perspectives, connections, statements, bindings, etc
+     * @param ctx
+     * @return 
      */
     @Override
     public Object visitCreateProcessModel(XQtParser.CreateProcessModelContext ctx) {
@@ -106,6 +99,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     @Override
     public Object visitPerspective(@NotNull XQtParser.PerspectiveContext ctx) { 
         PerspectiveDescriptor perspective = PerspectiveAnnotator.describePerspective(ctx, processModel);
+        // check for duplicate names
         stack.push(perspective); // it would be better if there were no need for data communication :-(
         for(XQtParser.Attribute_defContext attCtx: ctx.attribute_def()){
             PerspectiveAttributeDescriptor att = (PerspectiveAttributeDescriptor)visitAttribute_def(attCtx);
@@ -206,7 +200,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         SetQualifierClause setQuantifier    = new SetQualifierClause();
         if(ctx.setQualifierClause() != null){
             setQuantifier = (SetQualifierClause)visitSetQualifierClause(ctx.setQualifierClause());
-            setQuantifier.setIsPresent(true);
+            setQuantifier.setPresent(true);
             select.getRequiredCapabilities().add("select.qualifier");
         }
         ProjectionClause   projection       = new ProjectionClause();
@@ -215,7 +209,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(projection.getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
                 projection.getPerspective().setId("Inline_Perspective_" + select.getId());                
             }
-            projection.setIsPresent(true);
+            projection.setPresent(true);
             select.getRequiredCapabilities().add("select.projection.perspective");
             select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
         }
@@ -225,35 +219,35 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         TargetClause target = new TargetClause();
         if( ctx.targetSelectionClause() != null){
             target = (TargetClause)visitTargetSelectionClause(ctx.targetSelectionClause());
-            target.setIsPresent(true);
+            target.setPresent(true);
             select.getRequiredCapabilities().add("select.target." + target.getContainer().getDataContainerType().toString().toLowerCase());
         }
         
         AnchorClause anchor = new AnchorClause();
         if(ctx.anchorClause() != null){
             anchor = (AnchorClause)visitAnchorClause(ctx.anchorClause());
-            anchor.setIsPresent(true);
+            anchor.setPresent(true);
             select.getRequiredCapabilities().add("select.anchor");
         }
         
         FilterClause       filter           = new FilterClause();
         if(ctx.filterClause() != null){
             filter = (FilterClause)visitFilterClause(ctx.filterClause());
-            filter.setIsPresent(true);
+            filter.setPresent(true);
             select.getRequiredCapabilities().add("select.filter");
         }
         
         OrderClause        order            = new OrderClause();
         if(ctx.orderClause() != null){
             order = (OrderClause)visitOrderClause(ctx.orderClause());
-            order.setIsPresent(true);
+            order.setPresent(true);
             select.getRequiredCapabilities().add("select.orderby");
         }
         
         LimitClause        limit            = new LimitClause();
         if(ctx.limitClause() != null) {
             limit = (LimitClause)visitLimitClause(ctx.limitClause());
-            limit.setIsPresent(true);
+            limit.setPresent(true);
             if (limit.getSkip() > -1){
                 select.getRequiredCapabilities().add("select.limit");
                 select.getRequiredCapabilities().add("select.limit.skip");
@@ -267,7 +261,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         GroupClause        group            = new GroupClause();
         if(ctx.groupClause() != null){
             group = (GroupClause)visitGroupClause(ctx.groupClause());
-            group.setIsPresent(true);
+            group.setPresent(true);
             select.getRequiredCapabilities().add("select.groupby");
         }
 
@@ -313,6 +307,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             PerspectiveDescriptor implicitPerspective = extractPerspective(source);
             implicitPerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
             projection.setPerspective(implicitPerspective);
+            projection.setPresent(false);
             select.getRequiredCapabilities().removeIf(p-> p.startsWith("select.projection.perspective.")); // remove the previous perspective type
             select.getRequiredCapabilities().add("select.projection.perspective." + projection.getPerspective().getPerspectiveType().toString().toLowerCase());
         }
@@ -359,17 +354,20 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 //                target.getVariable().setStatement(selectDesc);
 
         // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
-        MemberExpression faultyAttribute = validateAttributesInExpression(((FilterClause)filter).getPredicate(), projection.getPerspective());
-        if(faultyAttribute != null){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
-                       .setContextInfo1(faultyAttribute.getId())
-                       .setContextInfo2(projection.getPerspective().getId())
-                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-                       .build()
-            );
+        MemberExpression faultyAttribute = null;
+        if(projection.getPerspective().isExplicit() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit){
+            faultyAttribute = validateAttributesInExpression(((FilterClause)filter).getPredicate(), projection.getPerspective());
+            if(faultyAttribute != null){
+                select.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                           .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
+                           .setContextInfo1(faultyAttribute.getId())
+                           .setContextInfo2(projection.getPerspective().getId())
+                           .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                           .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                           .build()
+                );
+        }
         }
         // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
         faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStartAnchor(), projection.getPerspective());
@@ -430,7 +428,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // check postponed validations
         for(PostponedValidationRecord record: selectLateValidations){
             if(record.getContext3().toUpperCase().equals("TYPE-CHECK")){
-                if(projection.getPerspective().getAttributes().values().stream()
+                if( (projection.isPresent() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit)
+                        && projection.getPerspective().getAttributes().values().stream()
                         .filter(p->p.getId().equals(record.getContext1()) && p.getDataType().equals(record.getContext2())).count() <=0){
                     // the requested attrinute/type pair are not defined in the perspective;
                     String msg = MessageFormat.format("Attribute ''{0}'' of type ''{1}''", record.getContext1(), record.getContext2());
@@ -808,8 +807,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     ((SingleContainer)container.getRightContainer()).setPerspective((PerspectiveDescriptor)perspective);
                 }                
             }
-        }
-        
+        }        
         return container;
     }
     
@@ -1337,7 +1335,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
 
     private PerspectiveDescriptor extractPerspective(SourceClause source) {
-        // try to extract as mush field information as possible from the source clause.
+        // The perspective definition needs to be created based on the source clause
+        // this usually mean tooucing the data container(s). So this operation is bound to each adapter!
+        // Here an empty perspective is returned so that later the adpater can populate it.
         return new PerspectiveDescriptor();
     }
 

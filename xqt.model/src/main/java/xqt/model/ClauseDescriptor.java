@@ -17,11 +17,11 @@ public class ClauseDescriptor extends BaseDescriptor {
     protected boolean isPresent = false;
 
     // determines whether the clause exists in the statement. if not an empty/ defalt clause is added which its isPresent is false.
-    public boolean isIsPresent() {
+    public boolean isPresent() {
         return isPresent;
     }
 
-    public void setIsPresent(boolean isPresent) {
+    public void setPresent(boolean isPresent) {
         this.isPresent = isPresent;
     }
     

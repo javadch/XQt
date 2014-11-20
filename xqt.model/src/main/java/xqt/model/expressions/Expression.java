@@ -258,10 +258,14 @@ return ex;
     }
     
     public static MemberExpression Member(String name) {        
-        MemberExpression ex = new MemberExpression(name);
         // the caller must merge it with the effective surrounding expression elements.
         // i.e. if its a parameter to a function, its type would be of the type of that parameter, ...
-        ex.returnType = TypeSystem.Unknown; 
+        return Member(name, TypeSystem.Unknown);
+    }
+    
+    public static MemberExpression Member(String name, String type) {        
+        MemberExpression ex = new MemberExpression(name);
+        ex.returnType = type; 
         return ex;
     }
     

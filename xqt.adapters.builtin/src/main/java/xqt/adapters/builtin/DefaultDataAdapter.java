@@ -62,7 +62,7 @@ public class DefaultDataAdapter implements DataAdapter{
     }
 
     @Override
-    public Resultset compensate(SelectDescriptor select, Variable variable){
+    public Resultset complement(SelectDescriptor select, Variable variable){
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Variable:
                 Resultset resultSet = internalRun(select, variable);

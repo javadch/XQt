@@ -18,6 +18,8 @@ import xqt.engine.QueryEngine;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.containers.VariableContainer;
 import xqt.model.data.Resultset;
@@ -71,18 +73,18 @@ public class StatementExecuter implements StatementVisitor{
         } else {
             result = adapter.run(select, null);
         }
-        if(select.getCompensationStatement() != null){
+        if(select.getComplementingStatement() != null){
             Variable var = new Variable();
             var.setExecutionInfo(select.getExecutionInfo());
             //because of the compensation query, the target of the main one is a variable
             var.setName(((VariableContainer)select.getTargetClause().getContainer()).getVariableName());
             var.setResult(result);
 
-            DataAdapter compensationAdapter = select.getCompensationStatement().getExecutionInfo().getAdapter();
-            result = compensationAdapter.compensate(select.getCompensationStatement(), var);
+            DataAdapter compensationAdapter = select.getComplementingStatement().getExecutionInfo().getAdapter();
+            result = compensationAdapter.complement(select.getComplementingStatement(), var);
             var.setExecutionInfo(null); // remove the variable, its temporary and not needed anymore
             select.getClauses().remove(select.getTargetClause().getType());
-            select.addClause(select.getCompensationStatement().getTargetClause());
+            select.addClause(select.getComplementingStatement().getTargetClause());
         }
         return result;
     }
@@ -108,6 +110,7 @@ public class StatementExecuter implements StatementVisitor{
         // use the AdpaterInfo.getRegisteredAdapterInfos to access the information about the registered adapters
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Variable:
+            {
                 //if(!loadedAdapters.containsKey("Default")) {
                     // when the adapters are cached, their linked builders are also cached! which keep their previous state: attributes, where...
                     // this causes the second call to generate invalid files!! solve it first and the cache the adapters
@@ -117,8 +120,10 @@ public class StatementExecuter implements StatementVisitor{
                     return adapter; // when caching is enabled, remove this line
                 //}
                 //return loadedAdapters.get("Default"); // caching of the adapters currently works but the internal builder of the adpater is not in a proper state.
+            }
             case Single:
-                String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();;
+            {
+                String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
                     AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream()
                             .filter(p->p.getId().equalsIgnoreCase(adapterType)).findFirst().get(); // hande not found exception
@@ -144,6 +149,59 @@ public class StatementExecuter implements StatementVisitor{
                             .build()
                     );                        
                 }
+            }
+            case Joined:
+            {
+                JoinedContainer joinedSource = (JoinedContainer)select.getSourceClause().getContainer();
+                if(joinedSource.getLeftContainer().getDataContainerType() != joinedSource.getRightContainer().getDataContainerType()){
+                    select.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("Left and right containers of the JOIN should be of a same type.")
+                            .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
+                            .setColumnNumber(-1)
+                            .build()
+                    ); 
+                } else if(joinedSource.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){ // both sides are variable
+                    adapter = new DefaultDataAdapter();  
+                    adapter.setup(null);
+                    return adapter;
+                } else if(joinedSource.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Single){ // both are single containers
+                    // the single containers should use a same adapter.
+                    String leftAdapterCode = ((SingleContainer)joinedSource.getLeftContainer()).getBinding().getConnection().getAdapterName();
+                    String rightAdapterCode = ((SingleContainer)joinedSource.getRightContainer()).getBinding().getConnection().getAdapterName();
+                    if(!leftAdapterCode.equalsIgnoreCase(rightAdapterCode)) {
+                        select.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Left and right containers of the JOIN should use a same connection/ adapter.")
+                                .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
+                                .setColumnNumber(-1)
+                                .build()
+                        );                         
+                    } else { // can get the adapter info now and instantiate it.
+                        try {
+                            AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream()
+                                    .filter(p->p.getId().equalsIgnoreCase(leftAdapterCode)).findFirst().get(); // hande not found exception
+                            ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
+                            Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
+                            Constructor<?> ctor = cl.getConstructor();
+                            ctor.setAccessible(true);
+                            adapter = (DataAdapter)ctor.newInstance();
+                            adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
+                            return adapter;
+                        }
+                        catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 
+                                | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                            select.getLanguageExceptions().add(
+                                LanguageExceptionBuilder.builder()
+                                    .setMessageTemplate("Could not load the adapter for '" + leftAdapterCode + "'. " + ex.getMessage())
+                                    .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
+                                    .setColumnNumber(-1)
+                                    .build()
+                            );                        
+                        }                        
+                    }
+                }
+            }
             default: // joined is not yet supported
                 return null;
         }
@@ -187,7 +245,7 @@ public class StatementExecuter implements StatementVisitor{
         DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause, because the choose adpater function needs to know the source clause
         executionInfo.setAdapter(adapter);
 
-        if(select.getAnchorClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
+        if(select.getAnchorClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){                
                 comp.addClause(select.getAnchorClause());
                 select.getClauses().remove(select.getAnchorClause().getType());
@@ -197,7 +255,7 @@ public class StatementExecuter implements StatementVisitor{
             comp.addClause(new AnchorClause());
         }
 
-        if(select.getFilterClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.filter")){
+        if(select.getFilterClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.filter")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.filter")){
                 comp.addClause(select.getFilterClause());
                 select.getClauses().remove(select.getFilterClause().getType());
@@ -207,7 +265,7 @@ public class StatementExecuter implements StatementVisitor{
             comp.addClause(new FilterClause());
         }
         
-        if(select.getOrderClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
+        if(select.getOrderClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.orderby")){
                 comp.addClause(select.getOrderClause());
                 select.getClauses().remove(select.getOrderClause().getType());
@@ -217,7 +275,7 @@ public class StatementExecuter implements StatementVisitor{
             comp.addClause(new OrderClause());
         }
 
-        if(select.getGroupClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
+        if(select.getGroupClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.groupby")){
                 comp.addClause(select.getGroupClause());
                 select.getClauses().remove(select.getGroupClause().getType());
@@ -227,7 +285,7 @@ public class StatementExecuter implements StatementVisitor{
             comp.addClause(new GroupClause());
         }
                 
-        if(select.getLimitClause().isIsPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.limit")){
+        if(select.getLimitClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.limit")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
                 comp.addClause(select.getLimitClause());
                 select.getClauses().remove(select.getLimitClause().getType());

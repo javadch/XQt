@@ -40,11 +40,12 @@ public class ConvertSelectElement {
             if(!attributes.containsKey(attribute.getId())){
                 AttributeInfo ad = new AttributeInfo();
                 ad.name = attribute.getId();
-                ad.formalDataType = attribute.getDataType();
+                ad.conceptualDataType = attribute.getDataType();
                 ad.internalDataType = typeNameInAdapter;
                 ad.forwardMap = exp;
                 ad.fields = members;
                 ad.index = attributes.size();
+                ad.runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
                 attributes.put(attribute.getId(), ad);
             }            
         }        

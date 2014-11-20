@@ -137,9 +137,9 @@ public class DefaultQueryEngine  implements QueryEngine{
                 if(sm.getExecutionInfo().getSources().values().stream().count() > 0){
                     sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());
                     if(sm instanceof SelectDescriptor){ // do it also for the other types
-                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getCompensationStatement();
-                        if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
-                            sourcesToBeCompiled.putAll(compensationStatement.getExecutionInfo().getSources());
+                        SelectDescriptor complementingStatement = ((SelectDescriptor)sm).getComplementingStatement();
+                        if(complementingStatement != null && complementingStatement.getExecutionInfo().getSources().values().stream().count() > 0){
+                            sourcesToBeCompiled.putAll(complementingStatement.getExecutionInfo().getSources());
                         }
                     }
                 }
@@ -157,7 +157,7 @@ public class DefaultQueryEngine  implements QueryEngine{
                 for(InMemorySourceFile source : sm.getExecutionInfo().getSources().values()){                    
                     source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
                     if(sm instanceof SelectDescriptor){ // do it also for the other types
-                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getCompensationStatement();
+                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getComplementingStatement();
                         if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
                             for(InMemorySourceFile compSource : compensationStatement.getExecutionInfo().getSources().values()){
                                 compSource.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource.getFullName()));                                
