@@ -91,14 +91,18 @@ public class StatementExecuter implements StatementVisitor{
 
     @Override
     public void prepare(SelectDescriptor select) {
+        if(select.hasError())
+            return;
         ExecutionInfo eix = new ExecutionInfo();
         select.setExecutionInfo(eix);
         eix.setExecuted(false);
         DataAdapter adapter = chooseAdapter(select); // create the adapter based on its registration info and the statement's bindinf info
         eix.setAdapter(adapter);
         adapter.prepare(select); // creates the source files but does not compile them 
+        if(select.hasError()) // check after lazy construction and validations
+            return;
         if(!adapter.hasRequiredCapabilities(select)){
-            SelectDescriptor comp = buildCompensationStatement(select);
+            SelectDescriptor comp = buildCompletingStatement(select);
             comp.getExecutionInfo().getAdapter().prepare(comp);
         }
     }
@@ -207,7 +211,7 @@ public class StatementExecuter implements StatementVisitor{
         }
     }    
 
-    private SelectDescriptor buildCompensationStatement(SelectDescriptor select) {
+    private SelectDescriptor buildCompletingStatement(SelectDescriptor select) {
         // check which capabilities are missing and chech whether they are suppotrted by the compensation adapter?
         // check the dependecies between the missing capabilities
         // build a compensation query

@@ -31,5 +31,10 @@ public class FilterClause extends ClauseDescriptor{
 
     public void setPredicate(Expression predicate) {
         this.predicate = predicate;
+        if(this.predicate != null)
+            isPresent = true;
+        else
+            isPresent = false;
+        
     }
 }

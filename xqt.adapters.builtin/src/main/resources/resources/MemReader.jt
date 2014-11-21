@@ -51,7 +51,7 @@ public class @(BaseClassName)Reader implements DataReader<@(TargetRowType), @(So
                     public int compare(@(SourceRowType) left, @(SourceRowType) right){
                     @for (Map.Entry<AttributeInfo, String> entry : Ordering.entrySet()) {
                         @{
-                            DataTypeInfo dti = TypeSystem.getTypes().get(entry.getKey().formalDataType);
+                            DataTypeInfo dti = TypeSystem.getTypes().get(entry.getKey().conceptualDataType);
                             AttributeInfo ad = entry.getKey();
                         }
                         @if(Ordering.size() == 1) {                            

@@ -16,7 +16,12 @@ import java.util.StringTokenizer;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
+import xqt.model.declarations.PerspectiveDescriptor;
+import xqt.model.statements.query.FilterClause;
+import xqt.model.statements.query.OrderClause;
 import xqt.model.statements.query.SelectDescriptor;
+import xqt.model.statements.query.SourceClause;
+import xqt.model.statements.query.TargetClause;
 
 /**
  *
@@ -29,9 +34,9 @@ public class ConvertSelectElement {
         convertor = new ExpressionToJavaSource();
     }
 
-    public Map<String, AttributeInfo> prepareAttributes(SelectDescriptor select) {
+    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective) {
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
-        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
+        for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             convertor.reset();
             convertor.visit(attribute.getForwardExpression());
             String exp = convertor.getSource(); 
@@ -52,19 +57,19 @@ public class ConvertSelectElement {
         return attributes;
     }
 
-    public String prepareWhere(SelectDescriptor select) {
-        if(select.getFilterClause() == null || select.getFilterClause().getPredicate() == null)
+    public String prepareWhere(FilterClause filter) {
+        if(filter == null || filter.getPredicate() == null)
             return "";
         convertor.reset();
-        convertor.visit(select.getFilterClause().getPredicate()); // visit returns empty predicate string on null expressions
+        convertor.visit(filter.getPredicate()); // visit returns empty predicate string on null expressions
         String filterString = convertor.getSource();
         return filterString;
     }
 
-    public Map<String, String> prepareOrdering(SelectDescriptor select) {
+    public Map<String, String> prepareOrdering(OrderClause order) {
         Map<String, String> ordering = new LinkedHashMap<>();
         try {
-            select.getOrderClause().getOrderItems().entrySet().stream()
+            order.getOrderItems().entrySet().stream()
                     .map((entry) -> entry.getValue())
                     .forEach((orderItem) -> {
                             ordering.put(orderItem.getSortKey(), orderItem.getSortOrder().toString());
@@ -76,60 +81,22 @@ public class ConvertSelectElement {
         return ordering;
     }
 
-    public boolean shouldResultBeWrittenIntoFile(SelectDescriptor select) {
+    public boolean shouldResultBeWrittenIntoFile(TargetClause target) {
         return(
                 (
-                    select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single
-                ||  select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined
+                    target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Single
+                ||  target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined
                 )
         );
     }
-    
-    public String getCompleteSourceName(SelectDescriptor select){ //may need a container index too!
-        // see whether the source is a simple one or a joined!
-        if(select.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
-            SingleContainer container = (SingleContainer)select.getSourceClause().getContainer();
-            String basePath = container.getBinding().getConnection().getSourceUri();
-            String container0 = container.getContainerName();
-            String fileExtention = "csv";
-            String fileName = "";
-            try{
-                fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
-            } catch (Exception ex){}
-            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-            return fileName;
-            }
-        else if(select.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
-            return null;
-        }
-        return null;
-    }
-  
-    public String getCompleteTargetName(SelectDescriptor select){ //may need a container index too!
-        if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
-            SingleContainer container = (SingleContainer)select.getTargetClause().getContainer();
-            String basePath = container.getBinding().getConnection().getSourceUri();
-            String container0 = container.getContainerName();
-            String fileExtention = "csv";
-            String fileName = "";
-            try{
-                fileExtention = ((SingleContainer)select.getSourceClause().getContainer())
-                        .getBinding().getConnection().getParameters().get("fileExtension").getValue();
-            } catch (Exception ex){}
-            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-            return fileName;
-        } else {
-            return null;
-        }
-    }
-    
-    public String prepareExpression(SelectDescriptor select, String expression) {
+        
+    public String translateExpression(String expression, PerspectiveDescriptor perspective) {
         String expressionTranslated = "";
         for (StringTokenizer stringTokenizer = new StringTokenizer(expression, " ");
                 stringTokenizer.hasMoreTokens();) {
             String token = stringTokenizer.nextToken();
             // translate the wehre clause
-            if(select.getProjectionClause().getPerspective().getAttributes().containsKey(token)){
+            if(perspective.getAttributes().containsKey(token)){
                 expressionTranslated = expressionTranslated + " " + "p." + token;
             }
             else {

@@ -44,11 +44,11 @@ public class DataReaderBuilder {
         // set the full name
         String baseClassName = "C" + (new Date()).getTime(); // just to make a unique name
         
-        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select);
+        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective());
         
         // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
         Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
-        for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select).entrySet()) {
+        for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
                 if(attributes.containsKey(entry.getKey())){
                     orderItems.put(attributes.get(entry.getKey()), entry.getValue());
                 }            
@@ -60,7 +60,7 @@ public class DataReaderBuilder {
         readerContext.put("SourceRowNamespace", sourceRowType.subSequence(0, sourceRowType.lastIndexOf(".")));
         readerContext.put("SourceRowType", sourceRowType.subSequence(sourceRowType.lastIndexOf(".")+1, sourceRowType.length()));
         readerContext.put("TargetRowType", sourceRowType.subSequence(sourceRowType.lastIndexOf(".")+1, sourceRowType.length()));
-        readerContext.put("Where", convertSelect.prepareExpression(select, convertSelect.prepareWhere(select)));
+        readerContext.put("Where", convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause()), select.getProjectionClause().getPerspective()));
         
         // the delimiter MUST come from the source->connection->... chain. if the direct source has no connection it should come from the upper ones
         String header = String.join(",", attributes.values().stream().map(p-> p.name + ":" + p.internalDataType).collect(Collectors.toList()));
@@ -71,7 +71,7 @@ public class DataReaderBuilder {
         readerContext.put("Ordering", orderItems);
         readerContext.put("skip", select.getLimitClause().getSkip());
         readerContext.put("take", select.getLimitClause().getTake());
-        readerContext.put("writeResultsToFile", convertSelect.shouldResultBeWrittenIntoFile(select));
+        readerContext.put("writeResultsToFile", convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
         //readerContext.put("Attributes", attributes.values().stream().collect(Collectors.toList()));
         ClassGenerator generator = new ClassGenerator();
         String reader = generator.generate(this, "MemReader", "Resource", readerContext);

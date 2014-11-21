@@ -21,7 +21,6 @@ import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
 import xqt.lang.annotation.PerspectiveAnnotator;
-import xqt.lang.annotation.SelectAnnotator;
 import xqt.lang.grammar.XQtBaseVisitor;
 import xqt.lang.grammar.XQtParser;
 import xqt.lang.grammar.XQtParser.FunctionContext;
@@ -194,7 +193,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     @Override
     public Object visitSelectStatement(@NotNull XQtParser.SelectStatementContext ctx) {
-        SelectDescriptor select = SelectAnnotator.describeSelect(ctx, processModel);
+        SelectDescriptor select = SelectDescriptor.describeSelect(ctx, String.valueOf(processModel.getStatements().size()+1));
         stack.push(select); // it would be better if there were no need for data communication :-(
         // process clauses, add new objects instead of null if the corresponding visitor returns null
         SetQualifierClause setQuantifier    = new SetQualifierClause();
@@ -267,38 +266,59 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
         // -> when all the clauses are described perform the second round validation to interconnect and validate them
 
-        // when the source is a variable it is not possible to change the perspective. 
-        // So there should be an error message here if the perspective clause is present in the statement
-        if(source.getContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
-            if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
-                source.getLanguageExceptions().add(
+        switch(source.getContainer().getDataContainerType()){
+            // when the source is a variable it is not possible to have an explicitly declared perspective. 
+            // So there should be an error message here if the perspective clause is present in the statement
+            case Variable:
+                if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
+                    source.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared "
-                                    + " variable '%s' and perspective '%s'")
+                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable is present. The statement has declared variable '%s' and perspective '%s'")
                             .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
                             .setContextInfo2(projection.getPerspective().getId())
                             .setLineNumber(ctx.getStart().getLine())
                             .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
                             .build()
-                );                
-            } else { // the source variable should have already been defined as target in a previous statement
-                PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)source.getContainer()).getVariableName());
-                if(pers != null){
-                    projection.setPerspective(pers);
-                    variablesUsedAsTarget.put(((VariableContainer)source.getContainer()).getVariableName(), pers); 
-                } else {
+                    );                
+                } else { // the source variable should have already been defined as target in a previous statement
+                    PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)source.getContainer()).getVariableName());
+                    if(pers != null){
+                        projection.setPerspective(pers);
+                        // current statement would be depending on another. is that another statement is using an implicit perspective, it would be loaded lazily
+                        // so there is need to update the perspective and set the projection.isPresent to true
+                        projection.setPresent(false); 
+                        variablesUsedAsTarget.put(((VariableContainer)source.getContainer()).getVariableName(), pers); 
+                    } else {
+                        source.getLanguageExceptions().add(
+                                LanguageExceptionBuilder.builder()
+                                    .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
+                                    .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
+                                    //.setContextInfo2(projection.getPerspective().getId())
+                                    .setLineNumber(ctx.getStart().getLine())
+                                    .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                                    .build()
+                        );                      
+                    }
+                }
+                
+                break;
+            // Joined source statements should have no perspective, it is constructed by merging the perspectives of the left and right containers.    
+            case Joined:
+                if(projection.getPerspective() != null && projection.isPresent()){
                     source.getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
-                                .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
-                                //.setContextInfo2(projection.getPerspective().getId())
+                                .setMessageTemplate("It is not allowed to use a perspective when JOIN is present. The statement has declared perspective '%s'")                            
+                                .setContextInfo1(projection.getPerspective().getId())
                                 .setLineNumber(ctx.getStart().getLine())
-                                .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
                                 .build()
-                    );                      
+                    );                
                 }
-            }
-        } 
+                break;
+            default:
+                break;
+        }
+        
         // check for inline perspective and try to build it, like extractPerspective
 
         // check for implicit perspective if there is still no perspective detected/ determined
@@ -353,78 +373,78 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 //            if(target.getVariable() != null) // select may have no target
 //                target.getVariable().setStatement(selectDesc);
 
-        // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
-        MemberExpression faultyAttribute = null;
-        if(projection.getPerspective().isExplicit() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit){
-            faultyAttribute = validateAttributesInExpression(((FilterClause)filter).getPredicate(), projection.getPerspective());
-            if(faultyAttribute != null){
-                select.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                           .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
-                           .setContextInfo1(faultyAttribute.getId())
-                           .setContextInfo2(projection.getPerspective().getId())
-                           .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-                           .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-                           .build()
-                );
-        }
-        }
-        // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
-        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStartAnchor(), projection.getPerspective());
-        if(faultyAttribute != null){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-                       .setContextInfo1(faultyAttribute.getId())
-                       .setContextInfo2(projection.getPerspective().getId())
-                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-                       .build()
-            );
-        }
-
-        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStopAnchor(), projection.getPerspective());
-        if(faultyAttribute != null){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-                       .setContextInfo1(faultyAttribute.getId())
-                       .setContextInfo2(projection.getPerspective().getId())
-                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-                       .build()
-            );
-        }
-
-        // -> check whether Ids defined in the ordering clause are defined as an attribute in the associated perspective
-        for(OrderEntry orderItem : order.getOrderItems().values()){
-            if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
-                select.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-                        .setContextInfo1(orderItem.getSortKey())
-                        .setContextInfo2(projection.getPerspective().getId())
-                        .setLineNumber(orderItem.getParserContext().getStart().getLine())
-                        .setColumnNumber(orderItem.getParserContext().getStop().getCharPositionInLine())
-                       .build()
-                );
-            }
-        }
-        // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
-        for(GroupEntry groupItem : group.getGroupIds().values()){
-            if(!projection.getPerspective().getAttributes().containsKey(groupItem.getId())){
-                select.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("The group by clause refers to attribute %s "
-                             + ", which is not defined in the associated perspective ")
-                        .setContextInfo1(groupItem.getId())
-                        .setContextInfo2(projection.getPerspective().getId())
-                        .setLineNumber(groupItem.getParserContext().getStart().getLine())
-                        .setColumnNumber(groupItem.getParserContext().getStart().getCharPositionInLine())
-                       .build()
-                );
-            }
-        }
+//        // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
+//        MemberExpression faultyAttribute = null;
+//        if(projection.getPerspective().isExplicit() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit){
+//            faultyAttribute = validateAttributesInExpression(((FilterClause)filter).getPredicate(), projection.getPerspective());
+//            if(faultyAttribute != null){
+//                select.getLanguageExceptions().add(
+//                    LanguageExceptionBuilder.builder()
+//                           .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
+//                           .setContextInfo1(faultyAttribute.getId())
+//                           .setContextInfo2(projection.getPerspective().getId())
+//                           .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+//                           .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+//                           .build()
+//                );
+//            }
+//        }
+//        // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
+//        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStartAnchor(), projection.getPerspective());
+//        if(faultyAttribute != null){
+//            select.getLanguageExceptions().add(
+//                LanguageExceptionBuilder.builder()
+//                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+//                       .setContextInfo1(faultyAttribute.getId())
+//                       .setContextInfo2(projection.getPerspective().getId())
+//                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+//                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+//                       .build()
+//            );
+//        }
+//
+//        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStopAnchor(), projection.getPerspective());
+//        if(faultyAttribute != null){
+//            select.getLanguageExceptions().add(
+//                LanguageExceptionBuilder.builder()
+//                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+//                       .setContextInfo1(faultyAttribute.getId())
+//                       .setContextInfo2(projection.getPerspective().getId())
+//                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+//                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+//                       .build()
+//            );
+//        }
+//
+//        // -> check whether Ids defined in the ordering clause are defined as an attribute in the associated perspective
+//        for(OrderEntry orderItem : order.getOrderItems().values()){
+//            if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
+//                select.getLanguageExceptions().add(
+//                    LanguageExceptionBuilder.builder()
+//                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+//                        .setContextInfo1(orderItem.getSortKey())
+//                        .setContextInfo2(projection.getPerspective().getId())
+//                        .setLineNumber(orderItem.getParserContext().getStart().getLine())
+//                        .setColumnNumber(orderItem.getParserContext().getStop().getCharPositionInLine())
+//                       .build()
+//                );
+//            }
+//        }
+//        // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
+//        for(GroupEntry groupItem : group.getGroupIds().values()){
+//            if(!projection.getPerspective().getAttributes().containsKey(groupItem.getId())){
+//                select.getLanguageExceptions().add(
+//                    LanguageExceptionBuilder.builder()
+//                        .setMessageTemplate("The group by clause refers to attribute %s "
+//                             + ", which is not defined in the associated perspective ")
+//                        .setContextInfo1(groupItem.getId())
+//                        .setContextInfo2(projection.getPerspective().getId())
+//                        .setLineNumber(groupItem.getParserContext().getStart().getLine())
+//                        .setColumnNumber(groupItem.getParserContext().getStart().getCharPositionInLine())
+//                       .build()
+//                );
+//            }
+//        }
         // check postponed validations
         for(PostponedValidationRecord record: selectLateValidations){
             if(record.getContext3().toUpperCase().equals("TYPE-CHECK")){
@@ -471,6 +491,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
         select.setOrderInParent(processModel.totalElementCount());
         processModel.addStatementDescriptor(select); //its better to return to visit processmodel and add the perspective there
+        select.validate();
         stack.pop();
         
         return select;

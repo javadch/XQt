@@ -24,7 +24,7 @@ public abstract class StatementDescriptor extends ElementDescriptor {
         this.dependsUpon = dependsUpon;
     }
 
-    public Boolean isExecuted(){
+    public Boolean hasExecutionInfo(){
         return executionInfo != null;
     }
 
@@ -34,7 +34,7 @@ public abstract class StatementDescriptor extends ElementDescriptor {
     }
 
     public Boolean hasResult(){
-        return (isExecuted() && executionInfo.getVariable() != null);
+        return (hasExecutionInfo() && executionInfo.isExecuted() && executionInfo.getVariable() != null);
     }
     
     public ExecutionInfo getExecutionInfo() {

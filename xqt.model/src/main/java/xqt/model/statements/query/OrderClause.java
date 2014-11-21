@@ -32,6 +32,7 @@ public class OrderClause extends ClauseDescriptor{
 
     public void setOrderItems(Map<String, OrderEntry> orderItems) {
         this.orderItems = orderItems;
+        isPresent = this.orderItems != null && this.orderItems.size() > 0;
     }
 
 }

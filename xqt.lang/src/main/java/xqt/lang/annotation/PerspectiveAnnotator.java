@@ -16,7 +16,7 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
  * @author jfd
  */
 public class PerspectiveAnnotator {
-    
+    // its better to move these methods to PerspectiveDescriptor and PerspectiveAttributeDescriptor classes, but currently it makes the model project dependent upon the lang model!!!
     public static PerspectiveDescriptor describePerspective(XQtParser.PerspectiveContext ctx, ProcessModel processModel) {
         PerspectiveDescriptor perspective = new PerspectiveDescriptor();
         perspective.setId(ctx.name.getText());

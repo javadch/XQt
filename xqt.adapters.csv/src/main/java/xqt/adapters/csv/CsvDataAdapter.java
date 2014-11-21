@@ -51,11 +51,13 @@ import xqt.model.statements.query.SelectDescriptor;
 public class CsvDataAdapter implements DataAdapter {
 
     private ConvertSelectElement convertSelect = null;
+    private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
     private Boolean firstRowIsHeader = true;
     
     public CsvDataAdapter(){
         convertSelect = new ConvertSelectElement();
+        helper = new CsvDataAdapterHelper();
     }
 
     @Override
@@ -125,8 +127,8 @@ public class CsvDataAdapter implements DataAdapter {
             TestReader reader = new TestReader();
             if(reader != null){
                 List<TestEntity> result = reader
-                    .source(convertSelect.getCompleteSourceName(select))
-                    .target(convertSelect.getCompleteTargetName(select))
+                    .source(helper.getCompleteSourceName(select.getSourceClause()))
+                    .target(helper.getCompleteTargetName(select.getTargetClause()))
                     .bypassFirstRow(firstRowIsHeader)
                     .trimTokens(true) // default is true
                     .read();
@@ -134,7 +136,7 @@ public class CsvDataAdapter implements DataAdapter {
                 if(result != null){
                     Resultset resultSet = new Resultset(ResultsetType.Tabular);
                     resultSet.setData(result);
-                    resultSet.setSchema(prepareSchema(select));
+                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
                     return resultSet;
                 }else {
                     return null;
@@ -146,21 +148,6 @@ public class CsvDataAdapter implements DataAdapter {
         }
         return null;        
     }  
-
-    private HashSet<SchemaItem> prepareSchema(SelectDescriptor select) {
-        // pay attention to aggrgates!
-        HashSet<SchemaItem> schema = new LinkedHashSet<>();
-        // do not use the functional counterpart, as it uses the streaming method, which doe not guarantee to preserve the order
-        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
-            SchemaItem sItem = new SchemaItem();
-            sItem.setDataType(attribute.getDataType());
-            sItem.setName(attribute.getId());
-            sItem.setSystemType(TypeSystem.getTypes().get(attribute.getDataType()).getName());
-            sItem.setIndex(schema.size());            
-            schema.add(sItem); 
-        }
-        return schema;
-    }
 
     private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
         if(isSupported("select.limit")){
@@ -178,25 +165,6 @@ public class CsvDataAdapter implements DataAdapter {
         return false;
     }
 
-    private final HashMap<String, List<String>> typeConversion = new HashMap<>();
-    
-    public String getConceptualType(String physicalType){
-        Optional<Entry<String, List<String>>> entry = typeConversion.entrySet().stream()
-                .filter(p-> p.getValue().contains(physicalType.toLowerCase())).findFirst();
-        if(entry.isPresent()){
-            return entry.get().getKey();
-        }
-        else
-            return TypeSystem.Unknown;
-    }
-
-    public String getPhysicalType(String conceptualType){
-        if(typeConversion.containsKey(conceptualType)){
-            return typeConversion.get(conceptualType).get(0); // returns first physical data type by default.
-        }
-            return TypeSystem.Unknown;
-    }
-    
     private final HashMap<String, Boolean> capabilities = new HashMap<>();
     
     @Override
@@ -233,17 +201,10 @@ public class CsvDataAdapter implements DataAdapter {
         
         registerCapability("select.anchor", false);
         registerCapability("select.filter", true);
-        registerCapability("select.orderby", false);
+        registerCapability("select.orderby", true);
         registerCapability("select.groupby", false);
         registerCapability("select.limit", false);
         
-        typeConversion.put(TypeSystem.Boolean,  new ArrayList<String>() {{add("boolean");}});
-        typeConversion.put(TypeSystem.Byte,     new ArrayList<String>() {{add("byte");}});
-        typeConversion.put(TypeSystem.Date,     new ArrayList<String>() {{add("date");}});
-        typeConversion.put(TypeSystem.Integer,  new ArrayList<String>() {{add("integer");add("int");}});
-        typeConversion.put(TypeSystem.Long,     new ArrayList<String>() {{add("long");}});
-        typeConversion.put(TypeSystem.Real,     new ArrayList<String>() {{add("double");add("real");add("float");}});
-        typeConversion.put(TypeSystem.String,   new ArrayList<String>() {{add("string");add("char");}});
     }
 
     @Override
@@ -278,19 +239,24 @@ public class CsvDataAdapter implements DataAdapter {
         }
 
         try{
-            firstRowIsHeader = prepareFields(builder, select);
+            firstRowIsHeader = helper.isFirstRowHeader(select.getSourceClause());
+            builder.addFields(helper.prepareFields(select.getSourceClause(), builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
-                createPhysicalPerspective(select);
+                select.getProjectionClause().setPerspective(helper.createPhysicalPerspective(builder.getFields(), select.getProjectionClause().getPerspective(), select.getId()));
+                select.getProjectionClause().setPresent(true);
+                select.validate();
+                if(select.hasError())
+                    return;
             }
-            builder.setAttributes(convertSelect.prepareAttributes(select));
+            builder.setAttributes(convertSelect.prepareAttributes(select.getProjectionClause().getPerspective()));
             builder.getAttributes().values().stream().forEach(at -> {
-                at.internalDataType = getPhysicalType(at.conceptualDataType);
+                at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select));            
-            builder.setOrdering(convertSelect.prepareOrdering(select));
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()));            
+            builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
             prepareLimit(builder, select);
-            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select));
+            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
             select.getLanguageExceptions().add(
@@ -325,8 +291,8 @@ public class CsvDataAdapter implements DataAdapter {
                         //.quoteDelimiter("\"")
                         //.unitDelimiter("::")
                         // <====================================================
-                        .source(convertSelect.getCompleteSourceName(select))
-                        .target(convertSelect.getCompleteTargetName(select))
+                        .source(helper.getCompleteSourceName(select.getSourceClause()))
+                        .target(helper.getCompleteTargetName(select.getTargetClause()))
                         // pass th target file
                         .bypassFirstRow(firstRowIsHeader)
                         .trimTokens(true) // default is true
@@ -336,7 +302,7 @@ public class CsvDataAdapter implements DataAdapter {
                 if(result != null){
                     Resultset resultSet = new Resultset(ResultsetType.Tabular); 
                     resultSet.setData(result);
-                    resultSet.setSchema(prepareSchema(select));
+                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
                     return resultSet;
                 }else {
                     return null;
@@ -364,46 +330,5 @@ public class CsvDataAdapter implements DataAdapter {
         }
         return null;    
     }
-
-    private Boolean prepareFields(DataReaderBuilder builder, SelectDescriptor select) throws IOException {
-        switch (select.getSourceClause().getContainer().getDataContainerType()) {
-            case Single:
-                try {
-                    String fileName = convertSelect.getCompleteSourceName(select);
-                    HeaderBuilder hb = new HeaderBuilder();
-                    LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter());
-                    fields.values().stream().forEach(field -> {
-                        field.conceptualDataType = getConceptualType(field.internalDataType);
-                    });
-                    builder.addFields(fields);
-                    firstRowIsHeader = Boolean.valueOf(((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getParameters().get("firstRowIsHeader").getValue());
-                } catch (Exception ex){}
-                break;
-            case Joined:
-                break;
-            default:
-                break;
-        }
-                
-        return firstRowIsHeader;
-    }
-    
-    private void createPhysicalPerspective(SelectDescriptor select) {
-        builder.getFields().values().stream().forEach( p-> {
-            PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
-            attribute.setId(p.name);
-            attribute.setDataType(getConceptualType(p.internalDataType));
-            
-            MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
-            MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
-            
-            attribute.setForwardExpression(fwd);
-            attribute.setReverseExpression(rvs);
-            select.getProjectionClause().getPerspective().addAttribute(attribute);
-        });
-        select.getProjectionClause().getPerspective().setId("generated_Perspective_"+ select.getId());
-        select.getProjectionClause().setPresent(true);
-    }
-
 
 }

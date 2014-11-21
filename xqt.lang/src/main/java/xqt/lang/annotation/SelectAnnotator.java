@@ -14,10 +14,10 @@ import xqt.model.statements.query.SelectDescriptor;
  * @author standard
  */
 public class SelectAnnotator {
-    public static SelectDescriptor describeSelect(XQtParser.SelectStatementContext ctx, ProcessModel processModel) {
-        SelectDescriptor selectDesc = new SelectDescriptor();
-        selectDesc.setId(String.valueOf(processModel.getStatements().size()+1)); // I need a way to identify the sattements. they may have exactly same scripts
-        selectDesc.setParserContext((ParserRuleContext)ctx);
-        return selectDesc;
-    }
+//    public static SelectDescriptor describeSelect(XQtParser.SelectStatementContext ctx, ProcessModel processModel) {
+//        SelectDescriptor selectDesc = new SelectDescriptor();
+//        selectDesc.setId(String.valueOf(processModel.getStatements().size()+1)); // I need a way to identify the sattements. they may have exactly same scripts
+//        selectDesc.setParserContext((ParserRuleContext)ctx);
+//        return selectDesc;
+//    }
 }

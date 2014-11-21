@@ -43,14 +43,6 @@ public class ExecutionInfo {
         this.adapter = adapter;
     }
 
-    public Boolean isIsExecuted() {
-        return isExecuted;
-    }
-
-    public void setIsExecuted(Boolean isExecuted) {
-        this.isExecuted = isExecuted;
-    }
-
     public StatementDescriptor getStatement() {
         return statement;
     }

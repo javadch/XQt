@@ -9,11 +9,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.antlr.v4.runtime.ParserRuleContext;
 import xqt.model.ClauseDescriptor;
+import xqt.model.ProcessModel;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
+import xqt.model.expressions.BinaryExpression;
+import xqt.model.expressions.Expression;
+import xqt.model.expressions.FunctionExpression;
+import xqt.model.expressions.MemberExpression;
+import xqt.model.expressions.UnaryExpression;
+import xqt.model.expressions.ValueExpression;
 import xqt.model.statements.StatementDescriptor;
 import xqt.model.statements.StatementVisitor;
 
@@ -143,4 +152,139 @@ public class SelectDescriptor extends StatementDescriptor{
             }
         }
     }
+    
+    public static SelectDescriptor describeSelect(Object ctx, String id) {
+        SelectDescriptor selectDesc = new SelectDescriptor();
+        selectDesc.setId(id); // I need a way to identify the sattements. they may have exactly same scripts
+        selectDesc.setParserContext((ParserRuleContext)ctx);
+        return selectDesc;
+    }
+    
+    public void validate() {
+        MemberExpression faultyAttribute;
+        if(getProjectionClause().isPresent()){
+            ProjectionClause projection = getProjectionClause();
+            // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
+            if(getFilterClause().isPresent()){
+                faultyAttribute = validateAttributesInExpression(getFilterClause().getPredicate(), projection.getPerspective());
+                if(faultyAttribute != null){
+                    getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
+                               .setContextInfo1(faultyAttribute.getId())
+                               .setContextInfo2(projection.getPerspective().getId())
+                               .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                               .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                    );
+                }
+            }
+            // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
+            if(getAnchorClause().isPresent()){
+                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStartAnchor(), projection.getPerspective());
+                if(faultyAttribute != null){
+                    getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The ANCHOR START clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+                               .setContextInfo1(faultyAttribute.getId())
+                               .setContextInfo2(projection.getPerspective().getId())
+                               .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                               .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                    );
+                }
+                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStopAnchor(), projection.getPerspective());
+                if(faultyAttribute != null){
+                    getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+                               .setContextInfo1(faultyAttribute.getId())
+                               .setContextInfo2(projection.getPerspective().getId())
+                               .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                               .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                    );
+                }                
+            }
+            // -> check whether Ids defined in the ordering clause are defined as an attribute in the associated perspective
+            if(getOrderClause().isPresent()){
+                for(OrderEntry orderItem : getOrderClause().getOrderItems().values()){
+                    if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
+                        getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
+                                .setContextInfo1(orderItem.getSortKey())
+                                .setContextInfo2(projection.getPerspective().getId())
+                                .setLineNumber(orderItem.getParserContext().getStart().getLine())
+                                .setColumnNumber(orderItem.getParserContext().getStop().getCharPositionInLine())
+                               .build()
+                        );
+                    }
+                }
+            }
+    
+            // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
+            if(getGroupClause().isPresent()){
+                for(GroupEntry groupItem : getGroupClause().getGroupIds().values()){
+                    if(!projection.getPerspective().getAttributes().containsKey(groupItem.getId())){
+                        getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("The group by clause refers to attribute %s "
+                                     + ", which is not defined in the associated perspective ")
+                                .setContextInfo1(groupItem.getId())
+                                .setContextInfo2(projection.getPerspective().getId())
+                                .setLineNumber(groupItem.getParserContext().getStart().getLine())
+                                .setColumnNumber(groupItem.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                        );
+                    }
+                }
+            }
+        }
+    }
+    
+    private static MemberExpression validateAttributesInExpression(Expression expression, PerspectiveDescriptor perspective) {
+        if(expression == null){
+            return null;
+        }
+        if(expression.getClass().equals(BinaryExpression.class)){
+            BinaryExpression exp = (BinaryExpression)expression;
+            MemberExpression left = validateAttributesInExpression(exp.getLeft(), perspective);
+            if(left != null)
+                return left;
+            MemberExpression right = validateAttributesInExpression(exp.getRight(), perspective);
+            if(right != null)
+                return right;
+            return null; 
+            
+        } else if(expression.getClass().equals(FunctionExpression.class)){
+            FunctionExpression exp = (FunctionExpression)expression;
+            for (Expression p: exp.getParameters()) {
+                MemberExpression pa = validateAttributesInExpression(p, perspective);
+                if(pa != null)
+                    return pa;
+            }
+            return null;
+            
+        } else if(expression.getClass().equals(MemberExpression.class)){
+            MemberExpression exp = (MemberExpression)expression;
+            if(perspective.getAttributes().containsKey(exp.getId())){
+                return null;
+            }
+            return exp;
+            
+            
+        } else if(expression.getClass().equals(UnaryExpression.class)){
+            UnaryExpression exp = (UnaryExpression)expression;
+            MemberExpression operand = validateAttributesInExpression(exp.getOperand(), perspective);
+            if(operand != null)
+                return operand;
+            return null; 
+            
+        } else if(expression.getClass().equals(ValueExpression.class)){
+            return null;
+            
+        }
+        return null;
+    }    
 }

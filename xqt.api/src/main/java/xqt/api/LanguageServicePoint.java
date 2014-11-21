@@ -72,7 +72,7 @@ public class LanguageServicePoint {
             engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work           
         }
         catch (Exception ex) {
-            this.exceptions.add(new Exception("Could not prpare the query engine!", ex));
+            this.exceptions.add(new Exception("Could not prpare the query engine! Likely there are some errors in the process syntax.", ex));
         }       
     }
     
@@ -94,7 +94,7 @@ public class LanguageServicePoint {
             return result;
         }
         StatementDescriptor sd = getStatementDescriptor(statementId);
-        if(sd.isExecuted() && sd.getExecutionInfo().getVariable() != null)
+        if(sd.hasExecutionInfo() && sd.getExecutionInfo().getVariable() != null)
             return sd.getExecutionInfo().getVariable().getResult();
         else if(executeIfNeeded)
         {

@@ -24,6 +24,7 @@ public class AnchorClause extends ClauseDescriptor{
     public AnchorClause(){
         id = UUID.randomUUID().toString();
         type = SelectClauseType.Anchor.toString();
+        isPresent = false;
     }
 
     public Expression getStartAnchor() {
@@ -32,6 +33,10 @@ public class AnchorClause extends ClauseDescriptor{
 
     public void setStartAnchor(Expression startAnchor) {
         this.startAnchor = startAnchor;
+        if(this.startAnchor != null || this.stopAnchor != null)
+            isPresent = true;
+        else
+            isPresent = false;
     }
 
     public Expression getStopAnchor() {
@@ -40,6 +45,10 @@ public class AnchorClause extends ClauseDescriptor{
 
     public void setStopAnchor(Expression stopAnchor) {
         this.stopAnchor = stopAnchor;
+        if(this.startAnchor != null || this.stopAnchor != null)
+            isPresent = true;
+        else
+            isPresent = false;
     }
 
     
