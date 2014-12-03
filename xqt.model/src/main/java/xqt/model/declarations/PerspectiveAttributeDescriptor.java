@@ -1,5 +1,6 @@
 package xqt.model.declarations;
 
+import java.util.ArrayList;
 import xqt.model.PhraseDescriptor;
 import xqt.model.expressions.Expression;
 
@@ -15,6 +16,23 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
     private Expression forwardExpression;
     private Expression reverseExpression;
 
+    public PerspectiveAttributeDescriptor(){
+        
+    }
+    
+    public PerspectiveAttributeDescriptor(PerspectiveAttributeDescriptor original){
+        this.perspective = original.perspective;
+        this.dataType = original.dataType;
+        this.semanticKey = original.semanticKey;
+        this.forwardExpression = original.forwardExpression;
+        this.reverseExpression = original.reverseExpression;
+        this.orderInParent = original.orderInParent;
+        this.id = original.id;
+        this.type = original.type;
+        this.parserContext = original.parserContext;
+        this.setExtra(original.getExtra());
+        this.languageExceptions = new ArrayList<>(original.languageExceptions);
+    }
     public String getDataType() {
         return dataType;
     }

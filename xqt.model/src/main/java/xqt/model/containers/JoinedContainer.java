@@ -5,6 +5,8 @@
  */
 package xqt.model.containers;
 
+import xqt.model.expressions.MemberExpression;
+
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
@@ -22,8 +24,8 @@ public class JoinedContainer extends DataContainer {
     private JoinType joinType = JoinType.InnerJoin;
     private DataContainer leftContainer;
     private DataContainer rightContainer;
-    private String leftKey; // butter to be an attribute pointer
-    private String rightKey;
+    private MemberExpression leftKey; // butter to be an attribute pointer
+    private MemberExpression rightKey;
     
     public JoinedContainer(){
         this.dataContainerType = DataContainerType.Joined;
@@ -61,19 +63,19 @@ public class JoinedContainer extends DataContainer {
         this.rightContainer = rightContainer;
     }
 
-    public String getLeftKey() {
+    public MemberExpression getLeftKey() {
         return leftKey;
     }
 
-    public void setLeftKey(String leftKey) {
+    public void setLeftKey(MemberExpression leftKey) {
         this.leftKey = leftKey;
     }
 
-    public String getRightKey() {
+    public MemberExpression getRightKey() {
         return rightKey;
     }
 
-    public void setRightKey(String rightLey) {
+    public void setRightKey(MemberExpression rightLey) {
         this.rightKey = rightLey;
     }
 

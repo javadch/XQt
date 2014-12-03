@@ -48,7 +48,7 @@ public class MemberExpression extends Expression{
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }   
-    
+
     public enum MemberType {
         Simple,
         Compound

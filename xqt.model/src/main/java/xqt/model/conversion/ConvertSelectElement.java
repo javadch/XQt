@@ -51,6 +51,8 @@ public class ConvertSelectElement {
                 ad.fields = members;
                 ad.index = attributes.size();
                 ad.runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
+                ad.reference = attribute; // keeping the reference for possible further processing.
+                ad.joinSide = attribute.getExtra();
                 attributes.put(attribute.getId(), ad);
             }            
         }        
@@ -72,7 +74,7 @@ public class ConvertSelectElement {
             order.getOrderItems().entrySet().stream()
                     .map((entry) -> entry.getValue())
                     .forEach((orderItem) -> {
-                            ordering.put(orderItem.getSortKey(), orderItem.getSortOrder().toString());
+                            ordering.put(orderItem.getSortKey().getId(), orderItem.getSortOrder().toString());
             });
         }
         catch (Exception ex){            

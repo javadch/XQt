@@ -31,6 +31,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.rythmengine.internal.parser.Patterns;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
@@ -53,7 +55,6 @@ public class CsvDataAdapter implements DataAdapter {
     private ConvertSelectElement convertSelect = null;
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
-    private Boolean firstRowIsHeader = true;
     
     public CsvDataAdapter(){
         convertSelect = new ConvertSelectElement();
@@ -119,35 +120,33 @@ public class CsvDataAdapter implements DataAdapter {
         
     }
 
-//@Override
-    public Resultset run2(SelectDescriptor select) {
-        try{
-            Boolean firstRowIsHeader = true;            
-            
-            TestReader reader = new TestReader();
-            if(reader != null){
-                List<TestEntity> result = reader
-                    .source(helper.getCompleteSourceName(select.getSourceClause()))
-                    .target(helper.getCompleteTargetName(select.getTargetClause()))
-                    .bypassFirstRow(firstRowIsHeader)
-                    .trimTokens(true) // default is true
-                    .read();
-                
-                if(result != null){
-                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
-                    resultSet.setData(result);
-                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
-                    return resultSet;
-                }else {
-                    return null;
-                }
-            }
-        } catch (Exception ex1) {
-            Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
-            // throw a proper exception
-        }
-        return null;        
-    }  
+////@Override
+//    public Resultset run2(SelectDescriptor select) {
+//        try{
+//            TestReader reader = new TestReader();
+//            if(reader != null){
+//                List<TestEntity> result = reader
+//                    .source(helper.getCompleteSourceName(select.getSourceClause()))
+//                    .target(helper.getCompleteTargetName(select.getTargetClause()))
+//                    .bypassFirstRow(firstRowIsHeader)
+//                    .trimTokens(true) // default is true
+//                    .read();
+//                
+//                if(result != null){
+//                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
+//                    resultSet.setData(result);
+//                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
+//                    return resultSet;
+//                }else {
+//                    return null;
+//                }
+//            }
+//        } catch (Exception ex1) {
+//            Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
+//            // throw a proper exception
+//        }
+//        return null;        
+//    }  
 
     private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
         if(isSupported("select.limit")){
@@ -214,33 +213,16 @@ public class CsvDataAdapter implements DataAdapter {
     }
 
     private void prepareSingle(SelectDescriptor select) {
+        SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try {
-            String columnDelimiter = ((SingleContainer)select.getSourceClause().getContainer())
-                                        .getBinding().getConnection().getParameters().get("delimiter").getValue();
-            switch (columnDelimiter){ // register these cases as a map
-                case "comma": 
-                    builder.columnDelimiter(",");
-                    break;
-                case "tab": 
-                    builder.columnDelimiter("\t");
-                    break;
-                case "blank":
-                    builder.columnDelimiter(" ");
-                    break;
-                case "semicolon":
-                    builder.columnDelimiter(";");
-                    break;
-                default:
-                    builder.columnDelimiter(columnDelimiter);
-                    break;
-            }                                        
+            String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
+            builder.columnDelimiter(determineDeleimiter(columnDelimiter));
         } catch(Exception ex){
             builder.columnDelimiter(",");
         }
 
         try{
-            firstRowIsHeader = helper.isFirstRowHeader(select.getSourceClause());
-            builder.addFields(helper.prepareFields(select.getSourceClause(), builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addFields(helper.prepareFields(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
                 select.getProjectionClause().setPerspective(helper.createPhysicalPerspective(builder.getFields(), select.getProjectionClause().getPerspective(), select.getId()));
@@ -270,9 +252,102 @@ public class CsvDataAdapter implements DataAdapter {
         }
     }
 
-    //merge to single when all the called functions are container type aware! 18.11.14 Javad
+    private String determineDeleimiter(String delimiter){
+        switch (delimiter){ // register these cases as a map
+            case "comma": 
+                return(",");
+            case "tab": 
+                return("\t");
+            case "blank":
+                return(" ");
+            case "semicolon":
+                return(";");
+            default:
+                return(delimiter);
+        }                                                
+    }
+   
     private void prepareJoined(SelectDescriptor select) {
-      boolean a = true;
+        JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+        if(join.getLeftContainer().getDataContainerType() != DataContainer.DataContainerType.Single){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("A single (persistent) container is expected on the left side of the JOIN.")
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );    
+            return;
+        }
+        SingleContainer leftContainer = (SingleContainer)join.getLeftContainer();
+        if(join.getRightContainer().getDataContainerType() != DataContainer.DataContainerType.Single){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("A single (persistent) container is expected on the right side of the JOIN.")
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );    
+            return;
+        }
+        SingleContainer rightContainer = (SingleContainer)join.getRightContainer();
+
+        try {
+            String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
+            builder.leftColumnDelimiter(determineDeleimiter(columnDelimiter));                
+            columnDelimiter = rightContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
+            builder.rightColumnDelimiter(determineDeleimiter(columnDelimiter));                
+        } catch(Exception ex){
+            builder.leftColumnDelimiter(",");
+            builder.rightColumnDelimiter(",");
+        }
+
+        try{
+            builder.addLeftFields(helper.prepareFields(leftContainer, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addRightFields(helper.prepareFields(rightContainer, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+           
+            // it is sopposed that the perspective oject is set to null during the gramar visitation, if not appreaed in the join statement
+            if(leftContainer.getPerspective() == null) {
+                leftContainer.setPerspective(helper.createPhysicalPerspective(builder.getLeftFields(), null, "left_" + select.getId()));
+            }
+            if(rightContainer.getPerspective() == null) {
+                rightContainer.setPerspective(helper.createPhysicalPerspective(builder.getRightFields(), null, "right_" + select.getId()));
+            }
+            
+            // compile an implicit perspective for the whole select statement
+            select.getProjectionClause().setPerspective(
+                    helper.combinePerspective(
+                            select.getProjectionClause().getPerspective(), leftContainer.getPerspective(), rightContainer.getPerspective(), "joined_" + select.getId()
+                    ));
+            select.getProjectionClause().setPresent(true);
+            // filter, ordering, and grouping may face attribute rename issues because of the combined attributes of the left and right.
+            // they should be renamed accordingly
+            // select.repair();
+            select.validate();
+            if(select.hasError())
+                return;
+
+            builder.setAttributes(convertSelect.prepareAttributes(select.getProjectionClause().getPerspective()));
+            builder.getAttributes().values().stream().forEach(at -> {
+                at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+            });
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()));            
+            builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
+            prepareLimit(builder, select);
+            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+            select.getExecutionInfo().setSources(builder.createSources());
+        } catch (IOException ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );
+        }
     }
 
     private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
@@ -291,10 +366,10 @@ public class CsvDataAdapter implements DataAdapter {
                         //.quoteDelimiter("\"")
                         //.unitDelimiter("::")
                         // <====================================================
-                        .source(helper.getCompleteSourceName(select.getSourceClause()))
+                        .source(helper.getCompleteSourceName(((SingleContainer)select.getSourceClause().getContainer())))
                         .target(helper.getCompleteTargetName(select.getTargetClause()))
                         // pass th target file
-                        .bypassFirstRow(firstRowIsHeader)
+                        .bypassFirstRow(helper.isFirstRowHeader(((SingleContainer)select.getSourceClause().getContainer())))
                         .trimTokens(true) // default is true
                         .read();
                 

@@ -18,7 +18,6 @@ import xqt.model.ClauseDescriptor;
  * @project SciQuest
  */
 public class OrderClause extends ClauseDescriptor{
-
     private Map<String, OrderEntry> orderItems = new LinkedHashMap<>();
 
     public OrderClause(){

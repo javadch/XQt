@@ -6,6 +6,7 @@
 package xqt.model.statements.query;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import xqt.model.expressions.MemberExpression;
 
 /**
  *
@@ -13,15 +14,15 @@ import org.antlr.v4.runtime.ParserRuleContext;
  * @project SciQuest
  */
 public class GroupEntry {
-    private String id;
+    private MemberExpression key;
     private ParserRuleContext parserContext;
 
-    public String getId() {
-        return id;
+    public MemberExpression getKey() {
+        return key;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setKey(MemberExpression key) {
+        this.key = key;
     }
 
     public ParserRuleContext getParserContext() {

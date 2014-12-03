@@ -22,6 +22,7 @@ public class BaseDescriptor {
     protected String type = "";
     protected ParserRuleContext parserContext;
     protected List<LanguageException> languageExceptions = new ArrayList<>();
+    protected String extra = "";
 
     public boolean hasError(){
         return languageExceptions.size() > 0;
@@ -74,4 +75,14 @@ public class BaseDescriptor {
     public void setId(String id) {
         this.id = id;
     }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
+    }
+    
+    
 }

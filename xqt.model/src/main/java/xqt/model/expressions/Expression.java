@@ -41,7 +41,6 @@ public abstract class Expression extends ElementDescriptor {
         this.expressionType = expressionType;
     }
 
-    
     @Override
     public abstract String toString();
     

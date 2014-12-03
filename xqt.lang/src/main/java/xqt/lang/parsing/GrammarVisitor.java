@@ -228,14 +228,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             anchor.setPresent(true);
             select.getRequiredCapabilities().add("select.anchor");
         }
-        
+//        if(source.getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined)
+//            parsingContext = "Joined_source";
         FilterClause       filter           = new FilterClause();
         if(ctx.filterClause() != null){
             filter = (FilterClause)visitFilterClause(ctx.filterClause());
             filter.setPresent(true);
             select.getRequiredCapabilities().add("select.filter");
         }
-        
+//        parsingContext = "";
         OrderClause        order            = new OrderClause();
         if(ctx.orderClause() != null){
             order = (OrderClause)visitOrderClause(ctx.orderClause());
@@ -313,6 +314,10 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                                 .setColumnNumber(ctx.getStop().getCharPositionInLine())
                                 .build()
                     );                
+                } else {
+                    // if left and right perspectives are present, try combile them into the clause perspective
+                    // and then repair the filter, order, anchor, and groupig clauses.
+                    // otherwise it will be done by the adapter.
                 }
                 break;
             default:
@@ -802,8 +807,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             container.setJoinOperator(JoinedContainer.JoinOperator.LTEQ);
         }
 
-        container.setLeftKey(ctx.joinSpecification().leftKey.getText());
-        container.setRightKey(ctx.joinSpecification().rightKey.getText());
+        container.setLeftKey((MemberExpression)visit(ctx.joinSpecification().leftKey));
+        container.setRightKey((MemberExpression)visit(ctx.joinSpecification().rightKey));
         
         // process the right container
         if(ctx.rightVariable != null){
@@ -1198,13 +1203,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx) { 
-        if(parsingContext == "Inline_Perspective"){
-            Expression exp = (Expression)visit(ctx.operand);
-            //exp.setParserContext(ctx); // is set during the visit, replacing it may cause in accurate error reporting
-            return exp; 
-        }
-        MemberExpression exp = (MemberExpression)visit(ctx.operand);
-        //exp.setParserContext(ctx);
+        Expression exp = (Expression)visit(ctx.operand);
+        //exp.setParserContext(ctx); // is set during the visit, replacing it may cause in accurate error reporting
         return exp; 
     }
     
@@ -1219,17 +1219,20 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx) { 
         List<String> idComponents = new ArrayList<>();
         idComponents.add(ctx.qualifiedIdentifier().firstId.getText());
-        for(Token cmpnt: ctx.qualifiedIdentifier().otherIds){
+        ctx.qualifiedIdentifier().otherIds.stream().forEach((cmpnt) -> {
             idComponents.add(cmpnt.getText());
-        }
-        Expression exp = Expression.Invalid();
-        if(parsingContext == "Inline_Perspective"){ // check wheteher the id is reffering to a previously defined perspective attribute
+        });
+        // When in an Inline_Perspective, check wheteher the id is reffering to a previously defined perspective attribute
+        // this is because it is only this oint that it is known that the id has a quilified name. Later this id would be part of a bigger
+        // expression and validating it need traversing the whole expression tree.
+        if(parsingContext.equalsIgnoreCase("Inline_Perspective")){ 
+            Expression exp = Expression.Invalid();        
             if(idComponents.size()== 2) { // the perspective name and the attribute name
                 PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
                 PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1), null): null;
                 if(att != null){
                     //exp = Expression.CompoundMember(idComponents);
-                    exp = att.getForwardExpression(); // replace the compound member to its counterpart attribute's forward mapping
+                    exp = att.getForwardExpression(); // replace the compound member with its counterpart attribute's forward mapping
                     exp.setReturnType(att.getDataType());
                 } else { // no such a perspective / attribute
                     exp.getLanguageExceptions().add(
@@ -1252,10 +1255,13 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                         .build()
                 );
             }
-            
+            exp.setParserContext(ctx);        
+            return exp;             
         }
-        exp.setParserContext(ctx);        
-        return exp; 
+        // do the normal task
+        MemberExpression exp = Expression.CompoundMember(idComponents);
+        exp.setParserContext(ctx);
+        return exp;
     }
     @Override
     public Object visitExpression_smart(@NotNull XQtParser.Expression_smartContext ctx) { 
@@ -1268,7 +1274,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         OrderClause order = new OrderClause();
 
         for(XQtParser.SortSpecificationContext sortItemCtx: ctx.sortSpecification()){
-            String sortKey = sortItemCtx.sortKey().getText();
+            MemberExpression sortKeyExpr = (MemberExpression)visit(sortItemCtx.sortKey().idExpr());
+            String sortKey = sortKeyExpr.getId();
             if(sortKey  != null && !sortKey.isEmpty()){
                 if(order.getOrderItems().containsKey(sortKey)){ // duplicate key
                     order.getLanguageExceptions().add(
@@ -1282,7 +1289,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 }
                 else {
                     OrderEntry entry = new OrderEntry();
-                    entry.setSortKey(sortKey);
+                    entry.setSortKey(sortKeyExpr);
                     if(sortItemCtx.sortOrder() != null){
                         String sortOrderString = XQtParser.tokenNames[sortItemCtx.sortOrder().getStart().getType()];
                         entry.setSortOrder(SortOrder.valueOf(sortOrderString));
@@ -1292,7 +1299,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                         entry.setNullOrdering(NullOrdering.valueOf(nullOrder.replace(" ", "_")));
                     }
                     entry.setParserContext(sortItemCtx);
-                    order.getOrderItems().put(entry.getSortKey(), entry);
+                    order.getOrderItems().put(entry.getSortKey().getId(), entry);
                 }
             }                
         }
@@ -1326,14 +1333,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitGroupClause(@NotNull XQtParser.GroupClauseContext ctx) {
         GroupClause group = new GroupClause();
 
-        for(XQtParser.SimpleIdentifierContext groupItemCtx: ctx.simpleIdentifier()){
-            String id = groupItemCtx.getText();
-            if(id  != null && !id.isEmpty()){
-                if(group.getGroupIds().containsKey(id)){ // duplicate key
+        for(XQtParser.IdExprContext groupItemCtx: ctx.idExpr()){
+            MemberExpression groupKeyExpr = (MemberExpression)visit(groupItemCtx);
+            String groupKey = groupKeyExpr.getId();
+            if(groupKey  != null && !groupKey.isEmpty()){
+                if(group.getGroupIds().containsKey(groupKey)){ // duplicate key
                     group.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("Duplicate grouping key %s found! Line %s")
-                            .setContextInfo1(id)
+                            .setContextInfo1(groupKey)
                             .setLineNumber(ctx.getStart().getLine())
                             .setColumnNumber(ctx.getStop().getCharPositionInLine())
                             .build()
@@ -1341,9 +1349,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 }
                 else{
                     GroupEntry g = new GroupEntry();
-                    g.setId(id);
+                    g.setKey(groupKeyExpr);
                     g.setParserContext(groupItemCtx);
-                    group.getGroupIds().put(g.getId(), g);
+                    group.getGroupIds().put(g.getKey().getId(), g);
                 }
             }
         }

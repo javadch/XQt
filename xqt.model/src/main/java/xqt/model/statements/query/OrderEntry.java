@@ -6,6 +6,7 @@
 package xqt.model.statements.query;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import xqt.model.expressions.MemberExpression;
 
 /**
  *
@@ -13,17 +14,17 @@ import org.antlr.v4.runtime.ParserRuleContext;
  * @project SciQuest
  */
 public class OrderEntry {
-    private String sortKey;
+    private MemberExpression sortKey;
     private SortOrder sortOrder = SortOrder.ASC;
     private NullOrdering nullOrdering = NullOrdering.NULL_LAST;
     private ParserRuleContext parserContext;
 
 
-    public String getSortKey() {
+    public MemberExpression getSortKey() {
         return sortKey;
     }
 
-    public void setSortKey(String sortKey) {
+    public void setSortKey(MemberExpression sortKey) {
         this.sortKey = sortKey;
     }
 

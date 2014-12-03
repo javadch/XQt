@@ -12,6 +12,8 @@ import java.util.Map;
 import org.antlr.v4.runtime.ParserRuleContext;
 import xqt.model.ClauseDescriptor;
 import xqt.model.ProcessModel;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.JoinedContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
 import xqt.model.declarations.PerspectiveDescriptor;
@@ -164,9 +166,38 @@ public class SelectDescriptor extends StatementDescriptor{
         MemberExpression faultyAttribute;
         if(getProjectionClause().isPresent()){
             ProjectionClause projection = getProjectionClause();
+            // check whether the join keys are valid and present in the associated perspective
+            if(getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
+                JoinedContainer join = (JoinedContainer) getSourceClause().getContainer();
+                // it would be good to separately check the attributes with the left and right perspectives of the join, too!
+                faultyAttribute = validateAttributesInExpression(join.getLeftKey(), projection.getPerspective(), true);
+                if(faultyAttribute != null){
+                    getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The Left Join Key is reffering to attribute '%s' but it is not defined in the associated perspective '%s'.")
+                               .setContextInfo1(faultyAttribute.getId())
+                               .setContextInfo2(projection.getPerspective().getId())
+                               .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                               .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                    );
+                }
+                faultyAttribute = validateAttributesInExpression(join.getRightKey(), projection.getPerspective(), true);
+                if(faultyAttribute != null){
+                    getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                               .setMessageTemplate("The Right Join Key is reffering to attribute '%s' but it is not defined in the associated perspective '%s'.")
+                               .setContextInfo1(faultyAttribute.getId())
+                               .setContextInfo2(projection.getPerspective().getId())
+                               .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
+                               .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
+                               .build()
+                    );
+                }
+            }
             // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
             if(getFilterClause().isPresent()){
-                faultyAttribute = validateAttributesInExpression(getFilterClause().getPredicate(), projection.getPerspective());
+                faultyAttribute = validateAttributesInExpression(getFilterClause().getPredicate(), projection.getPerspective(), true);
                 if(faultyAttribute != null){
                     getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
@@ -181,7 +212,7 @@ public class SelectDescriptor extends StatementDescriptor{
             }
             // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
             if(getAnchorClause().isPresent()){
-                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStartAnchor(), projection.getPerspective());
+                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStartAnchor(), projection.getPerspective(), true);
                 if(faultyAttribute != null){
                     getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
@@ -193,7 +224,7 @@ public class SelectDescriptor extends StatementDescriptor{
                                .build()
                     );
                 }
-                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStopAnchor(), projection.getPerspective());
+                faultyAttribute = validateAttributesInExpression(getAnchorClause().getStopAnchor(), projection.getPerspective(), true);
                 if(faultyAttribute != null){
                     getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
@@ -209,11 +240,12 @@ public class SelectDescriptor extends StatementDescriptor{
             // -> check whether Ids defined in the ordering clause are defined as an attribute in the associated perspective
             if(getOrderClause().isPresent()){
                 for(OrderEntry orderItem : getOrderClause().getOrderItems().values()){
-                    if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
+                    faultyAttribute = validateAttributesInExpression(orderItem.getSortKey(), projection.getPerspective(), true);
+                    if(faultyAttribute != null){
                         getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
                                .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-                                .setContextInfo1(orderItem.getSortKey())
+                                .setContextInfo1(faultyAttribute.getId())
                                 .setContextInfo2(projection.getPerspective().getId())
                                 .setLineNumber(orderItem.getParserContext().getStart().getLine())
                                 .setColumnNumber(orderItem.getParserContext().getStop().getCharPositionInLine())
@@ -226,64 +258,75 @@ public class SelectDescriptor extends StatementDescriptor{
             // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
             if(getGroupClause().isPresent()){
                 for(GroupEntry groupItem : getGroupClause().getGroupIds().values()){
-                    if(!projection.getPerspective().getAttributes().containsKey(groupItem.getId())){
+                    faultyAttribute = validateAttributesInExpression(groupItem.getKey(), projection.getPerspective(), true);
+                    if(faultyAttribute != null){
                         getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
                                 .setMessageTemplate("The group by clause refers to attribute %s "
                                      + ", which is not defined in the associated perspective ")
-                                .setContextInfo1(groupItem.getId())
+                                .setContextInfo1(faultyAttribute.getId())
                                 .setContextInfo2(projection.getPerspective().getId())
                                 .setLineNumber(groupItem.getParserContext().getStart().getLine())
                                 .setColumnNumber(groupItem.getParserContext().getStart().getCharPositionInLine())
                                .build()
                         );
-                    }
+                    } 
                 }
             }
         }
     }
     
-    private static MemberExpression validateAttributesInExpression(Expression expression, PerspectiveDescriptor perspective) {
+    // returns the invalid member expression if found.
+    private static MemberExpression validateAttributesInExpression(Expression expression, PerspectiveDescriptor perspective, boolean repair) {
         if(expression == null){
             return null;
         }
-        if(expression.getClass().equals(BinaryExpression.class)){
+        if(expression instanceof BinaryExpression){
             BinaryExpression exp = (BinaryExpression)expression;
-            MemberExpression left = validateAttributesInExpression(exp.getLeft(), perspective);
+            MemberExpression left = validateAttributesInExpression(exp.getLeft(), perspective, repair);
             if(left != null)
                 return left;
-            MemberExpression right = validateAttributesInExpression(exp.getRight(), perspective);
+            MemberExpression right = validateAttributesInExpression(exp.getRight(), perspective, repair);
             if(right != null)
                 return right;
             return null; 
             
-        } else if(expression.getClass().equals(FunctionExpression.class)){
+        } else if(expression instanceof FunctionExpression){
             FunctionExpression exp = (FunctionExpression)expression;
             for (Expression p: exp.getParameters()) {
-                MemberExpression pa = validateAttributesInExpression(p, perspective);
+                MemberExpression pa = validateAttributesInExpression(p, perspective, repair);
                 if(pa != null)
                     return pa;
             }
             return null;
             
-        } else if(expression.getClass().equals(MemberExpression.class)){
+        } else if(expression instanceof MemberExpression){
             MemberExpression exp = (MemberExpression)expression;
+            if(repair){
+                // component 0: is the literal "L" or "R". component 1: is the actual attribute name
+                if(exp.getMemberType() == MemberExpression.MemberType.Compound 
+                    && perspective.getAttributes().containsKey(exp.getComponents().get(0) + "_" + exp.getComponents().get(1))){
+                    // changing the id of the expression to match the perspective attribute.
+                    // the id of the member does not follow x.y.z pattern anymore
+                    exp.setId(perspective.getAttributes().get(exp.getComponents().get(0) + "_" + exp.getComponents().get(1)).getId());
+                    return null;
+                }
+            } 
             if(perspective.getAttributes().containsKey(exp.getId())){
                 return null;
             }
             return exp;
             
             
-        } else if(expression.getClass().equals(UnaryExpression.class)){
+        } else if(expression instanceof UnaryExpression){
             UnaryExpression exp = (UnaryExpression)expression;
-            MemberExpression operand = validateAttributesInExpression(exp.getOperand(), perspective);
+            MemberExpression operand = validateAttributesInExpression(exp.getOperand(), perspective, repair);
             if(operand != null)
                 return operand;
             return null; 
             
         } else if(expression.getClass().equals(ValueExpression.class)){
-            return null;
-            
+            return null;            
         }
         return null;
     }    
