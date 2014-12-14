@@ -33,6 +33,7 @@ import org.rythmengine.internal.parser.Patterns;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
+import xqt.model.containers.JoinedContainer.JoinOperator;
 import xqt.model.containers.SingleContainer;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
@@ -55,10 +56,17 @@ public class CsvDataAdapter implements DataAdapter {
     private ConvertSelectElement convertSelect = null;
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
+    private Map<JoinOperator, String> runtimeJoinOperators = new HashMap<>();
     
     public CsvDataAdapter(){
         convertSelect = new ConvertSelectElement();
         helper = new CsvDataAdapterHelper();
+        runtimeJoinOperators.put(JoinOperator.EQ, "==");
+        runtimeJoinOperators.put(JoinOperator.NotEQ, "!=");
+        runtimeJoinOperators.put(JoinOperator.GT, ">");
+        runtimeJoinOperators.put(JoinOperator.GTEQ, ">=");
+        runtimeJoinOperators.put(JoinOperator.LT, "<");
+        runtimeJoinOperators.put(JoinOperator.LTEQ, "<=");
     }
 
     @Override
@@ -67,15 +75,16 @@ public class CsvDataAdapter implements DataAdapter {
             case Single:
                 return runForSingleContainer(select, context);
             case Joined:
-                TestReaderJoin joinedReader = new TestReaderJoin();
-                {
-                    try {
-                        List<TestEntityJoin> result = joinedReader.read();
-                    } catch (IOException ex) {
-                        Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                return null;
+                return runForJoinedContainer(select, context);
+//                TestReaderJoin joinedReader = new TestReaderJoin();
+//                {
+//                    try {
+//                        List<TestEntityJoin> result = joinedReader.read();
+//                    } catch (IOException ex) {
+//                        Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                }
+//                return null;
             default:
                 return null;
         }
@@ -235,7 +244,7 @@ public class CsvDataAdapter implements DataAdapter {
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()));            
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()), false);            
             builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
             prepareLimit(builder, select);
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
@@ -333,10 +342,16 @@ public class CsvDataAdapter implements DataAdapter {
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()));            
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);            
             builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
             prepareLimit(builder, select);
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+
+            builder.setJoinType(join.getJoinType().toString());
+            builder.setJoinOperator(runtimeJoinOperators.get(join.getJoinOperator()));
+            builder.setLeftJoinKey(join.getLeftKey().getId());
+            builder.setRightJoinKey(join.getRightKey().getId());
+            
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
             select.getLanguageExceptions().add(
@@ -406,4 +421,52 @@ public class CsvDataAdapter implements DataAdapter {
         return null;    
     }
 
+    private Resultset runForJoinedContainer(SelectDescriptor select, Object context) {
+        try{
+            Class entryPoint = select.getExecutionInfo().getSources().values().stream()
+                    .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+            JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+            DataReader<Object> reader = builder.build(entryPoint);
+            if(reader != null){
+                List<Object> result = reader
+                    .source(helper.getCompleteSourceName((SingleContainer)join.getLeftContainer()))
+                    .sourceRight(helper.getCompleteSourceName((SingleContainer)join.getRightContainer()))    
+                    .target(helper.getCompleteTargetName(select.getTargetClause()))
+                    // pass th target file
+                    .bypassFirstRow(helper.isFirstRowHeader((SingleContainer)join.getLeftContainer()))
+                    .bypassFirstRowRight(helper.isFirstRowHeader((SingleContainer)join.getRightContainer()))
+                    .trimTokens(true) // default is true
+                    .read();
+                
+                if(result != null){
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular); 
+                    resultSet.setData(result);
+                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
+                    return resultSet;
+                }else {
+                    return null;
+                }
+            }
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
+                    .build()
+            );            
+        }
+        catch (IOException ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+            );                        
+        }
+        return null;    
+    }
 }

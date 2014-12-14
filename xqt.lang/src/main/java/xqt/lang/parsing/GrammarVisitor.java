@@ -791,19 +791,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             }
         }
         // process the join operation and keys
-        if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().EQ().getText())){
+        if(ctx.joinSpecification().EQ() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().EQ().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.EQ);
-        } else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().NotEQ().getText())){
+        } else if(ctx.joinSpecification().NotEQ() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().NotEQ().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.NotEQ);
-        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GT().getText())){
+        }  else if(ctx.joinSpecification().GT() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GT().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.GT);
-        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GTEQ().getText())){
+        }  else if(ctx.joinSpecification().GTEQ() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().GTEQ().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.GTEQ);
-        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LIKE().getText())){
-            container.setJoinOperator(JoinedContainer.JoinOperator.LIKE);
-        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LT().getText())){
+        }  else if(ctx.joinSpecification().LT() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LT().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.LT);
-        }  else if(ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LTEQ().getText())){
+        }  else if(ctx.joinSpecification().LTEQ() != null && ctx.joinSpecification().op.getText().equalsIgnoreCase(ctx.joinSpecification().LTEQ().getText())){
             container.setJoinOperator(JoinedContainer.JoinOperator.LTEQ);
         }
 

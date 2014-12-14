@@ -72,7 +72,7 @@ public class LanguageServicePoint {
             engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work           
         }
         catch (Exception ex) {
-            this.exceptions.add(new Exception("Could not prrpare the query engine! Likely there are some errors in the process syntax.", ex));
+            this.exceptions.add(new Exception("Could not prepare the query engine! Likely there are some errors in the process syntax.", ex));
         }       
     }
     

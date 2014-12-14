@@ -13,7 +13,7 @@ import xqt.model.expressions.MemberExpression;
  */
 public class JoinedContainer extends DataContainer {
     public enum JoinOperator {
-        EQ, NotEQ, GT, GTEQ,  LT, LTEQ, LIKE
+        EQ, NotEQ, GT, GTEQ,  LT, LTEQ
     }
     
     public enum JoinType {
