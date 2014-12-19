@@ -15,7 +15,8 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
     private String semanticKey;
     private Expression forwardExpression;
     private Expression reverseExpression;
-
+    private PerspectiveAttributeDescriptor reference;
+    
     public PerspectiveAttributeDescriptor(){
         
     }
@@ -31,8 +32,14 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
         this.type = original.type;
         this.parserContext = original.parserContext;
         this.setExtra(original.getExtra());
+        this.reference = original;
         this.languageExceptions = new ArrayList<>(original.languageExceptions);
     }
+
+    public PerspectiveAttributeDescriptor getReference() {
+        return reference;
+    }
+        
     public String getDataType() {
         return dataType;
     }

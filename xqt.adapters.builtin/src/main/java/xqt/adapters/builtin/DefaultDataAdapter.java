@@ -17,6 +17,7 @@ import com.jidesoft.grid.SortableTable;
 import com.jidesoft.range.NumericRange;
 import com.jidesoft.range.Range;
 import com.vaiona.commons.compilation.InMemorySourceFile;
+import com.vaiona.commons.data.AttributeInfo;
 import java.awt.Color;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -33,12 +34,16 @@ import java.util.stream.Collectors;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.containers.DataContainer;
+import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.PlotContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.containers.VariableContainer;
+import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.SelectDescriptor;
 
@@ -49,6 +54,18 @@ import xqt.model.statements.query.SelectDescriptor;
 public class DefaultDataAdapter implements DataAdapter{
   
     private DataReaderBuilder builder = null;
+    private ConvertSelectElement convertSelect = null;
+    private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
+    
+    public DefaultDataAdapter(){
+        convertSelect = new ConvertSelectElement();
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.EQ, "==");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEQ, "!=");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.GT, ">");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.GTEQ, ">=");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
+    }
     
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
@@ -56,6 +73,8 @@ public class DefaultDataAdapter implements DataAdapter{
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Variable:
                 return runForSingleContainer(select, memory);
+            case Joined:
+                return runForJoinedContainer(select, memory);
             default:
                 return null;
         }
@@ -78,55 +97,23 @@ public class DefaultDataAdapter implements DataAdapter{
     }
 
     @Override
-    public void prepare(SelectDescriptor select) {
+    public void prepare(SelectDescriptor select, Object context) {
         builder = new DataReaderBuilder();
         switch (select.getSourceClause().getContainer().getDataContainerType()){
             case Plot:{
                 break;
             }
             case Joined:
+                prepareJoined(select, context);
                 break;
             case Single:
                 break;
             case Variable:{
-                try {
-                    // the statement should depend on another, because the source is a variable!
-                    String sourceRowType = "";
-                    SelectDescriptor master = select;
-                    do{ // the source maybe associated to the direct parent or one of the upper level ancestors.
-                        master = master.getDependsUpon()!= null? (SelectDescriptor)master.getDependsUpon(): null;
-                        if(master != null){
-                            Optional<InMemorySourceFile> source = master.getExecutionInfo().getSources().values().stream()
-                                .filter(p->p.getFullName().endsWith("Entity")).findFirst();
-                            if(source.isPresent()){
-                                sourceRowType = source.get().getFullName();
-                            }
-                        }                        
-                    } while(master != null && sourceRowType.isEmpty());   
-                    if(sourceRowType.isEmpty())
-                        throw new Exception("No dependecy trace is found"); // is caught by the next catch block
-                    LinkedHashMap<String, InMemorySourceFile> rs = builder.createSources(select, sourceRowType);
-                    select.getExecutionInfo().setSources(rs);
-
-                    //DataReader reader = createReader(select, sourceRowType);
-                    //List<Object> result = reader.read(source);
-                    //resultSet.setData(result);
-                    //resultSet.setSchema(sourceData.getResult().getSchema());
-                } catch (Exception ex) {
-                    // return a language exception
-                    select.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("A depenedent statement is encountered but no dependency information found!")
-                            .setContextInfo1(select.getId())
-                            .setLineNumber(select.getParserContext().getStart().getLine())
-                            .setColumnNumber(-1)
-                            .build()
-                        );                        
-                }
+                prepareVariable(select);
             }
-        }       
-    }    
-    
+        }
+    }       
+
     private HashMap<String, Boolean> capabilities = new HashMap<>();
     
     @Override
@@ -174,15 +161,7 @@ public class DefaultDataAdapter implements DataAdapter{
 
     private Resultset internalRun(SelectDescriptor select, Variable sourceVariable) {
         try{
-            // check whether the data is tabular!
-            // do something with the source data using the select definition
             List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
-            //Stream<Object> stream = source.stream();
-
-            //// END OF READER AREA
-
-            //// MAPPER AREA: maps the result of the reading part, which is a collection, to the specified output type. it can be a plot or a collection with another row object.
-            //// maybe they get mixed over time :-(
             switch (select.getTargetClause().getContainer().getDataContainerType()){
                 case Plot:{
                     Resultset resultSet = new Resultset(ResultsetType.Image); 
@@ -195,75 +174,15 @@ public class DefaultDataAdapter implements DataAdapter{
                         resultSet.setData(null);
                         resultSet.setSchema(sourceVariable.getResult().getSchema());
                     } else {
-                        Class entryPoint = select.getExecutionInfo().getSources().values().stream()
-                            .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+                        Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
                         DataReader reader = builder.build(entryPoint);
-                        List<Object> result = reader.read(source);
+                        List<Object> result = reader.read(source, null);
                         resultSet.setSchema(sourceVariable.getResult().getSchema()); 
                         // use the plot clause (model) in order to build the chart's data model
-                        DefaultChartModel modelA = new DefaultChartModel("ModelA"); 
+                        //DefaultChartModel modelA = new DefaultChartModel("ModelA"); 
                         //DefaultTableModel b = new DefaultTableModel();   
-                        // investigate using a table model and a TableToChartAdapter object ...
-                        Object [][] data = null;
-                        List<Field> axes = new ArrayList<>();
-                        if (result != null && result.size() > 0) {
-                            Class<?> clazz = result.get(0).getClass();
-                            //Field x = null;
-                            //Field y = null;
-                            
-                            try {
-                                 //x = clazz.getField(plotModel.getHax());
-                                 //y = clazz.getField(plotModel.getVaxes().get(0));
-                                 axes.add(clazz.getField(plotModel.getHax()));
-                                 for(String yAx: plotModel.getVaxes()) {
-                                     axes.add(clazz.getField(yAx));
-                                 };                                 
-                            } catch (NoSuchFieldException | SecurityException ex) {
-                                Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                            data = new Object[(int)result.stream().count()][axes.size()];
-                            int rowCounter = 0;
-                            for(Object row: result) {  
-                                int columnCounter = 0;
-                                for(Field axField: axes){
-                                    //Object xValue = x.get(row); // convert the values to proper types and also choose proper point type
-                                    //Object yValue = y.get(row);  
-                                    Object cellValue = axField.get(row);
-                                    data[rowCounter][columnCounter++] = cellValue;
-                                    //modelA.addPoint((double)xValue, (double)yValue); 
-                                }
-                                rowCounter++;
-                            }
-                        }
-                        //modelA.addPoint(102, 135);
-                        //modelA.addPoint(170, 200);
-                        TableModel tableModel = new DefaultTableModel(data, axes.stream().map(p->p.getName()).collect(Collectors.toList()).toArray());
-                        SortableTable table = new SortableTable(tableModel);
-                        String vLabel = plotModel.getVaxes().stream().map(p->p).collect(Collectors.joining(", "));
-                        Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
-                        xAxis.setRange(0, 400);
-                        Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel()));
-                        yAxis.setRange(0, 200);
-                        
-                        Chart chart = new Chart(); 
-                        chart.setXAxis(xAxis);
-                        chart.setYAxis(yAxis);
-
-                        
-                        List<TableToChartAdapter> adapters = new ArrayList<>();
-                        int adapterCounter = 0;
-                        List<Color> colorPallet = getDrawingColorPallet((int)axes.stream().count()-1);
-                        for(Field ax: axes.stream().skip(1).collect(Collectors.toList())){ // the first filed is the X variable
-                            TableToChartAdapter adapter = new TableToChartAdapter(ax.getName() + "Series", table.getModel());
-                            ChartStyle style = new ChartStyle(colorPallet.get(adapterCounter++), false, true); 
-                            adapter.setXColumn(0);
-                            adapter.setYColumn(adapterCounter);  // the first y column starts from 1, which is incremented at the color setting line                          
-                            adapters.add(adapter);
-                            chart.addModel(adapter, style); // and the style
-                        }
-                        updateXRange(adapters, plotModel.gethLabel(), chart);
-                        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);
-    
+                        // investigate using a table model and a TableToChartAdapter object ...            
+                        Chart chart = createChart(result, plotModel);
                         //ChartStyle styleA = new ChartStyle(Color.blue, false, true); 
                         //chart.addModel(modelA, styleA); 
                         resultSet.setData(chart);
@@ -281,10 +200,9 @@ public class DefaultDataAdapter implements DataAdapter{
                         resultSet.setData(null);
                         resultSet.setSchema(sourceVariable.getResult().getSchema());
                     } else {
-                        Class entryPoint = select.getExecutionInfo().getSources().values().stream()
-                            .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+                        Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
                         DataReader reader = builder.build(entryPoint);
-                        List<Object> result = reader.read(source);
+                        List<Object> result = reader.read(source, null);
                         resultSet.setData(result);
                         resultSet.setSchema(sourceVariable.getResult().getSchema());                               
                     }
@@ -302,29 +220,107 @@ public class DefaultDataAdapter implements DataAdapter{
     @SuppressWarnings("unchecked")
     private void updateXRange(List<TableToChartAdapter> adapters, String hLabel, Chart chart) {
         // check the axis variable type and based on the type decise on the Axis type: Category, Numeric, etc.
-        Range<?> xRange = (Range) adapters.get(0).getXRange();
-        Axis xAxis = new NumericAxis(xRange.minimum()*0.95, xRange.maximum()*1.05, hLabel);
-        chart.setXAxis(xAxis);
+        Axis xAxis = chart.getXAxis();
+        try{
+            Range<?> xRange = (Range) adapters.get(0).getXRange();
+            xAxis = new NumericAxis(xRange.minimum()*0.95, xRange.maximum()*1.05, hLabel);
+            chart.setXAxis(xAxis);
+        } catch (Exception ex){
+            // the range may contain invlid data, usually null values
+            xAxis.setLabel(xAxis.getLabel().getLabel() + " -> Erroneous data");
+        }
     }
 
     @SuppressWarnings("unchecked")
     private void updateYRange(List<TableToChartAdapter> adapters, String vLabel, Chart chart) {
-        NumericRange nRange = null;
-        for(TableToChartAdapter adapter: adapters){
-            Range<?> yRange = adapter.getYRange();
-            nRange = NumericRange.union((NumericRange) nRange, (NumericRange) yRange);
-        }        
-        Axis yAxis = null;// chart.getYAxis();
-        if (nRange.getMin() == nRange.getMax()) {
-            // Deal with the special case of only one point
-            yAxis = new NumericAxis(nRange.getMin(), nRange.getMax() + 1, vLabel);
+        Axis yAxis = chart.getYAxis();
+        try{
+            NumericRange nRange = null;
+            for(TableToChartAdapter adapter: adapters){
+                Range<?> yRange = adapter.getYRange();
+                nRange = NumericRange.union((NumericRange) nRange, (NumericRange) yRange);
+            }        
+            if (nRange.getMin() == nRange.getMax()) {
+                // Deal with the special case of only one point
+                yAxis = new NumericAxis(nRange.getMin(), nRange.getMax() + 1, vLabel);
+            }
+            else {
+                yAxis = new NumericAxis(nRange.minimum()*0.95, nRange.maximum()*1.05, vLabel);
+            }
+            chart.setYAxis(yAxis);
+        } catch (Exception ex){
+            // the range may contain invlid data, usually null values
+            yAxis.setLabel(yAxis.getLabel().getLabel() + " -> Erroneous data");
         }
-        else {
-            yAxis = new NumericAxis(nRange.minimum()*0.95, nRange.maximum()*1.05, vLabel);
-        }
-        chart.setYAxis(yAxis);
     }
 
+    private Chart createChart( List<Object> result, PlotContainer plotModel){
+        Object [][] data = null;
+        List<Field> axes = new ArrayList<>();
+        if (result != null && result.size() > 0) {
+            Class<?> clazz = result.get(0).getClass();
+            //Field x = null;
+            //Field y = null;
+
+            try {
+                 //x = clazz.getField(plotModel.getHax());
+                 //y = clazz.getField(plotModel.getVaxes().get(0));
+                 axes.add(clazz.getField(plotModel.getHax()));
+                 for(String yAx: plotModel.getVaxes()) {
+                     axes.add(clazz.getField(yAx));
+                 }                              
+            } catch (NoSuchFieldException | SecurityException ex) {
+                Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            data = new Object[(int)result.stream().count()][axes.size()];
+            int rowCounter = 0;
+            for(Object row: result) {  
+                int columnCounter = 0;
+                for(Field axField: axes){
+                    try {
+                        //Object xValue = x.get(row); // convert the values to proper types and also choose proper point type
+                        //Object yValue = y.get(row);
+                        Object cellValue = axField.get(row);
+                        data[rowCounter][columnCounter++] = cellValue;
+                        //modelA.addPoint((double)xValue, (double)yValue); 
+                    } catch (IllegalArgumentException | IllegalAccessException ex) {
+                        // report an error
+                    }
+                }
+                rowCounter++;
+            }
+        }
+        //modelA.addPoint(102, 135);
+        //modelA.addPoint(170, 200);
+        TableModel tableModel = new DefaultTableModel(data, axes.stream().map(p->p.getName()).collect(Collectors.toList()).toArray());
+        SortableTable table = new SortableTable(tableModel);
+        String vLabel = plotModel.getVaxes().stream().map(p->p).collect(Collectors.joining(", "));
+        Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
+        xAxis.setRange(0, 400);
+        Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel()));
+        yAxis.setRange(0, 200);
+
+        Chart chart = new Chart(); 
+        chart.setXAxis(xAxis);
+        chart.setYAxis(yAxis);
+
+
+        List<TableToChartAdapter> adapters = new ArrayList<>();
+        int adapterCounter = 0;
+        List<Color> colorPallet = getDrawingColorPallet((int)axes.stream().count()-1);
+        for(Field ax: axes.stream().skip(1).collect(Collectors.toList())){ // the first filed is the X variable
+            TableToChartAdapter adapter = new TableToChartAdapter(ax.getName() + "Series", table.getModel());
+            ChartStyle style = new ChartStyle(colorPallet.get(adapterCounter++), false, true); 
+            adapter.setXColumn(0);
+            adapter.setYColumn(adapterCounter);  // the first y column starts from 1, which is incremented at the color setting line                          
+            adapters.add(adapter);
+            chart.addModel(adapter, style); // and the style
+        }
+        updateXRange(adapters, plotModel.gethLabel(), chart);
+        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);        
+        return chart;
+    }
+    
     private List<Color> getDrawingColorPallet(int palletSize) {
         List<Color> pallet = new ArrayList<>(palletSize);
         for (int i = 0; i < palletSize; i++)
@@ -339,4 +335,166 @@ public class DefaultDataAdapter implements DataAdapter{
         Resultset resultSet = internalRun(select, sourceVariable);
         return resultSet;
     }
+
+    private Resultset runForJoinedContainer(SelectDescriptor select, Map<String, Variable> memory){
+        try {
+            JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+            
+            Variable leftVariable = (Variable)memory.get(((VariableContainer)join.getLeftContainer()).getVariableName());
+            List<Object> leftSource = (List<Object>)leftVariable.getResult().getTabularData();
+            
+            Variable rightVariable = (Variable)memory.get(((VariableContainer)join.getRightContainer()).getVariableName());
+            List<Object> rightSource = (List<Object>)rightVariable.getResult().getTabularData();
+            
+            Resultset resultSet = new Resultset(ResultsetType.Tabular);
+            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
+            DataReader reader = builder.build(entryPoint);
+            List<Object> result;
+            result = reader.read(leftSource, rightSource);          
+            resultSet.setData(result);
+            resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
+            //resultSet.setSchema(prepareSchema(select));
+            return resultSet;
+       } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+            
+       }
+       return null;
+    }
+
+    private void prepareJoined(SelectDescriptor select, Object context) {
+        JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+        if(join.getLeftContainer().getDataContainerType() != DataContainer.DataContainerType.Variable){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("A variable is expected on the left side of the JOIN.")
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );    
+            return;
+        }
+        VariableContainer leftContainer = (VariableContainer)join.getLeftContainer();
+        if(join.getRightContainer().getDataContainerType() != DataContainer.DataContainerType.Variable){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("A variable is expected on the right side of the JOIN.")
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );    
+            return;
+        }
+        VariableContainer rightContainer = (VariableContainer)join.getRightContainer();
+
+        if(leftContainer.getPerspective() == null) {
+            // error
+        }
+        if(rightContainer.getPerspective() == null) {
+            // error
+        }
+
+        // create an implicit perspective for the whole select statement
+        select.getProjectionClause().setPerspective(
+                PerspectiveDescriptor.combinePerspective(
+                        select.getProjectionClause().getPerspective(), leftContainer.getPerspective(), rightContainer.getPerspective(), "joined_" + select.getId()
+                ));
+        select.getProjectionClause().setPresent(true);
+        // filter, ordering, and grouping may face attribute rename issues because of the combined attributes of the left and right.
+        // they should be renamed accordingly
+        // select.repair();
+        select.validate();
+        if(select.hasError())
+            return;
+        
+        builder.leftClassName(select.getDependsUpon().getEntityType().getFullName());
+        builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
+        
+        builder.readerResourceName("MemReader");
+        builder.entityResourceName("MemJoinedEntity");        
+        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+        builder.addAttributes(attributes);
+//        builder.getAttributes().values().stream().forEach(at -> {
+//            at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+//        });
+        builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);            
+        Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+        for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                if(attributes.containsKey(entry.getKey())){
+                    orderItems.put(attributes.get(entry.getKey()), entry.getValue());
+                }            
+        }
+        builder.orderBy(orderItems);
+        prepareLimit(builder, select);
+        builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+
+        builder.joinType(join.getJoinType().toString())
+                .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()))
+                .leftJoinKey(join.getLeftKey().getId())
+                .rightJoinKey(join.getRightKey().getId());
+
+        try {
+            select.getExecutionInfo().setSources(builder.createSources());
+        } catch (IOException ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );
+        }            
+    }
+
+    private void prepareVariable(SelectDescriptor select) {
+        try {
+            // the statement should depend on another, because the source is a variable!
+            String sourceRowType = select.getEntityType().getFullName();                    
+            if(sourceRowType.isEmpty())
+                throw new Exception("No dependecy trace is found"); // is caught by the next catch block
+            
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);
+            builder.addAttributes(attributes);
+            // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
+            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+            for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                    if(attributes.containsKey(entry.getKey())){
+                        orderItems.put(attributes.get(entry.getKey()), entry.getValue());
+                    }            
+            }
+            builder.sourceRowType(sourceRowType)
+                .readerResourceName("MemReader")
+                .entityResourceName("")
+                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause()), select.getProjectionClause().getPerspective()), false)
+                .orderBy(orderItems)
+                .writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+                ;
+            prepareLimit(builder, select);
+            select.getExecutionInfo().setSources(builder.createSources());
+        } catch (Exception ex) {
+            // return a language exception
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("A depenedent statement is found but no dependency information found!")
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+            );                        
+        }
+    }
+    
+    private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
+        if(isSupported("select.limit")){
+            builder.skip(select.getLimitClause().getSkip())
+                   .take(select.getLimitClause().getTake());
+        }
+        else{
+            builder.skip(-1)
+                   .take(-1);
+        }
+    }
+    
 }

@@ -5,12 +5,16 @@
  */
 package xqt.model.containers;
 
+import xqt.model.declarations.PerspectiveAttributeDescriptor;
+import xqt.model.declarations.PerspectiveDescriptor;
+
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
  */
 public class VariableContainer extends DataContainer{
     protected String variableName;
+    protected PerspectiveDescriptor perspective;
     
     public VariableContainer(){
         this.dataContainerType = DataContainerType.Variable;
@@ -29,5 +33,13 @@ public class VariableContainer extends DataContainer{
         this.variableName = variableName;
         if(dataContainerType == DataContainerType.Variable || dataContainerType == DataContainerType.Plot)
             this.id = variableName;
-    }                
+    }     
+
+    public PerspectiveDescriptor getPerspective() {
+        return perspective;
+    }
+
+    public void setPerspective(PerspectiveDescriptor perspective) {
+        this.perspective = perspective;
+    }
 }

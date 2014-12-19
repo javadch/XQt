@@ -11,20 +11,16 @@ import com.vaiona.csv.reader.HeaderBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
-import xqt.model.data.SchemaItem;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.MemberExpression;
-import xqt.model.statements.query.SourceClause;
 import xqt.model.statements.query.TargetClause;
 
 /**
@@ -36,13 +32,13 @@ public class CsvDataAdapterHelper {
     private static final HashMap<String, List<String>> typeConversion = new HashMap<>();
     
     static {
-        typeConversion.put(TypeSystem.Boolean,  new ArrayList<String>() {{add("boolean");}});
-        typeConversion.put(TypeSystem.Byte,     new ArrayList<String>() {{add("byte");}});
-        typeConversion.put(TypeSystem.Date,     new ArrayList<String>() {{add("date");}});
-        typeConversion.put(TypeSystem.Integer,  new ArrayList<String>() {{add("integer");add("int");}});
-        typeConversion.put(TypeSystem.Long,     new ArrayList<String>() {{add("long");}});
-        typeConversion.put(TypeSystem.Real,     new ArrayList<String>() {{add("double");add("real");add("float");}});
-        typeConversion.put(TypeSystem.String,   new ArrayList<String>() {{add("string");add("char");}});        
+        typeConversion.put(TypeSystem.TypeName.Boolean,  new ArrayList<String>() {{add("boolean");}});
+        typeConversion.put(TypeSystem.TypeName.Byte,     new ArrayList<String>() {{add("byte");}});
+        typeConversion.put(TypeSystem.TypeName.Date,     new ArrayList<String>() {{add("date");}});
+        typeConversion.put(TypeSystem.TypeName.Integer,  new ArrayList<String>() {{add("integer");add("int");}});
+        typeConversion.put(TypeSystem.TypeName.Long,     new ArrayList<String>() {{add("long");}});
+        typeConversion.put(TypeSystem.TypeName.Real,     new ArrayList<String>() {{add("double");add("real");add("float");}});
+        typeConversion.put(TypeSystem.TypeName.String,   new ArrayList<String>() {{add("string");add("char");}});        
     }
     
     public String getConceptualType(String physicalType){
@@ -52,14 +48,14 @@ public class CsvDataAdapterHelper {
             return entry.get().getKey();
         }
         else
-            return TypeSystem.Unknown;
+            return TypeSystem.TypeName.Unknown;
     }
 
     public String getPhysicalType(String conceptualType){
         if(typeConversion.containsKey(conceptualType)){
             return typeConversion.get(conceptualType).get(0); // returns first physical data type by default.
         }
-            return TypeSystem.Unknown;
+            return TypeSystem.TypeName.Unknown;
     }
     
 
@@ -141,45 +137,6 @@ public class CsvDataAdapterHelper {
         return perspective;
     }
     
-    PerspectiveDescriptor combinePerspective(PerspectiveDescriptor perspective, PerspectiveDescriptor left, PerspectiveDescriptor right, String id) {
-        if(perspective == null){
-            perspective = new PerspectiveDescriptor();
-            perspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
-        }
-        perspective.setId("generated_Perspective_"+ id);
-        left.getAttributes().values().stream().forEach(p-> p.setExtra("L"));
-        perspective.getAttributes().putAll(left.getAttributes());
-        for (Map.Entry<String, PerspectiveAttributeDescriptor> entrySet : right.getAttributes().entrySet()) {
-            String key = entrySet.getKey();
-            PerspectiveAttributeDescriptor value = entrySet.getValue();
-            // if the name already exists in the combined perspective, the name is prefixed by "R_" because it happens to the right side perspectives.
-            // all the attributes are linked to their origins, except the renamed ones. which are somehow trackable by their names
-            // the right side attributes are cloned to prevent attribute interlinking when the right and left sides are using one (same) perspective
-            PerspectiveAttributeDescriptor renamedAttribute = new PerspectiveAttributeDescriptor(value);
-            renamedAttribute.setExtra("R"); // the attribute is marked, so that later during the repair process, it is possile to rename the referring attributes
-            if(perspective.getAttributes().containsKey(key)){
-                renamedAttribute.setId("R_" + renamedAttribute.getId());
-            }
-            perspective.addAttribute(renamedAttribute);
-        }        
-        return perspective;
-    }
-
-    public HashSet<SchemaItem> prepareSchema(PerspectiveDescriptor perspective) {
-        // pay attention to aggrgates!
-        HashSet<SchemaItem> schema = new LinkedHashSet<>();
-        // do not use the functional counterpart, as it uses the streaming method, which doe not guarantee to preserve the order
-        for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
-            SchemaItem sItem = new SchemaItem();
-            sItem.setDataType(attribute.getDataType());
-            sItem.setName(attribute.getId());
-            sItem.setSystemType(TypeSystem.getTypes().get(attribute.getDataType()).getName());
-            sItem.setIndex(schema.size());            
-            schema.add(sItem); 
-        }
-        return schema;
-    }   
-
 }    
 
     

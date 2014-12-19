@@ -10,6 +10,7 @@ import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Variable;
 import xqt.model.statements.StatementDescriptor;
@@ -27,6 +28,21 @@ public class ExecutionInfo {
     private DataAdapter adapter = null;
     LinkedHashMap<String, InMemorySourceFile> sources = new LinkedHashMap<>();
 
+    public InMemorySourceFile getExecutionSource(){
+        Optional<InMemorySourceFile> source = sources.values().stream()
+                    .filter(p-> p.isEntryPoint()).findFirst();
+        if(source.isPresent())
+            return source.get();
+        return null;    
+    }
+    
+    public InMemorySourceFile getEntitySource(){
+        Optional<InMemorySourceFile> source = sources.values().stream()
+                    .filter(p-> !p.isEntryPoint() && p.getFullName().endsWith("Entity")).findFirst();
+        if(source.isPresent())
+            return source.get();
+        return null;
+    }
     public LinkedHashMap<String, InMemorySourceFile> getSources(){
         return sources;
     }

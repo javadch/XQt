@@ -6,30 +6,16 @@
 
 package xqt.adapters.csv;
 
-import com.vaiona.commons.data.FieldInfo;
-import com.vaiona.commons.types.TypeSystem;
+import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
-import com.vaiona.csv.reader.HeaderBuilder;
-import com.vaiona.csv.reader.TestEntity;
-import com.vaiona.csv.reader.TestEntityJoin;
-import com.vaiona.csv.reader.TestReader;
-import com.vaiona.csv.reader.TestReaderJoin;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.rythmengine.internal.parser.Patterns;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -38,13 +24,10 @@ import xqt.model.containers.SingleContainer;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
-import xqt.model.data.SchemaItem;
 import xqt.model.data.Variable;
-import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-import xqt.model.expressions.Expression;
-import xqt.model.expressions.MemberExpression;
+
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -96,7 +79,7 @@ public class CsvDataAdapter implements DataAdapter {
     }
     
     @Override
-    public void prepare(SelectDescriptor select) {
+    public void prepare(SelectDescriptor select, Object context) {
         // check whether the source is a simple or a joined one!
         try{
             builder = new DataReaderBuilder();
@@ -104,6 +87,8 @@ public class CsvDataAdapter implements DataAdapter {
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
                 //.addProjection("MAX", "SN")// MIN, SUM, COUNT, AVG, 
+                .namespace("com.vaiona.csv.reader")
+                .entityResourceName("Entity")
             ;
             switch (select.getSourceClause().getContainer().getDataContainerType()) {
                 case Single:
@@ -128,34 +113,6 @@ public class CsvDataAdapter implements DataAdapter {
         }    
         
     }
-
-////@Override
-//    public Resultset run2(SelectDescriptor select) {
-//        try{
-//            TestReader reader = new TestReader();
-//            if(reader != null){
-//                List<TestEntity> result = reader
-//                    .source(helper.getCompleteSourceName(select.getSourceClause()))
-//                    .target(helper.getCompleteTargetName(select.getTargetClause()))
-//                    .bypassFirstRow(firstRowIsHeader)
-//                    .trimTokens(true) // default is true
-//                    .read();
-//                
-//                if(result != null){
-//                    Resultset resultSet = new Resultset(ResultsetType.Tabular);
-//                    resultSet.setData(result);
-//                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
-//                    return resultSet;
-//                }else {
-//                    return null;
-//                }
-//            }
-//        } catch (Exception ex1) {
-//            Logger.getLogger(CsvDataAdapter.class.getName()).log(Level.SEVERE, null, ex1);
-//            // throw a proper exception
-//        }
-//        return null;        
-//    }  
 
     private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
         if(isSupported("select.limit")){
@@ -229,7 +186,7 @@ public class CsvDataAdapter implements DataAdapter {
         } catch(Exception ex){
             builder.columnDelimiter(",");
         }
-
+        builder.readerResourceName("Reader");
         try{
             builder.addFields(helper.prepareFields(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
@@ -240,12 +197,22 @@ public class CsvDataAdapter implements DataAdapter {
                 if(select.hasError())
                     return;
             }
-            builder.setAttributes(convertSelect.prepareAttributes(select.getProjectionClause().getPerspective()));
+            // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+            builder.addAttributes(attributes);
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()), false);            
-            builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()), false);         
+
+            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+            for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                    if(attributes.containsKey(entry.getKey())){
+                        orderItems.put(attributes.get(entry.getKey()), entry.getValue());
+                    }            
+            }
+            builder.orderBy(orderItems);
+
             prepareLimit(builder, select);
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
             select.getExecutionInfo().setSources(builder.createSources());
@@ -261,22 +228,8 @@ public class CsvDataAdapter implements DataAdapter {
         }
     }
 
-    private String determineDeleimiter(String delimiter){
-        switch (delimiter){ // register these cases as a map
-            case "comma": 
-                return(",");
-            case "tab": 
-                return("\t");
-            case "blank":
-                return(" ");
-            case "semicolon":
-                return(";");
-            default:
-                return(delimiter);
-        }                                                
-    }
-   
     private void prepareJoined(SelectDescriptor select) {
+        builder.readerResourceName("JoinReader");
         JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
         if(join.getLeftContainer().getDataContainerType() != DataContainer.DataContainerType.Single){
             select.getLanguageExceptions().add(
@@ -327,7 +280,7 @@ public class CsvDataAdapter implements DataAdapter {
             
             // compile an implicit perspective for the whole select statement
             select.getProjectionClause().setPerspective(
-                    helper.combinePerspective(
+                    PerspectiveDescriptor.combinePerspective(
                             select.getProjectionClause().getPerspective(), leftContainer.getPerspective(), rightContainer.getPerspective(), "joined_" + select.getId()
                     ));
             select.getProjectionClause().setPresent(true);
@@ -337,20 +290,30 @@ public class CsvDataAdapter implements DataAdapter {
             select.validate();
             if(select.hasError())
                 return;
+            // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
 
-            builder.setAttributes(convertSelect.prepareAttributes(select.getProjectionClause().getPerspective()));
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+            builder.addAttributes(attributes);
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);            
-            builder.setOrdering(convertSelect.prepareOrdering(select.getOrderClause()));
+            builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);         
+
+            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+            for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                    if(attributes.containsKey(entry.getKey())){
+                        orderItems.put(attributes.get(entry.getKey()), entry.getValue());
+                    }            
+            }
+            builder.orderBy(orderItems);
+            
             prepareLimit(builder, select);
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
 
-            builder.setJoinType(join.getJoinType().toString());
-            builder.setJoinOperator(runtimeJoinOperators.get(join.getJoinOperator()));
-            builder.setLeftJoinKey(join.getLeftKey().getId());
-            builder.setRightJoinKey(join.getRightKey().getId());
+            builder.joinType(join.getJoinType().toString())
+                    .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()))
+                    .leftJoinKey(join.getLeftKey().getId())
+                    .rightJoinKey(join.getRightKey().getId());
             
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
@@ -365,10 +328,24 @@ public class CsvDataAdapter implements DataAdapter {
         }
     }
 
+    private String determineDeleimiter(String delimiter){
+        switch (delimiter){ // register these cases as a map
+            case "comma": 
+                return(",");
+            case "tab": 
+                return("\t");
+            case "blank":
+                return(" ");
+            case "semicolon":
+                return(";");
+            default:
+                return(delimiter);
+        }                                                
+    }
+   
     private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
         try{
-            Class entryPoint = select.getExecutionInfo().getSources().values().stream()
-                    .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
             DataReader<Object> reader = builder.build(entryPoint);
             if(reader != null){
                 // when the reader is built, it can be used nutiple time having different CSV settings
@@ -392,7 +369,7 @@ public class CsvDataAdapter implements DataAdapter {
                 if(result != null){
                     Resultset resultSet = new Resultset(ResultsetType.Tabular); 
                     resultSet.setData(result);
-                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
+                    resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
                     return resultSet;
                 }else {
                     return null;
@@ -423,8 +400,7 @@ public class CsvDataAdapter implements DataAdapter {
 
     private Resultset runForJoinedContainer(SelectDescriptor select, Object context) {
         try{
-            Class entryPoint = select.getExecutionInfo().getSources().values().stream()
-                    .filter(p-> p.isEntryPoint() == true).findFirst().get().getCompiledClass();
+            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
             JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
             DataReader<Object> reader = builder.build(entryPoint);
             if(reader != null){
@@ -441,7 +417,7 @@ public class CsvDataAdapter implements DataAdapter {
                 if(result != null){
                     Resultset resultSet = new Resultset(ResultsetType.Tabular); 
                     resultSet.setData(result);
-                    resultSet.setSchema(helper.prepareSchema(select.getProjectionClause().getPerspective()));
+                    resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
                     return resultSet;
                 }else {
                     return null;

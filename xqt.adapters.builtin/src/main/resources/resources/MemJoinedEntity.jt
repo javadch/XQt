@@ -1,0 +1,105 @@
+@import xqt.adapters.builtin.*
+@import com.vaiona.commons.data.*;
+@import com.vaiona.commons.types.*;
+
+@args() {
+    String namespace,
+    String BaseClassName,
+    String LeftClassName,
+    String RightClassName,
+    List<AttributeInfo> Attributes,
+    List<AttributeInfo> Pre,
+    List<AttributeInfo> Mid,
+    List<AttributeInfo> Post,
+    List<AttributeInfo> Post_Left,
+    List<AttributeInfo> Post_Right
+}
+
+package @(namespace);
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class @(BaseClassName)Entity {
+
+    @for(AttributeInfo ad : Attributes) {
+        public @ad.runtimeType @ad.name;
+    }
+
+    public boolean isValid = true; @/ set it to false if the object is not valid for any reason    
+    private @(LeftClassName) leftEntity; @/ should be a weak reference
+    private @(RightClassName) rightEntity; @/ should be a weak reference
+            
+    public @(BaseClassName)Entity (@(LeftClassName) left, @(RightClassName) right){
+        @/ if there is no where clause, usually there is no need for a pre population, hence, the Pre is empty
+        @/ in case of JOIN, the ctor initializes the join keys
+        this.leftEntity = left;
+        this.rightEntity = right;
+        @if(Pre != null && Pre.size() > 0){ 
+            try {
+                @for(AttributeInfo ad : Pre) {
+                    @ad.name = @ad.forwardMapTranslated;
+                }
+            } catch (Exception ex) {
+                isValid = false;
+                this.leftEntity = null;
+                this.rightEntity = null;
+            }
+        }
+    }
+
+    @if(Mid != null && Mid.size() > 0){ 
+        public @(BaseClassName)Entity midPopulate() {
+            try {
+                @for(AttributeInfo ad : Mid) {
+                    @ad.name = @ad.forwardMapTranslated;
+                }
+            } catch (Exception ex) {
+                isValid = false;
+            }
+            return this;
+        }    
+    }
+
+    public @(BaseClassName)Entity populate(){
+        @// populate all other attributes and release row
+        @// make the object invalid if something went wrong
+        @// apply data conversion checks
+        try {
+            @for(AttributeInfo ad : Post) {
+                @ad.name = @ad.forwardMapTranslated;
+            }
+        } catch (Exception ex) {
+            isValid = false;
+        }
+        this.leftEntity = null;
+        this.rightEntity = null;
+        return this;
+    }
+
+    public @(BaseClassName)Entity populateLeft(){
+        try {
+            @for(AttributeInfo ad : Post_Left) {
+                @ad.name = @ad.forwardMapTranslated;
+            }
+        } catch (Exception ex) {
+            isValid = false;
+        }
+        this.leftEntity = null;
+        this.rightEntity = null;
+        return this;
+    }
+
+    public @(BaseClassName)Entity populateRight(){
+        try {
+            @for(AttributeInfo ad : Post_Right) {
+                @ad.name = @ad.forwardMapTranslated;
+            }
+        } catch (Exception ex) {
+            isValid = false;
+        }
+        this.leftEntity = null;
+        this.rightEntity = null;
+        return this;
+    }
+}

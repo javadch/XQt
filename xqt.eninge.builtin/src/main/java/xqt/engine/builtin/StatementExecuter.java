@@ -80,8 +80,8 @@ public class StatementExecuter implements StatementVisitor{
             var.setName(((VariableContainer)select.getTargetClause().getContainer()).getVariableName());
             var.setResult(result);
 
-            DataAdapter compensationAdapter = select.getComplementingStatement().getExecutionInfo().getAdapter();
-            result = compensationAdapter.complement(select.getComplementingStatement(), var);
+            DataAdapter compelementingAdapter = select.getComplementingStatement().getExecutionInfo().getAdapter();
+            result = compelementingAdapter.complement(select.getComplementingStatement(), var);
             var.setExecutionInfo(null); // remove the variable, its temporary and not needed anymore
             select.getClauses().remove(select.getTargetClause().getType());
             select.addClause(select.getComplementingStatement().getTargetClause());
@@ -98,16 +98,16 @@ public class StatementExecuter implements StatementVisitor{
         eix.setExecuted(false);
         DataAdapter adapter = chooseAdapter(select); // create the adapter based on its registration info and the statement's bindinf info
         eix.setAdapter(adapter);
-        adapter.prepare(select); // creates the source files but does not compile them 
+        adapter.prepare(select, null); // creates the source files but does not compile them 
         if(select.hasError()) // check after lazy construction and validations
             return;
         if(!adapter.hasRequiredCapabilities(select)){
             SelectDescriptor comp = buildCompletingStatement(select);
-            comp.getExecutionInfo().getAdapter().prepare(comp);
+            comp.getExecutionInfo().getAdapter().prepare(comp, null);        
         }
     }
     
-    private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
+    //private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
     
     private DataAdapter chooseAdapter(SelectDescriptor select) {
         DataAdapter adapter = null;
@@ -221,7 +221,7 @@ public class StatementExecuter implements StatementVisitor{
         
         SelectDescriptor comp = new SelectDescriptor();
         comp.setDependsUpon(select);
-        select.setCompensationStatement(comp);
+        select.setComplementingStatement(comp);
         
         comp.addClause(new SetQualifierClause());
         comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection

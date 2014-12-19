@@ -34,7 +34,7 @@ public class ConvertSelectElement {
         convertor = new ExpressionToJavaSource();
     }
 
-    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective) {
+    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, boolean useOriginalNames) {
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             convertor.reset();
@@ -44,7 +44,10 @@ public class ConvertSelectElement {
             String typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
             if(!attributes.containsKey(attribute.getId())){
                 AttributeInfo ad = new AttributeInfo();
-                ad.name = attribute.getId();
+                if(useOriginalNames & attribute.getReference()!= null)
+                    ad.name = attribute.getReference().getId();
+                else
+                    ad.name = attribute.getId();
                 ad.conceptualDataType = attribute.getDataType();
                 ad.internalDataType = typeNameInAdapter;
                 ad.forwardMap = exp;

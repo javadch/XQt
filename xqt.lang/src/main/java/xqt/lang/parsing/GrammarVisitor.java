@@ -274,7 +274,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
                     source.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable is present. The statement has declared variable '%s' and perspective '%s'")
+                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared variable '%s' and perspective '%s'")
                             .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
                             .setContextInfo2(projection.getPerspective().getId())
                             .setLineNumber(ctx.getStart().getLine())
@@ -318,6 +318,41 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     // if left and right perspectives are present, try combile them into the clause perspective
                     // and then repair the filter, order, anchor, and groupig clauses.
                     // otherwise it will be done by the adapter.
+                    JoinedContainer join = ((JoinedContainer)source.getContainer());
+                    if(join.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
+                        PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)join.getLeftContainer()).getVariableName());
+                        if(pers != null){
+                            ((VariableContainer)join.getLeftContainer()).setPerspective(pers);
+                            //variablesUsedAsTarget.put(((VariableContainer)join.getLeftContainer()).getVariableName(), pers); 
+                        } else {
+                            source.getLanguageExceptions().add(
+                                    LanguageExceptionBuilder.builder()
+                                        .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
+                                        .setContextInfo1(((VariableContainer)join.getLeftContainer()).getVariableName())
+                                        //.setContextInfo2(projection.getPerspective().getId())
+                                        .setLineNumber(ctx.getStart().getLine())
+                                        .setColumnNumber(join.getLeftContainer().getParserContext().getStop().getCharPositionInLine())
+                                        .build()
+                            );                      
+                        }                        
+                    }
+                    if(join.getRightContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
+                        PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)join.getRightContainer()).getVariableName());
+                        if(pers != null){
+                            ((VariableContainer)join.getRightContainer()).setPerspective(pers);
+                            //variablesUsedAsTarget.put(((VariableContainer)join.getRightContainer()).getVariableName(), pers); 
+                        } else {
+                            source.getLanguageExceptions().add(
+                                    LanguageExceptionBuilder.builder()
+                                        .setMessageTemplate("Could not determine a perspective for variable '%s'. The variable is not defined as a target of any previous statement.")
+                                        .setContextInfo1(((VariableContainer)join.getRightContainer()).getVariableName())
+                                        //.setContextInfo2(projection.getPerspective().getId())
+                                        .setLineNumber(ctx.getStart().getLine())
+                                        .setColumnNumber(join.getRightContainer().getParserContext().getStop().getCharPositionInLine())
+                                        .build()
+                            );                      
+                        }                                                
+                    }
                 }
                 break;
             default:
@@ -1149,7 +1184,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             // there is an exception: when the parameter is a member, its a field of the physical data which its type is not defined yet. 
             // so I do trust it for the time being and wait to enouncter a possible type conversion exection later during the statement execution by the adapter.
             // enhancement: I will consider type determination at this stage when everything works as designed.
-            if(!((pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.Unknown)) 
+            if(!((pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)) 
                 || (paramInfo.getPermittedDataTypes().contains(pa.getReturnType())))){                
                 pa.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
@@ -1178,22 +1213,22 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitExpression_value(@NotNull XQtParser.Expression_valueContext ctx) { 
         ValueExpression exp = null;
         if(ctx.operand.UINT()!= null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Integer);
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.INT() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Integer);
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.FLOAT() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Real);            
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Real);            
             exp.setParserContext(ctx);
         } else if(ctx.operand.BOOLEAN() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Boolean);
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Boolean);
             exp.setParserContext(ctx);
         } else if(ctx.operand.STRING() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.String);
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.String);
             exp.setParserContext(ctx);
         } else if(ctx.operand.DATE() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.Date);
+            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Date);
             exp.setParserContext(ctx);
         }        
         return exp; 

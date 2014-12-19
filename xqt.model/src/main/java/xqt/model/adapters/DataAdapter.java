@@ -7,8 +7,10 @@
 package xqt.model.adapters;
 
 import com.vaiona.commons.compilation.InMemorySourceFile;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import xqt.model.containers.JoinedContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
 import xqt.model.statements.query.SelectDescriptor;
@@ -23,7 +25,7 @@ public interface DataAdapter {
     Resultset run(SelectDescriptor select, Object conext);
     Resultset complement(SelectDescriptor select, Variable variable);
 
-    void prepare(SelectDescriptor select);
+    void prepare(SelectDescriptor select, Object context);
     
     boolean isSupported(String capability);
     void registerCapability(String capabilityKey, boolean isSupported);

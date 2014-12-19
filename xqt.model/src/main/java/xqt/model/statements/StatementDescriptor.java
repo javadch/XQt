@@ -4,7 +4,9 @@
  */
 package xqt.model.statements;
 
+import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.List;
+import java.util.Optional;
 import xqt.model.ElementDescriptor;
 import xqt.model.execution.ExecutionInfo;
 
@@ -15,6 +17,7 @@ import xqt.model.execution.ExecutionInfo;
 public abstract class StatementDescriptor extends ElementDescriptor {    
     protected ExecutionInfo executionInfo = null;
     protected StatementDescriptor dependsUpon;
+    protected StatementDescriptor dependsUpon2;
 
     public StatementDescriptor getDependsUpon() {
         return dependsUpon;
@@ -24,6 +27,14 @@ public abstract class StatementDescriptor extends ElementDescriptor {
         this.dependsUpon = dependsUpon;
     }
 
+    public StatementDescriptor getDependsUpon2() {
+        return dependsUpon2;
+    }
+
+    public void setDependsUpon2(StatementDescriptor dependsUpon2) {
+        this.dependsUpon2 = dependsUpon2;
+    }
+    
     public Boolean hasExecutionInfo(){
         return executionInfo != null;
     }
@@ -41,6 +52,22 @@ public abstract class StatementDescriptor extends ElementDescriptor {
         return executionInfo;
     }
     
+    public InMemorySourceFile getEntityType() {
+        InMemorySourceFile entityType = null;
+        StatementDescriptor master = this;
+        do{ // the source maybe associated to the direct parent or one of the upper level ancestors.            
+            if(master != null){                
+                entityType = master.getExecutionInfo().getEntitySource();
+                if(entityType != null){
+                    break;
+                } else {
+                    master = master.getDependsUpon();
+                }
+            }                  
+        } while(master != null);   
+        return entityType;
+    }
+    
     public StatementDescriptor(){
 
     }
@@ -56,7 +83,7 @@ public abstract class StatementDescriptor extends ElementDescriptor {
     // implementations should get and load a proper adapter, make the adapter to generate sources (to be compiled and executed later)
     public abstract void prepare(StatementVisitor visitor);
 
-    public abstract void pass2(StatementVisitor visitor);
+//    public abstract void pass2(StatementVisitor visitor);
 
     public abstract void checkDependencies(List<StatementDescriptor> stmts);
 }

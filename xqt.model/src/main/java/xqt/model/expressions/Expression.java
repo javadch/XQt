@@ -19,7 +19,7 @@ public abstract class Expression extends ElementDescriptor {
 
     protected String body;
     protected ExpressionType expressionType;
-    protected String returnType = TypeSystem.Unknown; // link it the conceptual types
+    protected String returnType = TypeSystem.TypeName.Unknown; // link it the conceptual types
 
     public String getReturnType() {
         return returnType;
@@ -195,7 +195,7 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.NotEqual);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        ex.returnType = TypeSystem.Boolean;
+        ex.returnType = TypeSystem.TypeName.Boolean;
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "noteq", false, true));
         return ex;
     }
@@ -259,7 +259,7 @@ return ex;
     public static MemberExpression Member(String name) {        
         // the caller must merge it with the effective surrounding expression elements.
         // i.e. if its a parameter to a function, its type would be of the type of that parameter, ...
-        return Member(name, TypeSystem.Unknown);
+        return Member(name, TypeSystem.TypeName.Unknown);
     }
     
     public static MemberExpression Member(String name, String type) {        
@@ -270,7 +270,7 @@ return ex;
     
     public static MemberExpression CompoundMember(List<String> nameComponents) {        
         MemberExpression ex = new MemberExpression(nameComponents);
-        ex.returnType = TypeSystem.Unknown;
+        ex.returnType = TypeSystem.TypeName.Unknown;
         return ex;
     }
   
@@ -294,7 +294,7 @@ return ex;
 
     public static InvalidExpression Invalid() {        
         InvalidExpression ex = new InvalidExpression();
-        ex.returnType = TypeSystem.Unknown;
+        ex.returnType = TypeSystem.TypeName.Unknown;
         return ex;
     }
 

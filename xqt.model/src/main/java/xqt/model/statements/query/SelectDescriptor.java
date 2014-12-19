@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import org.antlr.v4.runtime.ParserRuleContext;
 import xqt.model.ClauseDescriptor;
-import xqt.model.ProcessModel;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.data.Resultset;
@@ -45,7 +44,7 @@ public class SelectDescriptor extends StatementDescriptor{
         return compensationStatement;
     }
 
-    public void setCompensationStatement(SelectDescriptor compensationStatement) {
+    public void setComplementingStatement(SelectDescriptor compensationStatement) {
         this.compensationStatement = compensationStatement;
     }
 
@@ -134,17 +133,32 @@ public class SelectDescriptor extends StatementDescriptor{
         
     }
     
-    @Override
-    public void pass2(StatementVisitor visitor) {
-        visitor.prepare(this);
-    }
+//    @Override
+//    public void pass2(StatementVisitor visitor) {
+//        visitor.prepare(this);
+//    }
 
     @Override
     public void checkDependencies(List<StatementDescriptor> stmts) {        
         for(StatementDescriptor stmt: stmts){
             if(stmt instanceof SelectDescriptor){
                 SelectDescriptor stmtCasted = (SelectDescriptor)stmt;
-                if(this.getSourceClause().getContainer().getDataContainerType() == stmtCasted.getTargetClause().getContainer().getDataContainerType()
+                if(this.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
+                    JoinedContainer join = ((JoinedContainer)this.getSourceClause().getContainer());
+                    if(join.getLeftContainer().getDataContainerType() == stmtCasted.getTargetClause().getContainer().getDataContainerType()
+                      && join.getLeftContainer().getId().equalsIgnoreCase(stmtCasted.getTargetClause().getContainer().getId())
+                            ){
+                        this.setDependsUpon(stmtCasted);
+                        //break; // do not break, as the other dependency comes from another statement.
+                    }
+                    if(join.getRightContainer().getDataContainerType() == stmtCasted.getTargetClause().getContainer().getDataContainerType()
+                      && join.getRightContainer().getId().equalsIgnoreCase(stmtCasted.getTargetClause().getContainer().getId())
+                            ){
+                        this.setDependsUpon2(stmtCasted);
+                    }                    
+                }
+                // the source is a single conainer
+                else if(this.getSourceClause().getContainer().getDataContainerType() == stmtCasted.getTargetClause().getContainer().getDataContainerType()
                   && this.getSourceClause().getContainer().getId().equalsIgnoreCase(stmtCasted.getTargetClause().getContainer().getId())
                         ){
                     this.setDependsUpon(stmtCasted);
@@ -330,4 +344,5 @@ public class SelectDescriptor extends StatementDescriptor{
         }
         return null;
     }    
+
 }
