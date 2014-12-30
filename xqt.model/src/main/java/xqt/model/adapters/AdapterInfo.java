@@ -6,9 +6,6 @@
 
 package xqt.model.adapters;
 
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -24,6 +21,7 @@ public class AdapterInfo {
     private String locationType;
     private String mainClassName;
     private String mainNamespace;
+    private Boolean isFallback;
     
     public AdapterInfo(){
         
@@ -35,6 +33,15 @@ public class AdapterInfo {
         this.locationType = locationType;
         this.mainClassName = mainClassName;
         this.mainNamespace = mainNamespace;
+    }
+    
+    @XmlElement(name="IsFallback", required = false)
+    public Boolean getIsFallback() {
+        return isFallback;
+    }
+
+    public void setIsFallback(Boolean isFallback) {
+        this.isFallback = isFallback;
     }
 
     @XmlElement(name="Id")
