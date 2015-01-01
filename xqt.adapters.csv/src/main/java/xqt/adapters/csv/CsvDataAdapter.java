@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -39,7 +40,7 @@ public class CsvDataAdapter implements DataAdapter {
     private ConvertSelectElement convertSelect = null;
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
-    private Map<JoinOperator, String> runtimeJoinOperators = new HashMap<>();
+    private final Map<JoinOperator, String> runtimeJoinOperators = new HashMap<>();
     
     public CsvDataAdapter(){
         convertSelect = new ConvertSelectElement();
@@ -144,6 +145,18 @@ public class CsvDataAdapter implements DataAdapter {
         capabilities.put(capabilityKey, isSupported);
     }
 
+    private AdapterInfo adapterInfo;
+    
+    @Override
+    public AdapterInfo getAdapterInfo(){
+        return adapterInfo;
+    }
+    
+    @Override
+    public void setAdapterInfo(AdapterInfo value){
+        adapterInfo = value;
+    }
+    
     @Override
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", false);
@@ -198,12 +211,12 @@ public class CsvDataAdapter implements DataAdapter {
                     return;
             }
             // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
             builder.addAttributes(attributes);
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()), false);         
+            builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);         
 
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
             for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
@@ -292,12 +305,12 @@ public class CsvDataAdapter implements DataAdapter {
                 return;
             // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
 
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
             builder.addAttributes(attributes);
             builder.getAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-            builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);         
+            builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);         
 
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
             for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {

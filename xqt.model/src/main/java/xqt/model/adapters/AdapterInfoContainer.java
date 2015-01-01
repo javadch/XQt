@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.XMLConstants;
@@ -69,6 +70,22 @@ public class AdapterInfoContainer {
         return registeredAdapterInfos;
     }
 
+    public AdapterInfo getDefultAdapter(){
+         Optional<AdapterInfo> adapterInfo = registeredAdapterInfos.stream()
+                            .filter(p->p.getIsFallback()).findFirst();// .getId().equalsIgnoreCase("Default")).findFirst();
+         if(adapterInfo.isPresent())
+             return adapterInfo.get();
+         return null;
+    }
+    
+    public AdapterInfo getAdapterInfo(String adapterId){
+        Optional<AdapterInfo> adapterInfo = registeredAdapterInfos.stream()
+                            .filter(p->p.getId().equalsIgnoreCase(adapterId)).findFirst(); 
+        if(adapterInfo.isPresent())
+             return adapterInfo.get();
+        return null;
+    }
+    
     private static AdapterInfoContainer loadRegisteredAdapterInfos() throws Exception {
         // read the adapters info from the config/adapters.xml
         // the default location for adpater jars is the adapters folder but they can be anywhere
@@ -95,9 +112,9 @@ public class AdapterInfoContainer {
     }
     
     public void writeConfig() {
-        AdapterInfo a1 = new AdapterInfo("CSV", "D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/csv.adapter-1.0-SNAPSHOT.jar", "file", "CsvDataAdapter", "xqt.adapters.csv");
+        AdapterInfo a1 = new AdapterInfo("CSV", "D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/csv.adapter-1.0-SNAPSHOT.jar", "file", "CsvDataAdapter", "xqt.adapters.csv", false);
         instance.registeredAdapterInfos.add(a1);
-        AdapterInfo a2 = new AdapterInfo("DBMS", "c:\\m2", "file", "DbmsAdapter", "x1.dbms");
+        AdapterInfo a2 = new AdapterInfo("DBMS", "c:\\m2", "file", "DbmsAdapter", "x1.dbms", false);
         instance.registeredAdapterInfos.add(a2);
 
         try (OutputStream buffer = new BufferedOutputStream(new FileOutputStream("config\\adapters.xml"))) {

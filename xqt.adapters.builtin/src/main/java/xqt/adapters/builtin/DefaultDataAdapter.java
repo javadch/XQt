@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -128,6 +129,18 @@ public class DefaultDataAdapter implements DataAdapter{
         capabilities.put(capabilityKey, isSupported);
     }    
 
+    private AdapterInfo adapterInfo;
+    
+    @Override
+    public AdapterInfo getAdapterInfo(){
+        return adapterInfo;
+    }
+    
+    @Override
+    public void setAdapterInfo(AdapterInfo value){
+        adapterInfo = value;
+    }
+    
     @Override
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", false);
@@ -413,12 +426,12 @@ public class DefaultDataAdapter implements DataAdapter{
         
         builder.readerResourceName("MemReader");
         builder.entityResourceName("MemJoinedEntity");        
-        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);            
+        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);            
         builder.addAttributes(attributes);
 //        builder.getAttributes().values().stream().forEach(at -> {
 //            at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
 //        });
-        builder.where(convertSelect.prepareWhere(select.getFilterClause()), true);            
+        builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);            
         Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
         for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
                 if(attributes.containsKey(entry.getKey())){
@@ -455,7 +468,7 @@ public class DefaultDataAdapter implements DataAdapter{
             if(sourceRowType.isEmpty())
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
             
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), false);
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);
             builder.addAttributes(attributes);
             // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
@@ -467,7 +480,7 @@ public class DefaultDataAdapter implements DataAdapter{
             builder.sourceRowType(sourceRowType)
                 .readerResourceName("MemReader")
                 .entityResourceName("")
-                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause()), select.getProjectionClause().getPerspective()), false)
+                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), select.getProjectionClause().getPerspective()), false)
                 .orderBy(orderItems)
                 .writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
                 ;

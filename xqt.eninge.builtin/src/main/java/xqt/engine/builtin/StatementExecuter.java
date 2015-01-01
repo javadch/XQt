@@ -121,6 +121,7 @@ public class StatementExecuter implements StatementVisitor{
                     adapter = new DefaultDataAdapter();  
                     adapter.setup(null);
                     //loadedAdapters.put("Default", adapter);
+                    adapter.setAdapterInfo(adapterInfoContainer.getDefultAdapter());
                     return adapter; // when caching is enabled, remove this line
                 //}
                 //return loadedAdapters.get("Default"); // caching of the adapters currently works but the internal builder of the adpater is not in a proper state.
@@ -129,8 +130,7 @@ public class StatementExecuter implements StatementVisitor{
             {
                 String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
-                    AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream()
-                            .filter(p->p.getId().equalsIgnoreCase(adapterType)).findFirst().get(); // hande not found exception
+                    AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
                     ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
                     Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
                     Constructor<?> ctor = cl.getConstructor();
@@ -138,6 +138,7 @@ public class StatementExecuter implements StatementVisitor{
                     adapter = (DataAdapter)ctor.newInstance();
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     //loadedAdapters.put("CSV", adapter);
+                    adapter.setAdapterInfo(adapterInfo);
                     return adapter;
                 //}
                 //return loadedAdapters.get("CSV");
@@ -168,6 +169,7 @@ public class StatementExecuter implements StatementVisitor{
                 } else if(joinedSource.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){ // both sides are variable
                     adapter = new DefaultDataAdapter();  
                     adapter.setup(null);
+                    adapter.setAdapterInfo(adapterInfoContainer.getDefultAdapter());
                     return adapter;
                 } else if(joinedSource.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Single){ // both are single containers
                     // the single containers should use a same adapter.
@@ -183,14 +185,14 @@ public class StatementExecuter implements StatementVisitor{
                         );                         
                     } else { // can get the adapter info now and instantiate it.
                         try {
-                            AdapterInfo adapterInfo = adapterInfoContainer.getRegisteredAdaptersInfo().stream()
-                                    .filter(p->p.getId().equalsIgnoreCase(leftAdapterCode)).findFirst().get(); // hande not found exception
+                            AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
                             ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
                             Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
                             Constructor<?> ctor = cl.getConstructor();
                             ctor.setAccessible(true);
                             adapter = (DataAdapter)ctor.newInstance();
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
+                            adapter.setAdapterInfo(adapterInfo);
                             return adapter;
                         }
                         catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 

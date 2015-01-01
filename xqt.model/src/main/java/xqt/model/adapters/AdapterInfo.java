@@ -8,6 +8,7 @@ package xqt.model.adapters;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import xqt.model.functions.FunctionInfoContainer;
 
 /**
  *
@@ -27,12 +28,13 @@ public class AdapterInfo {
         
     }
 
-    public AdapterInfo(String id, String location, String locationType, String mainClassName, String mainNamespace){
+    public AdapterInfo(String id, String location, String locationType, String mainClassName, String mainNamespace, boolean isFallback){
         this.id = id;
         this.location = location;
         this.locationType = locationType;
         this.mainClassName = mainClassName;
         this.mainNamespace = mainNamespace;
+        this.isFallback = isFallback;
     }
     
     @XmlElement(name="IsFallback", required = false)
@@ -89,5 +91,8 @@ public class AdapterInfo {
     public void setMainNamespace(String mainNamespace) {
         this.mainNamespace = mainNamespace;
     }
-        
+      
+    public FunctionInfoContainer getFunctionInfoContainer(){
+        return FunctionInfoContainer.getInstance(id);
+    }
 }

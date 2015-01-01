@@ -31,5 +31,8 @@ public interface DataAdapter {
     void registerCapability(String capabilityKey, boolean isSupported);
 
     boolean hasRequiredCapabilities(SelectDescriptor select);
+    
+    AdapterInfo getAdapterInfo();
+    void setAdapterInfo(AdapterInfo value);
 
 }

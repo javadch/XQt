@@ -1,8 +1,10 @@
 package xqt.model.expressions;
 
+import xqt.model.adapters.AdapterInfo;
+
 public interface ExpressionVisitor {
 
-    public void visit(Expression expr);
+    public void visit(Expression expr, AdapterInfo adapterInfo);
     public void reset();
      /*
     public void visit(FunctionExpression expr);

@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import xqt.model.adapters.AdapterInfo;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
@@ -28,17 +29,17 @@ import xqt.model.statements.query.TargetClause;
  * @author standard
  */
 public class ConvertSelectElement {
-    private ExpressionToJavaSource convertor = null;
+    private ExpressionLocalizer convertor = null;
     
     public ConvertSelectElement(){
-        convertor = new ExpressionToJavaSource();
+        convertor = new ExpressionLocalizer();
     }
 
-    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, boolean useOriginalNames) {
+    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, AdapterInfo adapterInfo, boolean useOriginalNames) {
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             convertor.reset();
-            convertor.visit(attribute.getForwardExpression());
+            convertor.visit(attribute.getForwardExpression(), adapterInfo);
             String exp = convertor.getSource(); 
             List<String> members = convertor.getMemeberNames();
             String typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
@@ -62,11 +63,11 @@ public class ConvertSelectElement {
         return attributes;
     }
 
-    public String prepareWhere(FilterClause filter) {
+    public String prepareWhere(FilterClause filter, AdapterInfo adapterInfo) {
         if(filter == null || filter.getPredicate() == null)
             return "";
         convertor.reset();
-        convertor.visit(filter.getPredicate()); // visit returns empty predicate string on null expressions
+        convertor.visit(filter.getPredicate(), adapterInfo); // visit returns empty predicate string on null expressions
         String filterString = convertor.getSource();
         return filterString;
     }

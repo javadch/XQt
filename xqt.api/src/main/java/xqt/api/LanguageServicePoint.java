@@ -123,7 +123,7 @@ public class LanguageServicePoint {
     FunctionInfoContainer functionContainer = null;
     private void loadFunctionSpecifications() {
         // use the function specification bean, read the function pack folder, list the packages, read them all, add them to the function list.
-        functionContainer = FunctionInfoContainer.getInstance();
+        functionContainer = FunctionInfoContainer.getDefaultInstance();
     }
     
 }

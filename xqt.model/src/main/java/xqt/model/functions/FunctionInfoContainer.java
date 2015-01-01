@@ -14,7 +14,9 @@ import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
@@ -26,6 +28,8 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
+import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.AdapterInfoContainer;
 
 /**
  *
@@ -35,23 +39,29 @@ import org.xml.sax.XMLReader;
 @XmlRootElement(name="Functions")
 public class FunctionInfoContainer {
 
-    private static FunctionInfoContainer instance = null; // its a singleton object
+    private static Map<String, FunctionInfoContainer> instances = new HashMap<>(); // its a singleton object
     private List<FunctionInfo> registeredFunctions = new ArrayList<>();
     
     private FunctionInfoContainer(){
         
     }
+    public static FunctionInfoContainer getDefaultInstance(){
+        AdapterInfo defaultAdapter = AdapterInfoContainer.getInstance().getDefultAdapter();
+        if(defaultAdapter == null)
+            return getInstance("Default");
+        return getInstance(defaultAdapter.getId());
+    }
     
-    public static FunctionInfoContainer getInstance(){
-        if(instance == null){
+    public static FunctionInfoContainer getInstance(String adapterId){
+        if(!instances.containsKey(adapterId)){
             try {
                 //writeConfig();
-                instance = FunctionInfoContainer.loadRegisteredFunctions();
+                instances.put(adapterId, FunctionInfoContainer.loadRegisteredFunctions(adapterId));
             } catch (Exception ex) {
                 Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        return instance;
+        return instances.get(adapterId);
     }
 
     @XmlElement(name="Function")
@@ -63,7 +73,7 @@ public class FunctionInfoContainer {
         this.registeredFunctions = registeredFunctions;
     }
 
-    private static FunctionInfoContainer loadRegisteredFunctions() throws Exception {
+    private static FunctionInfoContainer loadRegisteredFunctions(String adapterId) throws Exception {
         JAXBContext jc = JAXBContext.newInstance(FunctionInfoContainer.class);
         UnmarshallerHandler unmarshallerHandler = jc.createUnmarshaller().getUnmarshallerHandler();
 
@@ -73,7 +83,7 @@ public class FunctionInfoContainer {
         xr.setContentHandler(unmarshallerHandler);
 
         // open and read all the function pack files in the config\\functionpacks folder
-        String functionPackRoot = "config\\functionpacks";
+        String functionPackRoot = "config\\adapters\\" + adapterId.toLowerCase() + "\\functionpacks";
         File funcDir = new File(functionPackRoot);
         
         List<FunctionInfo> functions = new ArrayList<>();
@@ -103,7 +113,7 @@ public class FunctionInfoContainer {
         return container; //(FunctionInfoContainer)unmarshallerHandler.getResult();
     }
  
-    private static void writeConfig() {
+    private static void writeConfigForTest() {
         FunctionParameterInfo p1 = new FunctionParameterInfo("columnName", "Boolean|Byte|String|Integer|Long|Real|Date");
         FunctionParameterInfo p2 = new FunctionParameterInfo("columnName2", "Boolean|Byte|String|Integer|Long|Real|Date");
         List<FunctionParameterInfo> parameters = new ArrayList<>();
@@ -111,7 +121,7 @@ public class FunctionInfoContainer {
         parameters.add(p2);
         FunctionInfo f1 = new FunctionInfo("count", "column", "Long", "default", parameters, null);
         
-        instance = new FunctionInfoContainer();
+        FunctionInfoContainer instance = new FunctionInfoContainer();
         instance.registeredFunctions.add(f1);
 
         try (OutputStream buffer = new BufferedOutputStream(new FileOutputStream("config\\functionpacks\\default.xml"))) {

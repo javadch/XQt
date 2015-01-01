@@ -1154,7 +1154,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
     
     private Expression createFunction(String id, String packageId, List<XQtParser.ArgumentContext> arguments, FunctionContext ctx){
-        FunctionInfoContainer functionContainer = FunctionInfoContainer.getInstance();
+        FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
         Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
                 .filter(p-> p.getPackageName().equals(packageId) && p.getName().equals(id)).findFirst();
         if(!fInfo.isPresent()){
