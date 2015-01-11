@@ -10,13 +10,11 @@ import com.jidesoft.chart.Chart;
 import com.jidesoft.chart.annotation.AutoPositionedLabel;
 import com.jidesoft.chart.axis.Axis;
 import com.jidesoft.chart.axis.NumericAxis;
-import com.jidesoft.chart.model.DefaultChartModel;
 import com.jidesoft.chart.model.TableToChartAdapter;
 import com.jidesoft.chart.style.ChartStyle;
 import com.jidesoft.grid.SortableTable;
 import com.jidesoft.range.NumericRange;
 import com.jidesoft.range.Range;
-import com.vaiona.commons.compilation.InMemorySourceFile;
 import com.vaiona.commons.data.AttributeInfo;
 import java.awt.Color;
 import java.io.IOException;
@@ -27,7 +25,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -38,7 +35,6 @@ import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.PlotContainer;
-import xqt.model.containers.SingleContainer;
 import xqt.model.containers.VariableContainer;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
@@ -209,23 +205,26 @@ public class DefaultDataAdapter implements DataAdapter{
                     break;
                 case Variable:{
                     Resultset resultSet = new Resultset(ResultsetType.Tabular); 
-                    if(source == null || source.stream().count() <= 0){                    
-                        resultSet.setData(null);
-                        resultSet.setSchema(sourceVariable.getResult().getSchema());
+                    if(source == null || source.stream().count() <= 0){  
+                        return null;
+//                        resultSet.setData(null);
+//                        resultSet.setSchema(sourceVariable.getResult().getSchema());
                     } else {
                         Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
                         DataReader reader = builder.build(entryPoint);
                         List<Object> result = reader.read(source, null);
+                        if(result == null)
+                            return null;
                         resultSet.setData(result);
                         resultSet.setSchema(sourceVariable.getResult().getSchema());                               
                     }
                     //resultSet.setSchema(prepareSchema(select));
                     return resultSet;
                 }
-                //// END OF MAPPER AREA
+                //// END OF MAPPER AREA                //// END OF MAPPER AREA
             }
         } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-            
+            // do something here!!
         }       
         return null;    
     }
@@ -376,6 +375,7 @@ public class DefaultDataAdapter implements DataAdapter{
 
     private void prepareJoined(SelectDescriptor select, Object context) {
         JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+        
         if(join.getLeftContainer().getDataContainerType() != DataContainer.DataContainerType.Variable){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
@@ -388,6 +388,7 @@ public class DefaultDataAdapter implements DataAdapter{
             return;
         }
         VariableContainer leftContainer = (VariableContainer)join.getLeftContainer();
+        
         if(join.getRightContainer().getDataContainerType() != DataContainer.DataContainerType.Variable){
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()

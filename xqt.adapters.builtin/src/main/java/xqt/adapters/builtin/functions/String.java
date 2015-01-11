@@ -1,5 +1,11 @@
 package xqt.adapters.builtin.functions;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
@@ -7,14 +13,42 @@ package xqt.adapters.builtin.functions;
 
 // maybe it is better to put these function pack classes into a standalone jar.
 public class String {
+    private static final List<SimpleDateFormat> dateFormats = new ArrayList<>();
+    static {
+        dateFormats.add(new SimpleDateFormat("M/dd/yyyy"));
+        dateFormats.add(new SimpleDateFormat("MM/dd/yyyy"));
+        dateFormats.add(new SimpleDateFormat("dd.M.yyyy"));
+        dateFormats.add(new SimpleDateFormat("dd.MM.yyyy"));
+        dateFormats.add(new SimpleDateFormat("M/dd/yyyy hh:mm:ss a"));
+        dateFormats.add(new SimpleDateFormat("dd.M.yyyy hh:mm:ss a"));
+        dateFormats.add(new SimpleDateFormat("dd.MMM.yyyy"));
+        dateFormats.add(new SimpleDateFormat("dd-MMM-yyyy"));
+        dateFormats.add(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX"));
+    };    
+            
     public static int indexOf(java.lang.String s1, java.lang.String s2){
         if(s1 == null || s1.isEmpty() || s2 == null || s2.isEmpty())
             return -1;
         return s1.indexOf(s2);
     }
 
-    public static boolean isDate(java.lang.String s){ // needs work
-        return false;
+    public static boolean isDate(java.lang.String s){ // it is a heavy method
+        Date date = null;
+        if(s == null) {
+            return false;
+        }
+        for (SimpleDateFormat format : dateFormats) {
+            try {
+                format.setLenient(false);
+                date = format.parse(s);
+            } catch (ParseException e) {
+                //try other formats
+            }
+            if (date != null) {
+                break;
+            }
+        }
+        return date != null;
     }
     
     public static boolean isEmpty(java.lang.String s){

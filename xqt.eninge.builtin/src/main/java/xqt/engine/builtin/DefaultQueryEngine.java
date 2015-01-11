@@ -160,6 +160,10 @@ public class DefaultQueryEngine  implements QueryEngine{
                                     SelectDescriptor complementingStatement = ((SelectDescriptor)sm).getComplementingStatement();
                                     if(complementingStatement != null && complementingStatement.getExecutionInfo().getSources().values().stream().count() > 0){
                                         sourcesToBeCompiled.putAll(complementingStatement.getExecutionInfo().getSources());
+                                        SelectDescriptor complementingStatement2 = ((SelectDescriptor)sm).getComplementingStatement().getComplementingStatement();
+                                        if(complementingStatement2 != null && complementingStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
+                                            sourcesToBeCompiled.putAll(complementingStatement2.getExecutionInfo().getSources());
+                                        }
                                     }
                                 }
                             }
@@ -192,6 +196,14 @@ public class DefaultQueryEngine  implements QueryEngine{
                                             for(InMemorySourceFile compSource : compensationStatement.getExecutionInfo().getSources().values()){
                                                 compSource.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource.getFullName()));                                
                                             }
+                                            
+                                            SelectDescriptor compensationStatement2 = ((SelectDescriptor)sm).getComplementingStatement().getComplementingStatement();
+                                            if(compensationStatement2 != null && compensationStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
+                                                for(InMemorySourceFile compSource2 : compensationStatement2.getExecutionInfo().getSources().values()){
+                                                    compSource2.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource2.getFullName()));                                
+                                                }
+                                            }
+
                                         }
                                     }
                                 } catch (ClassNotFoundException ex) {

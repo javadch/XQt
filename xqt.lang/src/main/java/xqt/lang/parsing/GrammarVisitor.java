@@ -1213,13 +1213,22 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitExpression_value(@NotNull XQtParser.Expression_valueContext ctx) { 
         ValueExpression exp = null;
         if(ctx.operand.UINT()!= null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Integer);
+            String value = ctx.operand.getText();
+            value = value.replaceFirst("^0+(?!$)", ""); // removes leading zeros
+            if (value.isEmpty()) value = "0";
+            exp = Expression.Value(value, TypeSystem.TypeName.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.INT() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Integer);
+            String value = ctx.operand.getText();
+            value = value.replaceFirst("^0+(?!$)", ""); // removes leading zeros
+            if (value.isEmpty()) value = "0";
+            exp = Expression.Value(value, TypeSystem.TypeName.Integer);
             exp.setParserContext(ctx);            
         } else if(ctx.operand.FLOAT() != null){
-            exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Real);            
+            String value = ctx.operand.getText();
+            value = value.replaceFirst("^0+(?!$)", ""); // removes leading zeros
+            if (value.isEmpty()) value = "0";
+            exp = Expression.Value(value, TypeSystem.TypeName.Real);            
             exp.setParserContext(ctx);
         } else if(ctx.operand.BOOLEAN() != null){
             exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Boolean);

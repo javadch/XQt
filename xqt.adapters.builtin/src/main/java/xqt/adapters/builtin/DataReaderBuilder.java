@@ -1,23 +1,13 @@
 
 package xqt.adapters.builtin;
 
+import com.vaiona.commons.data.DataReaderBase;
 import com.vaiona.commons.compilation.*;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.DataReaderBuilderBase;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.stream.Collectors;
-import javax.tools.JavaFileManager;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
-import xqt.model.statements.query.SelectDescriptor;
 
 /**
  *
@@ -25,29 +15,9 @@ import xqt.model.statements.query.SelectDescriptor;
  */
 public class DataReaderBuilder extends DataReaderBuilderBase {
     ConvertSelectElement convertSelect = null;
-    String leftClassName = "";
-    String rightClassName = "";
     
     public DataReaderBuilder(){        
         convertSelect = new ConvertSelectElement();
-    }
-
-    public String getSourceRowType(){ return leftClassName;}
-    public DataReaderBuilder sourceRowType(String value){
-        this.leftClassName = value;
-        return this;
-    }
-
-    public String getLeftClassName(){ return leftClassName;}
-    public DataReaderBuilder leftClassName(String value){
-        this.leftClassName = value;
-        return this;
-    }
-
-    public String getRightClassName(){ return rightClassName;}
-    public DataReaderBuilder rightClassName(String value){
-        this.rightClassName = value;
-        return this;
     }
 
     DataReader build(Class classObject) throws NoSuchMethodException, InstantiationException, IllegalAccessException,
