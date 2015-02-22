@@ -636,6 +636,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         int index = 0;
         for(XQtParser.InlineAttributeContext inlineAttribute: ctx.inlineAttribute()){
             if(inlineAttribute.att != null){
+                //PerspectiveAnnotator.describePerspectiveAttribute(inlineAttribute, perspective.getId());
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
                 if(inlineAttribute.alias != null){
                     attribute.setId(inlineAttribute.alias.getText());                    
@@ -646,36 +647,36 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 // go through the expression and se whether there are any references to other perspectives' attributes
                 // if so replace the forward and reverse mappings of the sub/ expression with their counterparts
                 //exp = replaceReferencedAttributes(exp);
-//                if(exp.getExpressionType() == ExpressionType.Member){
-//                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
-//                        projection.getLanguageExceptions().add(
-//                           LanguageExceptionBuilder.builder()
-//                                .setMessageTemplate("Standalone identifier \'%s\' reffers to a physical field, which is not supported.")
-//                                .setContextInfo1(exp.getId())
-//                                .setLineNumber(ctx.getStart().getLine())
-//                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
-//                                .build()
-//                        );                        
-//                    }
-//                }
-                if(exp.getExpressionType() == ExpressionType.Function){ // temprary check, because aggregate functions are not supported yet.
-                    FunctionExpression fExp = (FunctionExpression)exp;
-                    // chack all the parameters to see whether they are ferrefing to a physical field.
-                    
-                    // the following block should be removed when the aggregate functions are supported!
-                    if(fExp.getFunctionSpecification().getAppliesTo().equalsIgnoreCase("column")){ // this is an aggregate function
+                if(exp.getExpressionType() == ExpressionType.Member){
+                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
                         projection.getLanguageExceptions().add(
                            LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Aggregate function \'%s.%s\' is not supported.")
-                                .setContextInfo1(fExp.getPackageId())
-                                .setContextInfo2(fExp.getId())
+                                .setMessageTemplate("Identifier \'%s\' does not refer to a perspective attribute. Using physical fields is not yet supported.")
+                                .setContextInfo1(exp.getId())
                                 .setLineNumber(ctx.getStart().getLine())
                                 .setColumnNumber(ctx.getStart().getCharPositionInLine())
                                 .build()
                         );                        
                     }
-                    
                 }
+//                if(exp.getExpressionType() == ExpressionType.Function){ // temprary check, because aggregate functions are not supported yet.
+//                    FunctionExpression fExp = (FunctionExpression)exp;
+//                    // chack all the parameters to see whether they are ferrefing to a physical field.
+//                    
+//                    // the following block should be removed when the aggregate functions are supported!
+//                    if(fExp.getFunctionSpecification().isAggregate()){ // this is an aggregate function
+//                        projection.getLanguageExceptions().add(
+//                           LanguageExceptionBuilder.builder()
+//                                .setMessageTemplate("Aggregate function \'%s.%s\' is not supported.")
+//                                .setContextInfo1(fExp.getPackageId())
+//                                .setContextInfo2(fExp.getId())
+//                                .setLineNumber(ctx.getStart().getLine())
+//                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
+//                                .build()
+//                        );                        
+//                    }
+//                    
+//                }
                 // check for simple id, perspective.attribute id, aggregate function, general expression (not containing aggregate functions), ...
                 // AND try setting the data type!
                 
@@ -1156,7 +1157,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     private Expression createFunction(String id, String packageId, List<XQtParser.ArgumentContext> arguments, FunctionContext ctx){
         FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
         Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
-                .filter(p-> p.getPackageName().equals(packageId) && p.getName().equals(id)).findFirst();
+                .filter(p-> p.getPackageName().equalsIgnoreCase(packageId) && p.getName().equalsIgnoreCase(id)).findFirst();
         if(!fInfo.isPresent()){
             InvalidExpression exp = Expression.Invalid();
             exp.getLanguageExceptions().add(

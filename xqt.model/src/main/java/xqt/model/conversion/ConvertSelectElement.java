@@ -29,17 +29,14 @@ import xqt.model.statements.query.TargetClause;
  * @author standard
  */
 public class ConvertSelectElement {
-    private ExpressionLocalizer convertor = null;
     
-    public ConvertSelectElement(){
-        convertor = new ExpressionLocalizer();
-    }
-
+    // take care when calling from adapters other than the default and CSV, because of the aggregate call redirection!!! in the convertor.visit method
     public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, AdapterInfo adapterInfo, boolean useOriginalNames) {
+        ExpressionLocalizer convertor = new ExpressionLocalizer(adapterInfo);
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             convertor.reset();
-            convertor.visit(attribute.getForwardExpression(), adapterInfo);
+            convertor.visit(attribute.getForwardExpression());
             String exp = convertor.getSource(); 
             List<String> members = convertor.getMemeberNames();
             String typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
@@ -64,10 +61,11 @@ public class ConvertSelectElement {
     }
 
     public String prepareWhere(FilterClause filter, AdapterInfo adapterInfo) {
+        ExpressionLocalizer convertor = new ExpressionLocalizer(adapterInfo);
         if(filter == null || filter.getPredicate() == null)
             return "";
         convertor.reset();
-        convertor.visit(filter.getPredicate(), adapterInfo); // visit returns empty predicate string on null expressions
+        convertor.visit(filter.getPredicate()); // visit returns empty predicate string on null expressions
         String filterString = convertor.getSource();
         return filterString;
     }

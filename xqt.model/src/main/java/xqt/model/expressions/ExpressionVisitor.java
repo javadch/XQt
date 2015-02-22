@@ -1,24 +1,21 @@
 package xqt.model.expressions;
 
-import xqt.model.adapters.AdapterInfo;
-
 public interface ExpressionVisitor {
 
-    public void visit(Expression expr, AdapterInfo adapterInfo);
+    //public void visit(Expression expr);
     public void reset();
-     /*
+    
+    public void visit(BinaryExpression expr);
     public void visit(FunctionExpression expr);
-
+    public void visit(InvalidExpression expr);
     public void visit(MemberExpression expr);
-
+    public void visit(ParameterExpression expr);
     public void visit(UnaryExpression expr);
-
     public void visit(ValueExpression expr);
 
-    public void visit(BinaryExpression expr);
 
 
-
+ /*
     public void visit(DateTimeLiteral expr);
 
     public void visit(DecimalLiteral expr);

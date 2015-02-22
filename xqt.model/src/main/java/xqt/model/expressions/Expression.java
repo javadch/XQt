@@ -15,7 +15,7 @@ import xqt.model.ElementDescriptor;
  *
  * @author jfd
  */
-public abstract class Expression extends ElementDescriptor {
+public abstract class Expression extends ElementDescriptor implements VisitingExpressionElement{
 
     protected String body;
     protected ExpressionType expressionType;
@@ -41,6 +41,9 @@ public abstract class Expression extends ElementDescriptor {
         this.expressionType = expressionType;
     }
 
+    @Override
+    public abstract void accept(ExpressionVisitor visitor);
+    
     @Override
     public abstract String toString();
     

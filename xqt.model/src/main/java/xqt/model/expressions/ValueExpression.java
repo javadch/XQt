@@ -24,6 +24,11 @@ public class ValueExpression extends Expression {
         this.expressionType = ExpressionType.Constant;
     }
     
+   @Override
+    public void accept(ExpressionVisitor visitor){
+        visitor.visit(this);
+    }
+    
     @Override
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

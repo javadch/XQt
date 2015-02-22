@@ -15,6 +15,11 @@ public class InvalidExpression extends Expression{
     public InvalidExpression(){
         this.expressionType = ExpressionType.Invalid;
     }
+
+    @Override
+    public void accept(ExpressionVisitor visitor){
+        // do nothing
+    }    
     
     @Override
     public String toString() {

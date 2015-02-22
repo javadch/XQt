@@ -28,6 +28,11 @@ public class ParameterExpression extends Expression{
         this.internalExpression = internalExpression;
     }
     
+   @Override
+    public void accept(ExpressionVisitor visitor){
+        internalExpression.accept(visitor);
+        visitor.visit(this);
+    }
     
     @Override
     public String toString() {

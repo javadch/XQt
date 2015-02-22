@@ -58,6 +58,10 @@ public class FunctionInfo {
         this.appliesTo = appliesTo;
     }
 
+    public Boolean isAggregate(){
+        return (getAppliesTo().equalsIgnoreCase("column"));
+    }
+    
     @XmlAttribute(name="returnType")
     public String getReturnType() {
         return returnType;

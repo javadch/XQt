@@ -428,7 +428,7 @@ public class DefaultDataAdapter implements DataAdapter{
         builder.readerResourceName("MemReader");
         builder.entityResourceName("MemJoinedEntity");        
         Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);            
-        builder.addAttributes(attributes);
+        builder.addResultAttributes(attributes);
 //        builder.getAttributes().values().stream().forEach(at -> {
 //            at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
 //        });
@@ -470,7 +470,7 @@ public class DefaultDataAdapter implements DataAdapter{
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
             
             Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);
-            builder.addAttributes(attributes);
+            builder.addResultAttributes(attributes);
             // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
             for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {

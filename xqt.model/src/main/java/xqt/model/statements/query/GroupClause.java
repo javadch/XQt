@@ -31,7 +31,7 @@ public class GroupClause extends ClauseDescriptor{
 
     public void setGroupIds(Map<String, GroupEntry> groupIds) {
         this.groupIds = groupIds;
-        isPresent = groupIds != null && groupIds.size() > 0;
+        //isPresent = groupIds != null && groupIds.size() > 0;
     }
 
 

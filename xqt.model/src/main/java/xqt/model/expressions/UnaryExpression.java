@@ -25,6 +25,12 @@ public class UnaryExpression extends Expression{
     }
 
     @Override
+    public void accept(ExpressionVisitor visitor){
+        operand.accept(visitor);
+        visitor.visit(this);
+    }
+    
+    @Override
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

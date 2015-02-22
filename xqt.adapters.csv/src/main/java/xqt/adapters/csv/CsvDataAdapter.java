@@ -7,18 +7,17 @@
 package xqt.adapters.csv;
 
 import com.vaiona.commons.data.AttributeInfo;
-import com.vaiona.commons.data.DataReaderBase;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
@@ -30,9 +29,13 @@ import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-
+import xqt.model.expressions.AggregationFunctionVisitor;
+import xqt.model.expressions.Expression;
+import xqt.model.functions.AggregationCallInfo;
+import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -164,17 +167,6 @@ public class CsvDataAdapter implements DataAdapter {
         
     }
 
-    private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
-        if(isSupported("select.limit")){
-            builder.skip(select.getLimitClause().getSkip())
-                   .take(select.getLimitClause().getTake());
-        }
-        else{
-            builder.skip(-1)
-                   .take(-1);
-        }
-    }
-
     @Override
     public boolean needsMemory() {
         return false;
@@ -212,7 +204,7 @@ public class CsvDataAdapter implements DataAdapter {
         registerCapability("select.projection.perspective", true);
         registerCapability("select.projection.perspective.explicit", true);
         registerCapability("select.projection.perspective.implicit", true);
-//        registerCapability("select.projection.perspective.inline", true);
+        registerCapability("select.projection.perspective.inline", true);
         registerCapability("function", true);
         registerCapability("function.default.max", false); // add other functions, too.
         registerCapability("expression", true);
@@ -242,6 +234,7 @@ public class CsvDataAdapter implements DataAdapter {
         return allmatched;
     }
 
+    Map<String, AttributeInfo>  attributeInfos = new LinkedHashMap<>();
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try {
@@ -250,39 +243,82 @@ public class CsvDataAdapter implements DataAdapter {
         } catch(Exception ex){
             builder.columnDelimiter(",");
         }
-        builder.readerResourceName("Reader");
         builder.sourceOfData("container");
         try{
             builder.addFields(helper.prepareFields(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
-                select.getProjectionClause().setPerspective(helper.createPhysicalPerspective(builder.getFields(), select.getProjectionClause().getPerspective(), select.getId()));
+                select.getProjectionClause().setPerspective(
+                        helper.createPhysicalPerspective(builder.getFields(), select.getProjectionClause().getPerspective(), select.getId()));
                 select.getProjectionClause().setPresent(true);
                 select.validate();
                 if(select.hasError())
                     return;
             }
-            // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
-            builder.addAttributes(attributes);
-            builder.getAttributes().values().stream().forEach(at -> {
-                at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
-            });
-
-            if(isSupported("select.filter")) builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
-            else builder.where("", false);
-
-            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
-            for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
-                    if(attributes.containsKey(entry.getKey())){
-                        orderItems.put(attributes.get(entry.getKey()), entry.getValue());
-                    }            
+            // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
+            Boolean hasAggregates = prepareAggregates(builder, select);
+            if(hasAggregates){
+                builder.readerResourceName("AggregateReader");
+                builder.addAggregates(aggregattionCallInfo);
+                // send the aggregate perspective
+                // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
+                attributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this.getAdapterInfo(), false);            
+                builder.addRowAttributes(attributeInfos);
+                builder.getRowAttributes().values().stream().forEach(at -> {
+                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+                });
+                // set the resultset perspective. 
+                // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
+                // maybe pareparation is not needed!!!!!!
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                for(AttributeInfo attInfo: attributeInfos.values()){
+                    attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                    //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
+                }
+                builder.addResultAttributes(attributeInfos);
+                builder.getResultAttributes().values().stream().forEach(at -> {
+                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+                });
+                
+            } else {
+                builder.readerResourceName("Reader");
+                // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                builder.addResultAttributes(attributeInfos);
+                builder.getResultAttributes().values().stream().forEach(at -> {
+                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+                });
             }
             
-            if(isSupported("select.orderby")) builder.orderBy(orderItems);
-            else builder.orderBy(null);
+            if(isSupported("select.filter")) 
+                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
+            else 
+                builder.where("", false);
+            
+            if(isSupported("select.orderby")) {
+                Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+                for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                    if(attributeInfos.containsKey(entry.getKey())){
+                        orderItems.put(attributeInfos.get(entry.getKey()), entry.getValue());
+                    }            
+                }
+                builder.orderBy(orderItems);
+            }
+            else {
+                builder.orderBy(null);
+            }
 
             prepareLimit(builder, select);
+            // prepare groupBy. 
+            prepareGroupBy(builder, select);
+
+            if(groupByAttributes.size() > 0){
+                builder.groupBy(groupByAttributes);
+                
+            }
+            //all attributes refered to from the group by plus, 
+            //if the perspective contains aggregate functions, all non aggregate attributes should be added to the goup by list
+            // 
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
@@ -367,8 +403,8 @@ public class CsvDataAdapter implements DataAdapter {
             //builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
 
             Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
-            builder.addAttributes(attributes);
-            builder.getAttributes().values().stream().forEach(at -> {
+            builder.addResultAttributes(attributes);
+            builder.getResultAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
 
@@ -442,8 +478,8 @@ public class CsvDataAdapter implements DataAdapter {
             //builder.addFields();
             // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
             Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
-            builder.addAttributes(attributes);
-            builder.getAttributes().values().stream().forEach(at -> {
+            builder.addResultAttributes(attributes);
+            builder.getResultAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
 
@@ -621,4 +657,82 @@ public class CsvDataAdapter implements DataAdapter {
         }
         return null;    
     }
+
+    // holds the information about aggregate functions as they were found in the perspective attributes.
+    // the agg. functions are substituted with a pointer in the aggregattionCallInfo, so that the adapater, calls them later
+    // the whole argument passed to an aggregate function is moved to here and replaced with an automatically generaated name.
+    // these items, are used to create an intermediate perspective for retreiving data.
+    // the original perspective is used for the aggregated/ grouped resultset.
+    
+    private List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
+    private PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+    private List<AttributeInfo> groupByAttributes = new ArrayList<>();
+        
+    private Boolean prepareAggregates(DataReaderBuilder builder, SelectDescriptor select) {
+        // adopt for other types of queries, variable, join, etc
+        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
+            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId());
+            attribute.getForwardExpression().accept(visitor);
+            if(visitor.getAggregattionCallInfo().size() > 0){
+                aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
+            } else {// the attribute is not containg aggregate, it should be considered as a group by item. preserve and check it withe group by list, later
+                groupByAttributes.add(attributeInfos.get(attribute.getId()));
+            }
+        }
+        // if there is no aggregate function discovered, there is no need to do anything else, 
+        // also the group by items found above, are not needed anymore
+        if(aggregattionCallInfo.size() <= 0){
+            // remove the group by list items, too
+            groupByAttributes.clear();
+            return false;
+        }
+//        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+        aggregatePerspective.setId("aggregate_Perspective_for" + select.getProjectionClause().getPerspective().getId());
+
+        // replace the original aggregate calls
+        for(AggregationCallInfo callInfo: aggregattionCallInfo){
+                // I should find a way to replace this function with a specific wrapper call!!
+                callInfo.getFunction().setId(callInfo.getAliasName()); //.setId(callInfo.getAliasName());
+                callInfo.getFunction().setPackageId("DONOTCHANGE");
+                callInfo.getFunction().getParameters().clear();
+                callInfo.getFunction().getParameters()
+                        .add(Expression.Parameter(
+                                Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
+                
+                // also add the callinfo parameters to the row entity perpspective ...
+                PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+                attribute.setId(callInfo.getParameterName());
+                attribute.setDataType(callInfo.getParameter().getReturnType());
+
+                attribute.setForwardExpression(callInfo.getParameter());
+                attribute.setReverseExpression(null);
+                aggregatePerspective.addAttribute(attribute);
+        }
+        // if there is any aggregate function present in the perspective (aggregattionCallInfo)
+        // construct a row entity perpective to be used for reading the data. The current perspective is
+        // used for the result entities.
+        return true;
+    }
+
+    private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
+        if(isSupported("select.limit")){
+            builder.skip(select.getLimitClause().getSkip())
+                   .take(select.getLimitClause().getTake());
+        }
+        else{
+            builder.skip(-1)
+                   .take(-1);
+        }
+    }
+
+    private void prepareGroupBy(DataReaderBuilder builder, SelectDescriptor select) {
+        if(isSupported("select.groupby")) {
+            for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
+                if(!attributeInfos.containsKey(entry.getKey())){
+                    groupByAttributes.add(attributeInfos.get(entry.getKey()));
+                }            
+            }
+        }
+    }
+
 }

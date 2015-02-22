@@ -20,10 +20,20 @@ public class FunctionExpression extends Expression{
 
     private FunctionInfo functionSpecification = null;
     
+    @Override
+    public void accept(ExpressionVisitor visitor){
+        parameters.stream().forEachOrdered(p-> p.accept(visitor));
+        visitor.visit(this);
+    }
+
     public String getPackageId() {
         return packageId;
     }
 
+    public void setPackageId(String packageId) {
+        this.packageId = packageId;
+    }
+    
     public List<Expression> getParameters() {
         return parameters;
     }

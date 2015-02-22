@@ -23,6 +23,14 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     private Map<String, PerspectiveAttributeDescriptor> attributes = new LinkedHashMap<>(); // should keep the order
     private PerspectiveType perspectiveType = PerspectiveType.Explicit;
 
+    public PerspectiveDescriptor(){
+        this.perspectiveType = PerspectiveType.Explicit;
+    }
+    
+    public PerspectiveDescriptor(PerspectiveType value){
+        this.perspectiveType = value;
+    }
+    
     public PerspectiveType getPerspectiveType() {
         return perspectiveType;
     }
@@ -30,7 +38,6 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     public void setPerspectiveType(PerspectiveType perspectiveType) {
         this.perspectiveType = perspectiveType;
     }
-
     
     public void setExplicit() {
         this.perspectiveType = PerspectiveDescriptor.PerspectiveType.Explicit;

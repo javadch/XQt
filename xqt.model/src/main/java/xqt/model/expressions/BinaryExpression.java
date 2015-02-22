@@ -20,6 +20,13 @@ public class BinaryExpression extends Expression{
         this.expressionType = operator;
     }
     
+    @Override
+    public void accept(ExpressionVisitor visitor){
+        this.left.accept(visitor);
+        visitor.visit(this);
+        this.right.accept(visitor);
+    }
+
     public Expression getLeft() {
         return left;
     }
