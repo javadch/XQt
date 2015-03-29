@@ -432,7 +432,22 @@ public class DefaultDataAdapter implements DataAdapter{
 //        builder.getAttributes().values().stream().forEach(at -> {
 //            at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
 //        });
-        builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);            
+        try{
+            if(isSupported("select.filter")) 
+                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
+            else 
+                builder.where("", false);
+        } catch(Exception ex){
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate(ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+                );                
+        }
+
         Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
         for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
                 if(attributes.containsKey(entry.getKey())){

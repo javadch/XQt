@@ -647,18 +647,18 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 // go through the expression and se whether there are any references to other perspectives' attributes
                 // if so replace the forward and reverse mappings of the sub/ expression with their counterparts
                 //exp = replaceReferencedAttributes(exp);
-                if(exp.getExpressionType() == ExpressionType.Member){
-                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
-                        projection.getLanguageExceptions().add(
-                           LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Identifier \'%s\' does not refer to a perspective attribute. Using physical fields is not yet supported.")
-                                .setContextInfo1(exp.getId())
-                                .setLineNumber(ctx.getStart().getLine())
-                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
-                                .build()
-                        );                        
-                    }
-                }
+//                if(exp.getExpressionType() == ExpressionType.Member){
+//                    if(((MemberExpression)exp).getMemberType() == MemberExpression.MemberType.Simple){
+//                        projection.getLanguageExceptions().add(
+//                           LanguageExceptionBuilder.builder()
+//                                .setMessageTemplate("Identifier \'%s\' does not refer to a perspective attribute. Using physical fields is not yet supported.")
+//                                .setContextInfo1(exp.getId())
+//                                .setLineNumber(ctx.getStart().getLine())
+//                                .setColumnNumber(ctx.getStart().getCharPositionInLine())
+//                                .build()
+//                        );                        
+//                    }
+//                }
 //                if(exp.getExpressionType() == ExpressionType.Function){ // temprary check, because aggregate functions are not supported yet.
 //                    FunctionExpression fExp = (FunctionExpression)exp;
 //                    // chack all the parameters to see whether they are ferrefing to a physical field.

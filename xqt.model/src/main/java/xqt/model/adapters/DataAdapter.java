@@ -22,7 +22,7 @@ import xqt.model.statements.query.SelectDescriptor;
 public interface DataAdapter {
     boolean needsMemory();
     void setup(Map<String, Object> config);
-    Resultset run(SelectDescriptor select, Object conext);
+    Resultset run(SelectDescriptor select, Object context);
     Resultset complement(SelectDescriptor select, Variable variable);
 
     void prepare(SelectDescriptor select, Object context);

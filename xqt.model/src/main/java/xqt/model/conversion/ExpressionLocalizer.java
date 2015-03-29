@@ -6,6 +6,7 @@
 
 package xqt.model.conversion;
 
+import com.vaiona.commons.types.TypeSystem;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -116,6 +117,11 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
                     exp.getPackageId(), 
                     exp.getId(),
                     "NOCALL");
+                String runtimeType = TypeSystem.getTypes().get(exp.getReturnType()).getRuntimeType();
+                // enhancing the aggregate calls with explicit returntype casting. because the aggrgate functions are
+                // called via the interface AggregateFunction which returns an Object.
+                funcPattern = MessageFormat.format("(({0}){1})", runtimeType, funcPattern);
+                // the funcPattern still has placeholders for the function name and the parameter list.
                 return MessageFormat.format(funcPattern, functionPart, parameterPart);
             }
             Optional <FunctionInfo> funcSpec =adapterInfo.getFunctionInfoContainer().getRegisteredFunctions().stream()

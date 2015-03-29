@@ -107,6 +107,9 @@ public class @(BaseClassName)Reader implements DataReader<@(TargetRowType), @(Le
                 @if(take > -1){
                     .limit(@(take))
                 }
+                @/ When the target row type is different, a conversion is required here.
+                @/ This is the case when reading from a variable to an inline perspective
+                @/ Also the aggregation case should be handled here, maybe in a similar way.
                     .collect(Collectors.toList())
                 ;
             return result;

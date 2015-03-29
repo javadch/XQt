@@ -1,7 +1,6 @@
 
 package xqt.adapters.builtin;
 
-import com.vaiona.commons.data.DataReaderBase;
 import com.vaiona.commons.compilation.*;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.DataReaderBuilderBase;

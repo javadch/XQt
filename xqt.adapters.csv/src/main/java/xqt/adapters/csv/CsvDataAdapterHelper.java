@@ -20,6 +20,7 @@ import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.expressions.Expression;
+import xqt.model.expressions.ExpressionType;
 import xqt.model.expressions.MemberExpression;
 import xqt.model.statements.query.TargetClause;
 
@@ -116,27 +117,26 @@ public class CsvDataAdapterHelper {
     }
     
     public PerspectiveDescriptor createPhysicalPerspective(Map<String, FieldInfo> fields, PerspectiveDescriptor perspective, String id) {
-        if(perspective == null){
-            perspective = new PerspectiveDescriptor();
-            perspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
-        }
-        perspective.setId("generated_Perspective_"+ id);
         for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
             FieldInfo field = entrySet.getValue();
-            PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
-            attribute.setId(field.name);
-            attribute.setDataType(getConceptualType(field.internalDataType));
-            
-            MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
-            MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
-            
-            attribute.setForwardExpression(fwd);
-            attribute.setReverseExpression(rvs);
-            perspective.addAttribute(attribute);            
+            field.conceptualDataType = getConceptualType(field.internalDataType);
         }
+        perspective = new PerspectiveDescriptor(fields, id);
         return perspective;
     }
     
+    // looks for simple members in the expressions and checks whether they refer to a physical field,
+    // if yes, the data type of the the field is set for the members
+    public PerspectiveDescriptor improvePerspective(Map<String, FieldInfo> fields, PerspectiveDescriptor perspective) {
+        if(perspective == null){
+            return null;
+        }
+        for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
+            FieldInfo field = entrySet.getValue();
+            field.conceptualDataType = getConceptualType(field.internalDataType);
+        }
+        return perspective.improve(fields);
+    }
 }    
 
     

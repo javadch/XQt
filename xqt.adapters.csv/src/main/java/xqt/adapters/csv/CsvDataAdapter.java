@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
@@ -35,6 +36,9 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.AggregationFunctionVisitor;
 import xqt.model.expressions.Expression;
 import xqt.model.functions.AggregationCallInfo;
+import xqt.model.functions.aggregates.Average;
+import xqt.model.functions.aggregates.Minimum;
+import xqt.model.functions.aggregates.Sum;
 import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
 
@@ -48,6 +52,8 @@ public class CsvDataAdapter implements DataAdapter {
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
     private final Map<JoinOperator, String> runtimeJoinOperators = new HashMap<>();
+    private final HashMap<String, Boolean> capabilities = new HashMap<>();
+    private AdapterInfo adapterInfo;
     
     public CsvDataAdapter(){
         convertSelect = new ConvertSelectElement();
@@ -163,8 +169,7 @@ public class CsvDataAdapter implements DataAdapter {
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
                     .build()
             );                        
-        }    
-        
+        }            
     }
 
     @Override
@@ -172,8 +177,6 @@ public class CsvDataAdapter implements DataAdapter {
         return false;
     }
 
-    private final HashMap<String, Boolean> capabilities = new HashMap<>();
-    
     @Override
     public boolean isSupported(String capability) {
         if(capabilities.containsKey(capability.toLowerCase()) && capabilities.get(capability.toLowerCase()) == true)
@@ -186,8 +189,6 @@ public class CsvDataAdapter implements DataAdapter {
         capabilities.put(capabilityKey, isSupported);
     }
 
-    private AdapterInfo adapterInfo;
-    
     @Override
     public AdapterInfo getAdapterInfo(){
         return adapterInfo;
@@ -206,7 +207,7 @@ public class CsvDataAdapter implements DataAdapter {
         registerCapability("select.projection.perspective.implicit", true);
         registerCapability("select.projection.perspective.inline", true);
         registerCapability("function", true);
-        registerCapability("function.default.max", false); // add other functions, too.
+        registerCapability("function.default.max", true); // add other functions, too.
         registerCapability("expression", true);
         
         registerCapability("select.source.single", true);
@@ -221,11 +222,10 @@ public class CsvDataAdapter implements DataAdapter {
         registerCapability("select.anchor", false);
         registerCapability("select.filter", true);
         registerCapability("select.orderby", true);
-        registerCapability("select.groupby", false);
+        registerCapability("select.groupby", true);
         registerCapability("select.limit", false);
         registerCapability("select.limit.take", true);
-        registerCapability("select.limit.skip", true);
-        
+        registerCapability("select.limit.skip", true);        
     }
 
     @Override
@@ -254,6 +254,9 @@ public class CsvDataAdapter implements DataAdapter {
                 select.validate();
                 if(select.hasError())
                     return;
+            } else { // see whether there exists any attribute of unkown type!
+                select.getProjectionClause().setPerspective(
+                    helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
             }
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
@@ -262,11 +265,7 @@ public class CsvDataAdapter implements DataAdapter {
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                attributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this.getAdapterInfo(), false);            
-                builder.addRowAttributes(attributeInfos);
-                builder.getRowAttributes().values().stream().forEach(at -> {
-                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
-                });
+                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this.getAdapterInfo(), false);            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 // maybe pareparation is not needed!!!!!!
@@ -275,10 +274,45 @@ public class CsvDataAdapter implements DataAdapter {
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                     //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
                 }
+                prepareGroupBy(builder, select);
+                if(isSupported("select.groupby")) {
+                    if(groupByAttributes.size() > 0){
+                        builder.groupBy(groupByAttributes);
+                    }
+                }
+
+                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
+                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
+                    //replace the forward map of the resultentity to point to the same attribute in the row entity
+                    for(AttributeInfo attInfo: attributeInfos.values()){
+                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
+                            AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
+                            rowEntityattributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                        }
+                    }
+                } 
+                builder.addRowAttributes(rowEntityattributeInfos);
+                builder.getRowAttributes().values().stream().forEach(at -> {
+                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+                });
+
                 builder.addResultAttributes(attributeInfos);
                 builder.getResultAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
                 });
+                
+                if(isSupported("select.orderby")) {
+                    Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+                    for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                        if(attributeInfos.containsKey(entry.getKey())){
+                            orderItems.put(attributeInfos.get(entry.getKey()), entry.getValue());
+                        }            
+                    }
+                    builder.orderBy(orderItems);
+                }else {
+                    builder.orderBy(null);
+                }
                 
             } else {
                 builder.readerResourceName("Reader");
@@ -288,37 +322,48 @@ public class CsvDataAdapter implements DataAdapter {
                 builder.getResultAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
                 });
-            }
+                prepareGroupBy(builder, select);
+                if(isSupported("select.groupby")) {
+                    if(groupByAttributes.size() > 0){
+                        builder.groupBy(groupByAttributes);
+                    }
+                }                
             
-            if(isSupported("select.filter")) 
-                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
-            else 
-                builder.where("", false);
-            
-            if(isSupported("select.orderby")) {
-                Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
-                for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
-                    if(attributeInfos.containsKey(entry.getKey())){
-                        orderItems.put(attributeInfos.get(entry.getKey()), entry.getValue());
-                    }            
+                if(isSupported("select.orderby")) {
+                    Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+                    for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+                        if(attributeInfos.containsKey(entry.getKey())){
+                            orderItems.put(attributeInfos.get(entry.getKey()), entry.getValue());
+                        }            
+                    }
+                    builder.orderBy(orderItems);
+                }else {
+                    builder.orderBy(null);
                 }
-                builder.orderBy(orderItems);
             }
-            else {
-                builder.orderBy(null);
+            
+            try{
+                if(isSupported("select.filter")) 
+                    builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
+                else 
+                    builder.where("", false);
+            } catch(Exception ex){
+                select.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate(ex.getMessage())
+                        .setContextInfo1(select.getId())
+                        .setLineNumber(select.getParserContext().getStart().getLine())
+                        .setColumnNumber(-1)
+                        .build()
+                    );                
             }
+            
 
             prepareLimit(builder, select);
-            // prepare groupBy. 
-            prepareGroupBy(builder, select);
-
-            if(groupByAttributes.size() > 0){
-                builder.groupBy(groupByAttributes);
-                
-            }
             //all attributes refered to from the group by plus, 
             //if the perspective contains aggregate functions, all non aggregate attributes should be added to the goup by list
             // 
+
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
@@ -408,9 +453,22 @@ public class CsvDataAdapter implements DataAdapter {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
 
-            if(isSupported("select.filter")) builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
-            else builder.where("", true);
-
+            try{
+                if(isSupported("select.filter")) 
+                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
+                else 
+                    builder.where("", false);
+            } catch(Exception ex){
+                select.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate(ex.getMessage())
+                        .setContextInfo1(select.getId())
+                        .setLineNumber(select.getParserContext().getStart().getLine())
+                        .setColumnNumber(-1)
+                        .build()
+                    );                
+            }
+            
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
             for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
                     if(attributes.containsKey(entry.getKey())){
@@ -664,10 +722,11 @@ public class CsvDataAdapter implements DataAdapter {
     // these items, are used to create an intermediate perspective for retreiving data.
     // the original perspective is used for the aggregated/ grouped resultset.
     
-    private List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
-    private PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
-    private List<AttributeInfo> groupByAttributes = new ArrayList<>();
-        
+    private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
+    private final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+    private final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
+    private final List<String> groupByImplicitAttributes = new ArrayList<>();
+    
     private Boolean prepareAggregates(DataReaderBuilder builder, SelectDescriptor select) {
         // adopt for other types of queries, variable, join, etc
         for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
@@ -676,7 +735,7 @@ public class CsvDataAdapter implements DataAdapter {
             if(visitor.getAggregattionCallInfo().size() > 0){
                 aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
             } else {// the attribute is not containg aggregate, it should be considered as a group by item. preserve and check it withe group by list, later
-                groupByAttributes.add(attributeInfos.get(attribute.getId()));
+                groupByImplicitAttributes.add(attribute.getId());
             }
         }
         // if there is no aggregate function discovered, there is no need to do anything else, 
@@ -727,8 +786,13 @@ public class CsvDataAdapter implements DataAdapter {
 
     private void prepareGroupBy(DataReaderBuilder builder, SelectDescriptor select) {
         if(isSupported("select.groupby")) {
+            for(String implicitGroupByItem: groupByImplicitAttributes){
+                if(attributeInfos.containsKey(implicitGroupByItem)){
+                    groupByAttributes.add(attributeInfos.get(implicitGroupByItem));
+                }                 
+            }
             for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
-                if(!attributeInfos.containsKey(entry.getKey())){
+                if(attributeInfos.containsKey(entry.getKey())){
                     groupByAttributes.add(attributeInfos.get(entry.getKey()));
                 }            
             }

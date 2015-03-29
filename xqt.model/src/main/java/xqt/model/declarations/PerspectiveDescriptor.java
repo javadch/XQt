@@ -4,6 +4,7 @@
  */
 package xqt.model.declarations;
 
+import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.types.TypeSystem;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,6 +14,9 @@ import java.util.Map;
 import xqt.model.data.SchemaItem;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.expressions.Expression;
+import xqt.model.expressions.ExpressionType;
+import xqt.model.expressions.MemberExpression;
 
 /**
  *
@@ -29,6 +33,24 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     
     public PerspectiveDescriptor(PerspectiveType value){
         this.perspectiveType = value;
+    }
+    
+    public PerspectiveDescriptor(Map<String, FieldInfo> fields, String id) {
+        this.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+        this.setId("generated_Perspective_"+ id);
+        for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
+            FieldInfo field = entrySet.getValue();
+            PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+            attribute.setId(field.name);
+            attribute.setDataType(field.conceptualDataType);
+            
+            MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
+            MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
+            
+            attribute.setForwardExpression(fwd);
+            attribute.setReverseExpression(rvs);
+            this.addAttribute(attribute);            
+        }
     }
     
     public PerspectiveType getPerspectiveType() {
@@ -130,6 +152,28 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         }
         return schema;
     }   
+    
+    // looks for simple members in the expressions and checks whether they refer to a physical field,
+    // if yes, the data type of the the field is set for the members
+    public PerspectiveDescriptor improve(Map<String, FieldInfo> fields) {
+        if(this == null){
+            return null;
+        }
+        this.getAttributes().values().stream()
+            .filter(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown))
+            .filter(p->p.getForwardExpression().getExpressionType() == ExpressionType.Member)
+            .filter(p-> ((MemberExpression)p.getForwardExpression()).getMemberType() == MemberExpression.MemberType.Simple)
+            .forEachOrdered(unknownTypedAttribute-> {
+                String fieldName = ((MemberExpression)unknownTypedAttribute.getForwardExpression()).getComponents().get(0);
+                if(fields.containsKey(fieldName)){
+                    FieldInfo field = fields.get(fieldName);
+                    if(field!= null){
+                        unknownTypedAttribute.setDataType(field.conceptualDataType);
+                    }
+                }
+            });
+        return this;
+    }
     
     public enum PerspectiveType {
         Explicit,
