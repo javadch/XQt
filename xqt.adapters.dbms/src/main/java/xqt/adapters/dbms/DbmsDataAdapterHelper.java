@@ -113,6 +113,44 @@ public class DbmsDataAdapterHelper {
         return perspective.improve(fields);
     }    
 
+    public String getConnectionString(SingleContainer container){
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
+        switch (p.getValue().toLowerCase()){
+            case "postgresql":
+                return getConnectionStringForPgS(container);
+            default:
+                return "";
+        }        
+    }
+
+    public String getContainerUsername(SingleContainer container){
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
+        switch (p.getValue().toLowerCase()){
+            case "postgresql":
+                return container.getBinding().getConnection().getParameters().get("Username").getValue();
+            default:
+                return "";
+        }        
+    }
+
+    String getContainerDbProviderName(SingleContainer container) {
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
+        if(p == null || p.getValue() == null || p.getValue().equals("")){
+            return "postgresql";
+        }
+        return p.getValue().toLowerCase();
+    }
+
+    public String getContainerPassword(SingleContainer container){
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
+        switch (p.getValue().toLowerCase()){
+            case "postgresql":
+                return container.getBinding().getConnection().getParameters().get("Password").getValue();
+            default:
+                return "";
+        }        
+    }
+
     private LinkedHashMap<String, FieldInfo> getContinerSchemaFromPgS(SingleContainer container) {
         LinkedHashMap<String, FieldInfo> fields = new LinkedHashMap<>();
         Connection connection = null;
@@ -124,14 +162,8 @@ public class DbmsDataAdapterHelper {
             return fields;
         }        
         try {
-            String serverName = container.getBinding().getConnection().getParameters().get("Server").getValue();
-            String port = container.getBinding().getConnection().getParameters().get("Port").getValue();
-            String dbName = container.getBinding().getConnection().getParameters().get("DbName").getValue();
-            String username = container.getBinding().getConnection().getParameters().get("Username").getValue();
-            String password = container.getBinding().getConnection().getParameters().get("Password").getValue();
-            
-            String connectionString = MessageFormat.format("jdbc:postgresql://{0}:{1}/{2}", serverName, port, dbName);
-            connection = DriverManager.getConnection(connectionString, username, password);
+            String connectionString = getConnectionStringForPgS(container);
+            connection = DriverManager.getConnection(connectionString, getContainerUsername(container), getContainerPassword(container));
         } catch (SQLException e) {
                 System.out.println("Connection Failed! Check output console");
                 return fields;
@@ -173,6 +205,14 @@ public class DbmsDataAdapterHelper {
         }
     }
 
+    private String getConnectionStringForPgS(SingleContainer container){
+        String serverName = container.getBinding().getConnection().getParameters().get("Server").getValue();
+        String port = container.getBinding().getConnection().getParameters().get("Port").getValue();
+        String dbName = container.getBinding().getConnection().getParameters().get("DbName").getValue();
+        String connectionString = MessageFormat.format("jdbc:postgresql://{0}:{1}/{2}", serverName, port, dbName);
+        return connectionString;
+    }
+    
     private String convertPostgreSqlTypeToConceptualType(String dbmsType) {
         dbmsType = dbmsType.toLowerCase();
         if (dbmsType.startsWith("character") || dbmsType.startsWith("text") || dbmsType.startsWith("uuid")){
@@ -193,4 +233,5 @@ public class DbmsDataAdapterHelper {
             return TypeSystem.TypeName.Invalid;
         }
     }
+
 }

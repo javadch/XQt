@@ -36,6 +36,7 @@ import xqt.model.statements.query.SelectDescriptor;
  */
 public class DbmsDataAdapter implements DataAdapter{
     private DbmsDataReaderBuilder builder = null;
+    private DbmsDataAdapterHelper helper = null;
     private ConvertSelectElement convertSelect = null;
     private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
     private HashMap<String, Boolean> capabilities = new HashMap<>();
@@ -191,7 +192,6 @@ public class DbmsDataAdapter implements DataAdapter{
     }
     
     Map<String, AttributeInfo>  attributeInfos = new LinkedHashMap<>();
-    private DbmsDataAdapterHelper helper = null;
     private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
     private final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
     private final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
@@ -200,7 +200,8 @@ public class DbmsDataAdapter implements DataAdapter{
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try{
-            builder.addFields(helper.prepareFields(container));
+            builder.containerName(container.getContainerName())
+                   .addFields(helper.prepareFields(container));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
                 select.getProjectionClause().setPerspective(
@@ -213,6 +214,10 @@ public class DbmsDataAdapter implements DataAdapter{
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
             }
+            builder.connectionString(helper.getConnectionString(container))
+                   .username(helper.getContainerUsername(container))
+                   .password(helper.getContainerUsername(container))
+                   .dbProvider(helper.getContainerDbProviderName(container));
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){

@@ -21,10 +21,46 @@ import xqt.model.functions.AggregationCallInfo;
  */
 public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     ConvertSelectElement convertSelect = null;
+    String connectionString;
+    String username;
+    String password;
+    String dbProvider; // postgre, mysql, etc.
+    String containerName; // table or view name. the left one in the JOIN statements
+    String rightContainerName;
     
     public DbmsDataReaderBuilder(){        
         convertSelect = new ConvertSelectElement();
     }
+
+    public DbmsDataReaderBuilder connectionString(String value){
+        this.connectionString = value;
+        return this;
+    }    
+
+    public DbmsDataReaderBuilder username(String value){
+        this.username = value;
+        return this;
+    }    
+
+    public DbmsDataReaderBuilder password(String value){
+        this.password = value;
+        return this;
+    }    
+
+    public DbmsDataReaderBuilder dbProvider(String value){
+        this.dbProvider = value;
+        return this;
+    }    
+    
+    public DbmsDataReaderBuilder containerName(String value){
+        this.containerName = value;
+        return this;
+    }    
+
+    public DbmsDataReaderBuilder rightContainerName(String value){
+        this.rightContainerName = value;
+        return this;
+    }    
 
     List<AggregationCallInfo> aggregationCallInfo = new ArrayList<>();
     public DbmsDataReaderBuilder addAggregates(List<AggregationCallInfo> value) {
@@ -84,7 +120,8 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         //Default data adapter does not need these items! check for the join case
         //super.buildSingleSourceSegments();
         readerContext.put("TargetRowType", this.leftClassName);
-
+        String query = assembleQuery();
+        readerContext.put("Query", query);
     }
 
     @Override
@@ -97,4 +134,15 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         readerContext.put("RightClassName", this.rightClassName);
         readerContext.put("TargetRowType", (namespace + "." + baseClassName + "Entity"));
     }    
+
+    private String assembleQuery() {
+        String query = "SELECT * FROM " + this.containerName;       
+        switch (this.dbProvider.toLowerCase()){
+            case "postgresql":
+                // so something here
+            default:
+                return query;
+        }        
+    }
+
 }
