@@ -75,17 +75,6 @@ public interface XQtListener extends ParseTreeListener {
 	void exitBinding(@NotNull XQtParser.BindingContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link XQtParser#idExpr_qulaified}.
-	 * @param ctx the parse tree
-	 */
-	void enterIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#idExpr_qulaified}.
-	 * @param ctx the parse tree
-	 */
-	void exitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link XQtParser#setQualifierClause}.
 	 * @param ctx the parse tree
 	 */
@@ -128,17 +117,6 @@ public interface XQtListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitExpression_add(@NotNull XQtParser.Expression_addContext ctx);
-
-	/**
-	 * Enter a parse tree produced by {@link XQtParser#expression_idExpr}.
-	 * @param ctx the parse tree
-	 */
-	void enterExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#expression_idExpr}.
-	 * @param ctx the parse tree
-	 */
-	void exitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link XQtParser#connection}.
@@ -295,17 +273,6 @@ public interface XQtListener extends ParseTreeListener {
 	void exitSortKey(@NotNull XQtParser.SortKeyContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link XQtParser#idExpr_simple}.
-	 * @param ctx the parse tree
-	 */
-	void enterIdExpr_simple(@NotNull XQtParser.IdExpr_simpleContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#idExpr_simple}.
-	 * @param ctx the parse tree
-	 */
-	void exitIdExpr_simple(@NotNull XQtParser.IdExpr_simpleContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link XQtParser#simpleIdentifier}.
 	 * @param ctx the parse tree
 	 */
@@ -460,17 +427,6 @@ public interface XQtListener extends ParseTreeListener {
 	void exitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx);
 
 	/**
-	 * Enter a parse tree produced by {@link XQtParser#attribute_def}.
-	 * @param ctx the parse tree
-	 */
-	void enterAttribute_def(@NotNull XQtParser.Attribute_defContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQtParser#attribute_def}.
-	 * @param ctx the parse tree
-	 */
-	void exitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx);
-
-	/**
 	 * Enter a parse tree produced by {@link XQtParser#sortSpecification}.
 	 * @param ctx the parse tree
 	 */
@@ -603,6 +559,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitExpression_negate(@NotNull XQtParser.Expression_negateContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#attribute}.
+	 * @param ctx the parse tree
+	 */
+	void enterAttribute(@NotNull XQtParser.AttributeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#attribute}.
+	 * @param ctx the parse tree
+	 */
+	void exitAttribute(@NotNull XQtParser.AttributeContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#value}.
 	 * @param ctx the parse tree
 	 */
@@ -669,6 +636,17 @@ public interface XQtListener extends ParseTreeListener {
 	void exitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx);
 
 	/**
+	 * Enter a parse tree produced by {@link XQtParser#identifier_simple}.
+	 * @param ctx the parse tree
+	 */
+	void enterIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#identifier_simple}.
+	 * @param ctx the parse tree
+	 */
+	void exitIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx);
+
+	/**
 	 * Enter a parse tree produced by {@link XQtParser#searchPhrase}.
 	 * @param ctx the parse tree
 	 */
@@ -678,6 +656,28 @@ public interface XQtListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link XQtParser#identifier_qulaified}.
+	 * @param ctx the parse tree
+	 */
+	void enterIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#identifier_qulaified}.
+	 * @param ctx the parse tree
+	 */
+	void exitIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx);
+
+	/**
+	 * Enter a parse tree produced by {@link XQtParser#expression_identifier}.
+	 * @param ctx the parse tree
+	 */
+	void enterExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQtParser#expression_identifier}.
+	 * @param ctx the parse tree
+	 */
+	void exitExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx);
 
 	/**
 	 * Enter a parse tree produced by {@link XQtParser#function_simple}.

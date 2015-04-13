@@ -24,9 +24,10 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     String connectionString;
     String username;
     String password;
-    String dbProvider; // postgre, mysql, etc.
+    DBMSDialect dbProvider; // postgre, mysql, etc.
     String containerName; // table or view name. the left one in the JOIN statements
     String rightContainerName;
+    DbmsDataAdapterHelper queryHelper;
     
     public DbmsDataReaderBuilder(){        
         convertSelect = new ConvertSelectElement();
@@ -47,10 +48,15 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         return this;
     }    
 
-    public DbmsDataReaderBuilder dbProvider(String value){
+    public DbmsDataReaderBuilder dbProvider(DBMSDialect value){
         this.dbProvider = value;
         return this;
     }    
+    
+    public DbmsDataReaderBuilder registerQueryHelper(DbmsDataAdapterHelper value) {
+        this.queryHelper = value;
+        return this;
+    }
     
     public DbmsDataReaderBuilder containerName(String value){
         this.containerName = value;
@@ -120,7 +126,9 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         //Default data adapter does not need these items! check for the join case
         //super.buildSingleSourceSegments();
         readerContext.put("TargetRowType", this.leftClassName);
-        String query = assembleQuery();
+        // pass proper context for the query to be assembled properly.
+        readerContext.put("ContainerName", this.containerName);        
+        String query = queryHelper.assembleQuery(readerContext);
         readerContext.put("Query", query);
     }
 
@@ -134,15 +142,4 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         readerContext.put("RightClassName", this.rightClassName);
         readerContext.put("TargetRowType", (namespace + "." + baseClassName + "Entity"));
     }    
-
-    private String assembleQuery() {
-        String query = "SELECT * FROM " + this.containerName;       
-        switch (this.dbProvider.toLowerCase()){
-            case "postgresql":
-                // so something here
-            default:
-                return query;
-        }        
-    }
-
 }

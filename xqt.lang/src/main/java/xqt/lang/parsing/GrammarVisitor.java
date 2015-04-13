@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
@@ -100,8 +99,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         PerspectiveDescriptor perspective = PerspectiveAnnotator.describePerspective(ctx, processModel);
         // check for duplicate names
         stack.push(perspective); // it would be better if there were no need for data communication :-(
-        for(XQtParser.Attribute_defContext attCtx: ctx.attribute_def()){
-            PerspectiveAttributeDescriptor att = (PerspectiveAttributeDescriptor)visitAttribute_def(attCtx);
+        for(XQtParser.AttributeContext attCtx: ctx.attribute()){
+            PerspectiveAttributeDescriptor att = (PerspectiveAttributeDescriptor)visitAttribute(attCtx);
             perspective.addAttribute(att);
             perspective.getLanguageExceptions().addAll(att.getLanguageExceptions());
         }
@@ -112,7 +111,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
     
     @Override 
-    public Object visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { 
+    public Object visitAttribute(@NotNull XQtParser.AttributeContext ctx) { 
         PerspectiveDescriptor perspective = (PerspectiveDescriptor)stack.peek();
         PerspectiveAttributeDescriptor attribute = PerspectiveAnnotator.describePerspectiveAttribute(ctx, perspective.getId());
         if(ctx.fwd != null){ //these items will be moved to expression visitor/ descriptor methds
@@ -1245,21 +1244,21 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
     
     @Override
-    public Object visitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx) { 
+    public Object visitExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx) { 
         Expression exp = (Expression)visit(ctx.operand);
         //exp.setParserContext(ctx); // is set during the visit, replacing it may cause in accurate error reporting
         return exp; 
     }
     
     @Override
-    public Object visitIdExpr_simple(@NotNull XQtParser.IdExpr_simpleContext ctx) { 
+    public Object visitIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx) { 
         MemberExpression exp = Expression.Member(ctx.simpleIdentifier().ID().getText());
         exp.setParserContext(ctx);        
         return exp; 
     }
     
     @Override
-    public Object visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx) { 
+    public Object visitIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx) { 
         List<String> idComponents = new ArrayList<>();
         idComponents.add(ctx.qualifiedIdentifier().firstId.getText());
         ctx.qualifiedIdentifier().otherIds.stream().forEach((cmpnt) -> {
@@ -1317,7 +1316,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         OrderClause order = new OrderClause();
 
         for(XQtParser.SortSpecificationContext sortItemCtx: ctx.sortSpecification()){
-            MemberExpression sortKeyExpr = (MemberExpression)visit(sortItemCtx.sortKey().idExpr());
+            MemberExpression sortKeyExpr = (MemberExpression)visit(sortItemCtx.sortKey().identifier());
             String sortKey = sortKeyExpr.getId();
             if(sortKey  != null && !sortKey.isEmpty()){
                 if(order.getOrderItems().containsKey(sortKey)){ // duplicate key
@@ -1376,7 +1375,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitGroupClause(@NotNull XQtParser.GroupClauseContext ctx) {
         GroupClause group = new GroupClause();
 
-        for(XQtParser.IdExprContext groupItemCtx: ctx.idExpr()){
+        for(XQtParser.IdentifierContext groupItemCtx: ctx.identifier()){
             MemberExpression groupKeyExpr = (MemberExpression)visit(groupItemCtx);
             String groupKey = groupKeyExpr.getId();
             if(groupKey  != null && !groupKey.isEmpty()){

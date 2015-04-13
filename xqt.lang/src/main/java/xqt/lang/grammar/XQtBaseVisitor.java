@@ -66,14 +66,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -99,14 +91,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitExpression_add(@NotNull XQtParser.Expression_addContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
-	@Override public T visitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}
@@ -226,14 +210,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitIdExpr_simple(@NotNull XQtParser.IdExpr_simpleContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitSimpleIdentifier(@NotNull XQtParser.SimpleIdentifierContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -346,14 +322,6 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx) { return visitChildren(ctx); }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitSortSpecification(@NotNull XQtParser.SortSpecificationContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -450,6 +418,14 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitAttribute(@NotNull XQtParser.AttributeContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitValue(@NotNull XQtParser.ValueContext ctx) { return visitChildren(ctx); }
 
 	/**
@@ -498,7 +474,31 @@ public class XQtBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements XQ
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx) { return visitChildren(ctx); }
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx) { return visitChildren(ctx); }
 
 	/**
 	 * {@inheritDoc}

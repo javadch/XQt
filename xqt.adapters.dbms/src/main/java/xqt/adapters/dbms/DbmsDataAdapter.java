@@ -44,8 +44,6 @@ public class DbmsDataAdapter implements DataAdapter{
         
     public DbmsDataAdapter(){
         convertSelect = new ConvertSelectElement();
-        helper = new DbmsDataAdapterHelper();
-
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EQ, "==");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEQ, "!=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GT, ">");
@@ -200,8 +198,10 @@ public class DbmsDataAdapter implements DataAdapter{
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try{
+            helper = DbmsDataAdapterHelper.getQueryHelper(container);
             builder.containerName(container.getContainerName())
-                   .addFields(helper.prepareFields(container));
+                   .addFields(helper.getContinerSchema(container));
+            builder.registerQueryHelper(helper);
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
                 select.getProjectionClause().setPerspective(
@@ -217,7 +217,7 @@ public class DbmsDataAdapter implements DataAdapter{
             builder.connectionString(helper.getConnectionString(container))
                    .username(helper.getContainerUsername(container))
                    .password(helper.getContainerUsername(container))
-                   .dbProvider(helper.getContainerDbProviderName(container));
+                   .dbProvider(DbmsDataAdapterHelper.getContainerDbProviderName(container));
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){

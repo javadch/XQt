@@ -54,13 +54,6 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitBinding(@NotNull XQtParser.BindingContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link XQtParser#idExpr_qulaified}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIdExpr_qulaified(@NotNull XQtParser.IdExpr_qulaifiedContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link XQtParser#setQualifierClause}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -87,13 +80,6 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitExpression_add(@NotNull XQtParser.Expression_addContext ctx);
-
-	/**
-	 * Visit a parse tree produced by {@link XQtParser#expression_idExpr}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitExpression_idExpr(@NotNull XQtParser.Expression_idExprContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link XQtParser#connection}.
@@ -194,13 +180,6 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitSortKey(@NotNull XQtParser.SortKeyContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link XQtParser#idExpr_simple}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitIdExpr_simple(@NotNull XQtParser.IdExpr_simpleContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link XQtParser#simpleIdentifier}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -299,13 +278,6 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx);
 
 	/**
-	 * Visit a parse tree produced by {@link XQtParser#attribute_def}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitAttribute_def(@NotNull XQtParser.Attribute_defContext ctx);
-
-	/**
 	 * Visit a parse tree produced by {@link XQtParser#sortSpecification}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -390,6 +362,13 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitExpression_negate(@NotNull XQtParser.Expression_negateContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#attribute}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAttribute(@NotNull XQtParser.AttributeContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#value}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -432,11 +411,32 @@ public interface XQtVisitor<T> extends ParseTreeVisitor<T> {
 	T visitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx);
 
 	/**
+	 * Visit a parse tree produced by {@link XQtParser#identifier_simple}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx);
+
+	/**
 	 * Visit a parse tree produced by {@link XQtParser#searchPhrase}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx);
+
+	/**
+	 * Visit a parse tree produced by {@link XQtParser#identifier_qulaified}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx);
+
+	/**
+	 * Visit a parse tree produced by {@link XQtParser#expression_identifier}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx);
 
 	/**
 	 * Visit a parse tree produced by {@link XQtParser#function_simple}.

@@ -45,7 +45,7 @@ public class PerspectiveAnnotator {
         return perspective;
     }
 
-    public static PerspectiveAttributeDescriptor describePerspectiveAttribute(XQtParser.Attribute_defContext ctx, String perspectiveId) {
+    public static PerspectiveAttributeDescriptor describePerspectiveAttribute(XQtParser.AttributeContext ctx, String perspectiveId) {
     
         PerspectiveAttributeDescriptor attDesc = new PerspectiveAttributeDescriptor();  
         attDesc.setParserContext(ctx);

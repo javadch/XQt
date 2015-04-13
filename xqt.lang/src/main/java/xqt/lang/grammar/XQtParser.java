@@ -50,7 +50,7 @@ public class XQtParser extends Parser {
 		"DATE", "UINT", "INT", "FLOAT"
 	};
 	public static final int
-		RULE_createProcessModel = 0, RULE_process = 1, RULE_perspective = 2, RULE_attribute_def = 3, 
+		RULE_createProcessModel = 0, RULE_process = 1, RULE_perspective = 2, RULE_attribute = 3, 
 		RULE_connection = 4, RULE_parameter_def = 5, RULE_binding = 6, RULE_binding_scope_def = 7, 
 		RULE_statement = 8, RULE_dataStatement = 9, RULE_dataRetrievalStatement = 10, 
 		RULE_selectStatement = 11, RULE_setQualifierClause = 12, RULE_projectionClause = 13, 
@@ -63,12 +63,12 @@ public class XQtParser extends Parser {
 		RULE_groupClause = 33, RULE_variable = 34, RULE_searchPhrase = 35, RULE_intNumber = 36, 
 		RULE_floatNumber = 37, RULE_expression = 38, RULE_function = 39, RULE_argument = 40, 
 		RULE_packagedIdentifier = 41, RULE_smartId = 42, RULE_dataType = 43, RULE_semanticKey = 44, 
-		RULE_value = 45, RULE_idExpr = 46, RULE_versionSelector = 47, RULE_labelVersionSelector = 48, 
+		RULE_value = 45, RULE_identifier = 46, RULE_versionSelector = 47, RULE_labelVersionSelector = 48, 
 		RULE_sequenceVersionSelector = 49, RULE_dateVersionSelector = 50, RULE_simpleIdentifier = 51, 
 		RULE_qualifiedIdentifier = 52, RULE_literal = 53, RULE_path = 54, RULE_pathEntity = 55, 
 		RULE_pathAttribute = 56;
 	public static final String[] ruleNames = {
-		"createProcessModel", "process", "perspective", "attribute_def", "connection", 
+		"createProcessModel", "process", "perspective", "attribute", "connection", 
 		"parameter_def", "binding", "binding_scope_def", "statement", "dataStatement", 
 		"dataRetrievalStatement", "selectStatement", "setQualifierClause", "projectionClause", 
 		"inlineAttribute", "sourceSelectionClause", "sourceRef", "joinedSource", 
@@ -77,7 +77,7 @@ public class XQtParser extends Parser {
 		"orderClause", "sortSpecification", "sortKey", "sortOrder", "nullOrder", 
 		"limitClause", "groupClause", "variable", "searchPhrase", "intNumber", 
 		"floatNumber", "expression", "function", "argument", "packagedIdentifier", 
-		"smartId", "dataType", "semanticKey", "value", "idExpr", "versionSelector", 
+		"smartId", "dataType", "semanticKey", "value", "identifier", "versionSelector", 
 		"labelVersionSelector", "sequenceVersionSelector", "dateVersionSelector", 
 		"simpleIdentifier", "qualifiedIdentifier", "literal", "path", "pathEntity", 
 		"pathAttribute"
@@ -283,17 +283,17 @@ public class XQtParser extends Parser {
 	public static class PerspectiveContext extends ParserRuleContext {
 		public Token name;
 		public Token superPerspective;
+		public List<AttributeContext> attribute() {
+			return getRuleContexts(AttributeContext.class);
+		}
 		public List<TerminalNode> ID() { return getTokens(XQtParser.ID); }
 		public TerminalNode PERSPECTIVE() { return getToken(XQtParser.PERSPECTIVE, 0); }
 		public TerminalNode RCUR() { return getToken(XQtParser.RCUR, 0); }
+		public AttributeContext attribute(int i) {
+			return getRuleContext(AttributeContext.class,i);
+		}
 		public TerminalNode ID(int i) {
 			return getToken(XQtParser.ID, i);
-		}
-		public List<Attribute_defContext> attribute_def() {
-			return getRuleContexts(Attribute_defContext.class);
-		}
-		public Attribute_defContext attribute_def(int i) {
-			return getRuleContext(Attribute_defContext.class,i);
 		}
 		public TerminalNode EXTENDS() { return getToken(XQtParser.EXTENDS, 0); }
 		public TerminalNode LCUR() { return getToken(XQtParser.LCUR, 0); }
@@ -341,7 +341,7 @@ public class XQtParser extends Parser {
 			do {
 				{
 				{
-				setState(154); attribute_def();
+				setState(154); attribute();
 				}
 				}
 				setState(157); 
@@ -362,7 +362,7 @@ public class XQtParser extends Parser {
 		return _localctx;
 	}
 
-	public static class Attribute_defContext extends ParserRuleContext {
+	public static class AttributeContext extends ParserRuleContext {
 		public ExpressionContext fwd;
 		public ExpressionContext rvs;
 		public TerminalNode MapTo() { return getToken(XQtParser.MapTo, 0); }
@@ -382,28 +382,28 @@ public class XQtParser extends Parser {
 		public List<ExpressionContext> expression() {
 			return getRuleContexts(ExpressionContext.class);
 		}
-		public Attribute_defContext(ParserRuleContext parent, int invokingState) {
+		public AttributeContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_attribute_def; }
+		@Override public int getRuleIndex() { return RULE_attribute; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterAttribute_def(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterAttribute(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitAttribute_def(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitAttribute(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitAttribute_def(this);
+			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitAttribute(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 
-	public final Attribute_defContext attribute_def() throws RecognitionException {
-		Attribute_defContext _localctx = new Attribute_defContext(_ctx, getState());
-		enterRule(_localctx, 6, RULE_attribute_def);
+	public final AttributeContext attribute() throws RecognitionException {
+		AttributeContext _localctx = new AttributeContext(_ctx, getState());
+		enterRule(_localctx, 6, RULE_attribute);
 		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
@@ -416,7 +416,7 @@ public class XQtParser extends Parser {
 				{
 				setState(163); match(MapTo);
 				setState(164); match(ASN);
-				setState(165); ((Attribute_defContext)_localctx).fwd = expression(0);
+				setState(165); ((AttributeContext)_localctx).fwd = expression(0);
 				}
 			}
 
@@ -426,7 +426,7 @@ public class XQtParser extends Parser {
 				{
 				setState(168); match(REVERSEMAP);
 				setState(169); match(ASN);
-				setState(170); ((Attribute_defContext)_localctx).rvs = expression(0);
+				setState(170); ((AttributeContext)_localctx).rvs = expression(0);
 				}
 			}
 
@@ -1534,21 +1534,21 @@ public class XQtParser extends Parser {
 	}
 
 	public static class JoinSpecificationContext extends ParserRuleContext {
-		public IdExprContext leftKey;
+		public IdentifierContext leftKey;
 		public Token op;
-		public IdExprContext rightKey;
+		public IdentifierContext rightKey;
+		public IdentifierContext identifier(int i) {
+			return getRuleContext(IdentifierContext.class,i);
+		}
 		public TerminalNode NotEQ() { return getToken(XQtParser.NotEQ, 0); }
 		public TerminalNode LTEQ() { return getToken(XQtParser.LTEQ, 0); }
 		public TerminalNode LT() { return getToken(XQtParser.LT, 0); }
 		public TerminalNode GT() { return getToken(XQtParser.GT, 0); }
-		public List<IdExprContext> idExpr() {
-			return getRuleContexts(IdExprContext.class);
-		}
 		public TerminalNode EQ() { return getToken(XQtParser.EQ, 0); }
-		public TerminalNode GTEQ() { return getToken(XQtParser.GTEQ, 0); }
-		public IdExprContext idExpr(int i) {
-			return getRuleContext(IdExprContext.class,i);
+		public List<IdentifierContext> identifier() {
+			return getRuleContexts(IdentifierContext.class);
 		}
+		public TerminalNode GTEQ() { return getToken(XQtParser.GTEQ, 0); }
 		public JoinSpecificationContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -1575,7 +1575,7 @@ public class XQtParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(316); ((JoinSpecificationContext)_localctx).leftKey = idExpr();
+			setState(316); ((JoinSpecificationContext)_localctx).leftKey = identifier();
 			setState(317);
 			((JoinSpecificationContext)_localctx).op = _input.LT(1);
 			_la = _input.LA(1);
@@ -1583,7 +1583,7 @@ public class XQtParser extends Parser {
 				((JoinSpecificationContext)_localctx).op = (Token)_errHandler.recoverInline(this);
 			}
 			consume();
-			setState(318); ((JoinSpecificationContext)_localctx).rightKey = idExpr();
+			setState(318); ((JoinSpecificationContext)_localctx).rightKey = identifier();
 			}
 		}
 		catch (RecognitionException re) {
@@ -2254,8 +2254,8 @@ public class XQtParser extends Parser {
 	}
 
 	public static class SortKeyContext extends ParserRuleContext {
-		public IdExprContext idExpr() {
-			return getRuleContext(IdExprContext.class,0);
+		public IdentifierContext identifier() {
+			return getRuleContext(IdentifierContext.class,0);
 		}
 		public SortKeyContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -2282,7 +2282,7 @@ public class XQtParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(416); idExpr();
+			setState(416); identifier();
 			}
 		}
 		catch (RecognitionException re) {
@@ -2471,15 +2471,15 @@ public class XQtParser extends Parser {
 
 	public static class GroupClauseContext extends ParserRuleContext {
 		public TerminalNode GROUPBY() { return getToken(XQtParser.GROUPBY, 0); }
+		public IdentifierContext identifier(int i) {
+			return getRuleContext(IdentifierContext.class,i);
+		}
 		public List<TerminalNode> COMMA() { return getTokens(XQtParser.COMMA); }
-		public List<IdExprContext> idExpr() {
-			return getRuleContexts(IdExprContext.class);
+		public List<IdentifierContext> identifier() {
+			return getRuleContexts(IdentifierContext.class);
 		}
 		public TerminalNode COMMA(int i) {
 			return getToken(XQtParser.COMMA, i);
-		}
-		public IdExprContext idExpr(int i) {
-			return getRuleContext(IdExprContext.class,i);
 		}
 		public GroupClauseContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
@@ -2508,7 +2508,7 @@ public class XQtParser extends Parser {
 			enterOuterAlt(_localctx, 1);
 			{
 			setState(435); match(GROUPBY);
-			setState(436); idExpr();
+			setState(436); identifier();
 			setState(441);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
@@ -2516,7 +2516,7 @@ public class XQtParser extends Parser {
 				{
 				{
 				setState(437); match(COMMA);
-				setState(438); idExpr();
+				setState(438); identifier();
 				}
 				}
 				setState(443);
@@ -2758,6 +2758,26 @@ public class XQtParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
+	public static class Expression_identifierContext extends ExpressionContext {
+		public IdentifierContext operand;
+		public IdentifierContext identifier() {
+			return getRuleContext(IdentifierContext.class,0);
+		}
+		public Expression_identifierContext(ExpressionContext ctx) { copyFrom(ctx); }
+		@Override
+		public void enterRule(ParseTreeListener listener) {
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterExpression_identifier(this);
+		}
+		@Override
+		public void exitRule(ParseTreeListener listener) {
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitExpression_identifier(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitExpression_identifier(this);
+			else return visitor.visitChildren(this);
+		}
+	}
 	public static class Expression_functionContext extends ExpressionContext {
 		public FunctionContext operand;
 		public FunctionContext function() {
@@ -2960,26 +2980,6 @@ public class XQtParser extends Parser {
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class Expression_idExprContext extends ExpressionContext {
-		public IdExprContext operand;
-		public IdExprContext idExpr() {
-			return getRuleContext(IdExprContext.class,0);
-		}
-		public Expression_idExprContext(ExpressionContext ctx) { copyFrom(ctx); }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterExpression_idExpr(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitExpression_idExpr(this);
-		}
-		@Override
-		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitExpression_idExpr(this);
-			else return visitor.visitChildren(this);
-		}
-	}
 	public static class Expression_negateContext extends ExpressionContext {
 		public Token op;
 		public ExpressionContext operand;
@@ -3125,10 +3125,10 @@ public class XQtParser extends Parser {
 
 			case 6:
 				{
-				_localctx = new Expression_idExprContext(_localctx);
+				_localctx = new Expression_identifierContext(_localctx);
 				_ctx = _localctx;
 				_prevctx = _localctx;
-				setState(463); ((Expression_idExprContext)_localctx).operand = idExpr();
+				setState(463); ((Expression_identifierContext)_localctx).operand = identifier();
 				}
 				break;
 
@@ -3788,64 +3788,64 @@ public class XQtParser extends Parser {
 		return _localctx;
 	}
 
-	public static class IdExprContext extends ParserRuleContext {
-		public IdExprContext(ParserRuleContext parent, int invokingState) {
+	public static class IdentifierContext extends ParserRuleContext {
+		public IdentifierContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
-		@Override public int getRuleIndex() { return RULE_idExpr; }
+		@Override public int getRuleIndex() { return RULE_identifier; }
 	 
-		public IdExprContext() { }
-		public void copyFrom(IdExprContext ctx) {
+		public IdentifierContext() { }
+		public void copyFrom(IdentifierContext ctx) {
 			super.copyFrom(ctx);
 		}
 	}
-	public static class IdExpr_simpleContext extends IdExprContext {
+	public static class Identifier_simpleContext extends IdentifierContext {
 		public SimpleIdentifierContext simpleIdentifier() {
 			return getRuleContext(SimpleIdentifierContext.class,0);
 		}
-		public IdExpr_simpleContext(IdExprContext ctx) { copyFrom(ctx); }
+		public Identifier_simpleContext(IdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterIdExpr_simple(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterIdentifier_simple(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitIdExpr_simple(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitIdentifier_simple(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitIdExpr_simple(this);
+			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitIdentifier_simple(this);
 			else return visitor.visitChildren(this);
 		}
 	}
-	public static class IdExpr_qulaifiedContext extends IdExprContext {
+	public static class Identifier_qulaifiedContext extends IdentifierContext {
 		public QualifiedIdentifierContext qualifiedIdentifier() {
 			return getRuleContext(QualifiedIdentifierContext.class,0);
 		}
-		public IdExpr_qulaifiedContext(IdExprContext ctx) { copyFrom(ctx); }
+		public Identifier_qulaifiedContext(IdentifierContext ctx) { copyFrom(ctx); }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterIdExpr_qulaified(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).enterIdentifier_qulaified(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitIdExpr_qulaified(this);
+			if ( listener instanceof XQtListener ) ((XQtListener)listener).exitIdentifier_qulaified(this);
 		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
-			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitIdExpr_qulaified(this);
+			if ( visitor instanceof XQtVisitor ) return ((XQtVisitor<? extends T>)visitor).visitIdentifier_qulaified(this);
 			else return visitor.visitChildren(this);
 		}
 	}
 
-	public final IdExprContext idExpr() throws RecognitionException {
-		IdExprContext _localctx = new IdExprContext(_ctx, getState());
-		enterRule(_localctx, 92, RULE_idExpr);
+	public final IdentifierContext identifier() throws RecognitionException {
+		IdentifierContext _localctx = new IdentifierContext(_ctx, getState());
+		enterRule(_localctx, 92, RULE_identifier);
 		try {
 			setState(555);
 			switch ( getInterpreter().adaptivePredict(_input,63,_ctx) ) {
 			case 1:
-				_localctx = new IdExpr_qulaifiedContext(_localctx);
+				_localctx = new Identifier_qulaifiedContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
 				setState(553); qualifiedIdentifier();
@@ -3853,7 +3853,7 @@ public class XQtParser extends Parser {
 				break;
 
 			case 2:
-				_localctx = new IdExpr_simpleContext(_localctx);
+				_localctx = new Identifier_simpleContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
 				setState(554); simpleIdentifier();
