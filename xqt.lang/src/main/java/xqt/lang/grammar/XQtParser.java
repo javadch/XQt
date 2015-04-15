@@ -4115,7 +4115,7 @@ public class XQtParser extends Parser {
 		public Token ID;
 		public List<Token> otherIds = new ArrayList<Token>();
 		public Token INT;
-		public Token _tset634;
+		public Token _tset636;
 		public TerminalNode INT(int i) {
 			return getToken(XQtParser.INT, i);
 		}
@@ -4166,13 +4166,13 @@ public class XQtParser extends Parser {
 					{
 					setState(571); match(DOT);
 					setState(572);
-					((QualifiedIdentifierContext)_localctx)._tset634 = _input.LT(1);
+					((QualifiedIdentifierContext)_localctx)._tset636 = _input.LT(1);
 					_la = _input.LA(1);
 					if ( !(_la==ID || _la==INT) ) {
-						((QualifiedIdentifierContext)_localctx)._tset634 = (Token)_errHandler.recoverInline(this);
+						((QualifiedIdentifierContext)_localctx)._tset636 = (Token)_errHandler.recoverInline(this);
 					}
 					consume();
-					((QualifiedIdentifierContext)_localctx).otherIds.add(((QualifiedIdentifierContext)_localctx)._tset634);
+					((QualifiedIdentifierContext)_localctx).otherIds.add(((QualifiedIdentifierContext)_localctx)._tset636);
 					}
 					}
 					break;
