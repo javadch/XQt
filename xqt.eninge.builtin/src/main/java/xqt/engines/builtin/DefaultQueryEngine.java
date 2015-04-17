@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package xqt.engine.builtin;
+package xqt.engines.builtin;
 
 import com.vaiona.commons.compilation.ClassCompiler;
 import com.vaiona.commons.compilation.InMemoryCompiledObject;
@@ -19,6 +19,7 @@ import javax.tools.JavaFileObject;
 import xqt.engine.QueryEngine;
 import xqt.model.ProcessModel;
 import xqt.model.data.Variable;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementDescriptor;
 import xqt.model.statements.StatementVisitor;
@@ -127,7 +128,7 @@ public class DefaultQueryEngine  implements QueryEngine{
             // take a look at linked map, SortedMap
             // as the statementIds are ascending, unique and key of the map, maybe sortedmap solves the issue
             // but LinkedHashMap guarantees the insertion order without relying on the meaningfulness of the Ids
-            StatementVisitor visitor = new StatementExecuter(this, memory); // 
+            StatementVisitor visitor = new StatementExecuter(this, memory);
             LinkedHashMap<String, InMemorySourceFile> sourcesToBeCompiled = new LinkedHashMap<>();
             List<StatementDescriptor> erroneousStatements = new ArrayList<>();
             for(StatementDescriptor sm: model.getStatements().values()){
@@ -221,9 +222,11 @@ public class DefaultQueryEngine  implements QueryEngine{
                 }
             }
 
-        } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+        } catch (Exception ex) {
+            model.getLanguageExceptions().add(LanguageExceptionBuilder.builder()
+                            .setMessageTemplate(ex.getMessage())
+                            .build()
+                        );
         }
     }    
 }

@@ -4,14 +4,12 @@
  */
 package xqt.runtime;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import xqt.engine.QueryEngine;
-import xqt.engine.builtin.DefaultQueryEngine;
+import xqt.engines.builtin.DefaultQueryEngine;
 import xqt.lang.LanguageController;
 import xqt.model.ProcessModel;
-import xqt.model.exceptions.LanguageException;
 
 /**
  *

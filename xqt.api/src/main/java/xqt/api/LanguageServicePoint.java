@@ -51,11 +51,15 @@ public class LanguageServicePoint {
     }
         
     public LanguageServicePoint(InputStream processScript) {
-       init(processScript);
+        try{
+           init(processScript);
+        } catch(Exception ex){
+            this.exceptions.add(ex);
+        }
     }
     
     // it is to keep the ctors clean
-    private void init(InputStream processScript){
+    private void init(InputStream processScript) throws Exception{
         //prepare the parser/ annotator and create the DST use the runtime system for all the functions, 
         // The API is just a facade over the runtime
         // every statement should have an ID
@@ -121,7 +125,7 @@ public class LanguageServicePoint {
     }
 
     FunctionInfoContainer functionContainer = null;
-    private void loadFunctionSpecifications() {
+    private void loadFunctionSpecifications() throws Exception {
         // use the function specification bean, read the function pack folder, list the packages, read them all, add them to the function list.
         functionContainer = FunctionInfoContainer.getDefaultInstance();
     }

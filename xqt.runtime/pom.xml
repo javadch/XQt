@@ -15,18 +15,18 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>engine.interface</artifactId>
+            <artifactId>xqt.engine.interface</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>xqt.engine</groupId>
-            <artifactId>default.queryengine</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>xqt.language</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>xqt.engine</groupId>
+            <artifactId>xqt.engines.builtin</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <properties>

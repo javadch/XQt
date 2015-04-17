@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package xqt.engine.builtin;
+package xqt.engines.builtin;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -49,7 +49,7 @@ public class StatementExecuter implements StatementVisitor{
         this.engine = engine;
     }
 
-    StatementExecuter(DefaultQueryEngine engine, Map<String, Variable> memory) {
+    StatementExecuter(DefaultQueryEngine engine, Map<String, Variable> memory) throws Exception {
         this.engine = engine;
         this.memory = memory;
         adapterInfoContainer = AdapterInfoContainer.getInstance();
@@ -167,17 +167,12 @@ public class StatementExecuter implements StatementVisitor{
                         String adapterType = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getAdapterName();
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                            ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
-                            Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
-                            Constructor<?> ctor = cl.getConstructor();
-                            ctor.setAccessible(true);
-                            adapter = (DataAdapter)ctor.newInstance();
+                            adapter = adapterInfo.load();
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
                         }
-                        catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 
-                                | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                        catch (Exception ex) {
                             select.getLanguageExceptions().add(
                                 LanguageExceptionBuilder.builder()
                                     .setMessageTemplate("Could not load the adapter for '" + adapterType + "'. " + ex.getMessage())
@@ -199,17 +194,12 @@ public class StatementExecuter implements StatementVisitor{
                 String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                    ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
-                    Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
-                    Constructor<?> ctor = cl.getConstructor();
-                    ctor.setAccessible(true);
-                    adapter = (DataAdapter)ctor.newInstance();
+                    adapter = adapterInfo.load();
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     adapter.setAdapterInfo(adapterInfo);
                     return adapter;
                 }
-                catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 
-                        | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                catch (Exception ex) {
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("Could not load the adapter for '" + adapterType + "'. " + ex.getMessage())
@@ -255,13 +245,12 @@ public class StatementExecuter implements StatementVisitor{
                             Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
                             Constructor<?> ctor = cl.getConstructor();
                             ctor.setAccessible(true);
-                            adapter = (DataAdapter)ctor.newInstance();
+                            adapter = adapterInfo.load();
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
                         }
-                        catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | SecurityException 
-                                | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+                        catch (Exception ex) {
                             select.getLanguageExceptions().add(
                                 LanguageExceptionBuilder.builder()
                                     .setMessageTemplate("Could not load the adapter for '" + leftAdapterCode + "'. " + ex.getMessage())

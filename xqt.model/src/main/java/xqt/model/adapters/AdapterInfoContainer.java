@@ -45,14 +45,10 @@ public class AdapterInfoContainer {
         
     }
     
-    public static AdapterInfoContainer getInstance(){
+    public static AdapterInfoContainer getInstance() throws Exception{
         if(instance == null){
             //instance = new AdapterInfoContainer();
-            try {
-                instance = AdapterInfoContainer.loadRegisteredAdapterInfos();
-            } catch (Exception ex) {
-                Logger.getLogger(AdapterInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            instance = AdapterInfoContainer.loadRegisteredAdapterInfos();
         }
         return instance;
     }
@@ -102,6 +98,8 @@ public class AdapterInfoContainer {
         try (InputStream inputStream = new FileInputStream("config\\adapters.xml")) {
             InputSource inputSource = new InputSource(inputStream);
             xr.parse(inputSource);
+        } catch (Exception ex){
+            throw ex;
         }
 
         return (AdapterInfoContainer)unmarshallerHandler.getResult();
@@ -112,7 +110,7 @@ public class AdapterInfoContainer {
     }
     
     public void writeConfig() {
-        AdapterInfo a1 = new AdapterInfo("CSV", "D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/csv.adapter-1.0-SNAPSHOT.jar", "file", "CsvDataAdapter", "xqt.adapters.csv", false);
+        AdapterInfo a1 = new AdapterInfo("CSV", "D:/Projects/PhD/Src/XQt/xqt.adapters.csv/target/xqt.adapters.csv-1.0-SNAPSHOT.jar", "file", "CsvDataAdapter", "xqt.adapters.csv", false);
         instance.registeredAdapterInfos.add(a1);
         AdapterInfo a2 = new AdapterInfo("DBMS", "c:\\m2", "file", "DbmsAdapter", "x1.dbms", false);
         instance.registeredAdapterInfos.add(a2);

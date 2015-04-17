@@ -223,7 +223,7 @@ public class DefaultDataAdapter implements DataAdapter{
                 }
                 //// END OF MAPPER AREA                //// END OF MAPPER AREA
             }
-        } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+        } catch (Exception ex) {
             // do something here!!
         }       
         return null;    
@@ -367,7 +367,7 @@ public class DefaultDataAdapter implements DataAdapter{
             resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
             //resultSet.setSchema(prepareSchema(select));
             return resultSet;
-       } catch (IOException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+       } catch (Exception ex) {
             
        }
        return null;

@@ -8,6 +8,7 @@ package xqt.model.expressions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.functions.AggregationCallInfo;
 import xqt.model.functions.FunctionInfo;
 import xqt.model.functions.FunctionInfoContainer;
@@ -40,22 +41,40 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
     public void visit(FunctionExpression expr) {
         // check whether the function is an aggregate, add it to list, etc...
         // do not change the function itself, it will be done by the adapters
-        FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
-        Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
-                .filter(p-> p.getPackageName().equalsIgnoreCase(expr.getPackageId()) 
-                        && p.getName().equalsIgnoreCase(expr.getId())
-                        && p.isAggregate()).findFirst();
-        if(fInfo.isPresent()){
-            AggregationCallInfo aggInfo = new AggregationCallInfo();
-            aggInfo.setAliasName(namingPrefix + "_Aggregate_" + aggregattionCallInfo.size());
-            aggInfo.setFunction(expr);
-            aggInfo.setFunctionName(expr.getPackageId() + "." + expr.getId());
-            aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "P0"); // only one parameter is considered for the aggregate functions
-            if(expr.getParameters().size() > 0){
-                aggInfo.setParameter(expr.getParameters().get(0));
-            }
-            aggregattionCallInfo.add(aggInfo);
+///////////////////////////
+       try{
+            FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
+            Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
+                    .filter(p-> p.getPackageName().equalsIgnoreCase(expr.getPackageId()) 
+                            && p.getName().equalsIgnoreCase(expr.getId())
+                            && p.isAggregate()).findFirst();
+            if(fInfo.isPresent()){
+                AggregationCallInfo aggInfo = new AggregationCallInfo();
+                aggInfo.setAliasName(namingPrefix + "_Aggregate_" + aggregattionCallInfo.size());
+                aggInfo.setFunction(expr);
+                aggInfo.setFunctionName(expr.getPackageId() + "." + expr.getId());
+                aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "P0"); // only one parameter is considered for the aggregate functions
+                if(expr.getParameters().size() > 0){
+                    aggInfo.setParameter(expr.getParameters().get(0));
+                }
+                aggregattionCallInfo.add(aggInfo);
+            } else {            
+                expr.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
+                                .setContextInfo1(expr.getPackageId())
+                                .setContextInfo2(expr.getPackageId())
+                                .build()
+                        ); 
+            } 
+        } catch(Exception ex){
+            expr.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate(ex.getMessage())
+                            .build()
+                    ); 
         }        
+///////////////////////////        
     }
 
     @Override

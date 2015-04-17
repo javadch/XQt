@@ -45,11 +45,12 @@ public class FunctionInfoContainer {
     private FunctionInfoContainer(){
         
     }
-    public static FunctionInfoContainer getDefaultInstance(){
+    public static FunctionInfoContainer getDefaultInstance() throws Exception{
         AdapterInfo defaultAdapter = AdapterInfoContainer.getInstance().getDefultAdapter();
         if(defaultAdapter == null)
             return getInstance("Default");
         return getInstance(defaultAdapter.getId());
+
     }
     
     public static FunctionInfoContainer getInstance(String adapterId){

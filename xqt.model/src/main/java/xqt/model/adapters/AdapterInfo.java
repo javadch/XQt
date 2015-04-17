@@ -6,6 +6,9 @@
 
 package xqt.model.adapters;
 
+import com.vaiona.commons.compilation.ObjectCreator;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import xqt.model.functions.FunctionInfoContainer;
@@ -94,5 +97,17 @@ public class AdapterInfo {
       
     public FunctionInfoContainer getFunctionInfoContainer(){
         return FunctionInfoContainer.getInstance(id);
+    }
+
+    public DataAdapter load() throws Exception  {
+        try{
+        ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + location);
+        Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
+        DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
+        return adapter;
+        } catch(Exception ex){
+            throw ex;
+            //return null;
+        }
     }
 }

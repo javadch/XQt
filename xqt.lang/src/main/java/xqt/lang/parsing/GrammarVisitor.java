@@ -1154,22 +1154,33 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     }
     
     private Expression createFunction(String id, String packageId, List<XQtParser.ArgumentContext> arguments, FunctionContext ctx){
-        FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
-        Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
-                .filter(p-> p.getPackageName().equalsIgnoreCase(packageId) && p.getName().equalsIgnoreCase(id)).findFirst();
-        if(!fInfo.isPresent()){
-            InvalidExpression exp = Expression.Invalid();
-            exp.getLanguageExceptions().add(
+        Optional<FunctionInfo> fInfo;
+        InvalidExpression invalidExpr = Expression.Invalid();
+        try{
+            FunctionInfoContainer functionContainer;
+            functionContainer = FunctionInfoContainer.getDefaultInstance();
+            fInfo = functionContainer.getRegisteredFunctions().stream()
+                    .filter(p-> p.getPackageName().equalsIgnoreCase(packageId) && p.getName().equalsIgnoreCase(id)).findFirst();
+            if(!fInfo.isPresent()){            
+                invalidExpr.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
+                                .setContextInfo1(id)
+                                .setContextInfo2(packageId)
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                                .build()
+                        ); 
+                return invalidExpr;
+            } 
+        } catch(Exception ex){
+            invalidExpr.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
-                            .setContextInfo1(id)
-                            .setContextInfo2(packageId)
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                            .setMessageTemplate(ex.getMessage())
                             .build()
                     ); 
-            return exp;
-        } 
+            return invalidExpr; 
+        }
         
         List<Expression> parameters = new ArrayList<>();
         int paramIndex=0;
