@@ -6,12 +6,16 @@
 
 package xqt.model.adapters;
 
+import com.vaiona.commons.logging.LoggerHelper;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -95,10 +99,16 @@ public class AdapterInfoContainer {
         XMLReader xr = sp.getXMLReader();
         xr.setContentHandler(unmarshallerHandler);
 
-        try (InputStream inputStream = new FileInputStream("config\\adapters.xml")) {
+        
+        File f = new File("config/adapters.xml");
+        
+        LoggerHelper.logDebug("LoadingAdapterInfo" , MessageFormat.format("Loading file {0}", f.getAbsolutePath()));
+        try (InputStream inputStream = new FileInputStream(f)/*("./config/adapters.xml")*/) {
             InputSource inputSource = new InputSource(inputStream);
             xr.parse(inputSource);
+            LoggerHelper.logDebug(MessageFormat.format("The adapter config file {0} was successfully loaded.", f.getAbsolutePath()));
         } catch (Exception ex){
+            LoggerHelper.logError(MessageFormat.format("The adapter config file {0} was NOT loaded.", f.getAbsolutePath()));
             throw ex;
         }
 

@@ -7,8 +7,10 @@
 package xqt.model.adapters;
 
 import com.vaiona.commons.compilation.ObjectCreator;
+import com.vaiona.commons.logging.LoggerHelper;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.text.MessageFormat;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import xqt.model.functions.FunctionInfoContainer;
@@ -101,11 +103,13 @@ public class AdapterInfo {
 
     public DataAdapter load() throws Exception  {
         try{
-        ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + location);
-        Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
-        DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
+            ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + location);
+            Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
+            DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
+            LoggerHelper.logDebug(MessageFormat.format("The {0} adapter located at {1}:{2} was successfully loaded.", id, locationType, location));
         return adapter;
         } catch(Exception ex){
+            LoggerHelper.logError(MessageFormat.format("The {0} adapter located at {1}:{2} was NOT loaded. Cauase: {3}", id, locationType, location, ex.getMessage()));
             throw ex;
             //return null;
         }

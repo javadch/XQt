@@ -74,8 +74,7 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         return this;
     }
     
-    DbmsDataReader build(Class classObject) throws NoSuchMethodException, InstantiationException, IllegalAccessException,
-            IllegalArgumentException, InvocationTargetException  {
+    DbmsDataReader build(Class classObject) throws Exception  {
         DbmsDataReader<Object, Object, Object> instance = (DbmsDataReader)ObjectCreator.createInstance(classObject);
         return instance;
     }

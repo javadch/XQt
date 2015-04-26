@@ -7,10 +7,12 @@
 package xqt.adapters.csv;
 
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
+import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.AggregationFunctionVisitor;
 import xqt.model.expressions.Expression;
@@ -64,27 +67,33 @@ public class CsvDataAdapter implements DataAdapter {
         runtimeJoinOperators.put(JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinOperator.LTEQ, "<=");
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
     }
 
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started running the statement {0}.",select.getId()));        
+        Resultset resultset;
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Single:
-                return runForSingleContainer(select, context);
+                resultset = runForSingleContainer(select, context);
             case Joined:
-                return runForJoinedContainer(select, context);
+                resultset = runForJoinedContainer(select, context);
             case Variable:
                 if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
                     try {
-                        return runForVariable_SingleContainer(select, context);
+                        resultset = runForVariable_SingleContainer(select, context);
                     } catch (IOException ex) {
-                        return null;
+                        resultset = null;
                     }
                 }
-                return null;
+                resultset = null;
             default:
-                return null;
+                resultset = null;
         }
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter finished running the statement {0}.",select.getId()));
+        LoggerHelper.logDebug(MessageFormat.format("statement {0} execution had {1} result.", select.getId(), resultset == null? "no": "a"));        
+        return resultset;
     }
 
     @Override
@@ -121,6 +130,7 @@ public class CsvDataAdapter implements DataAdapter {
     @Override
     public void prepare(SelectDescriptor select, Object context) {
         // check whether the source is a simple or a joined one!
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing the statement {0}",select.getId()));        
         try{
             builder = new DataReaderBuilder();
             builder
@@ -161,15 +171,16 @@ public class CsvDataAdapter implements DataAdapter {
             }
           
         } catch (ParseException ex){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
+            LanguageException lex=    LanguageExceptionBuilder.builder()
                     .setMessageTemplate(ex.getMessage())
                     .setContextInfo1(select.getId())
                     .setLineNumber(select.getParserContext().getStart().getLine())
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
-                    .build()
-            );                        
-        }            
+                    .build();
+            select.getLanguageExceptions().add(lex);
+            LoggerHelper.logError(MessageFormat.format("The CSV adapter was not able to prepare the statement {0}. Cause: {1}",select.getId(), lex.getMessage()));                    
+        }      
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter prepared the statement {0}",select.getId()));                
     }
 
     @Override

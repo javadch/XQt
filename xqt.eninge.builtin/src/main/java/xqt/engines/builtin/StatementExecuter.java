@@ -6,11 +6,13 @@
 
 package xqt.engines.builtin;
 
+import com.vaiona.commons.logging.LoggerHelper;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 import xqt.adapters.builtin.DefaultDataAdapter;
@@ -68,6 +70,8 @@ public class StatementExecuter implements StatementVisitor{
         
         DataAdapter adapter = select.getExecutionInfo().getAdapter();
         Resultset result;
+        LoggerHelper.logDebug(MessageFormat.format("Executing statement {0} on the {1} adapter.", select.getId(), adapter.getAdapterInfo().getId()));
+
         result = adapter.run(select, memory);
 //        if(adapter.needsMemory()){
 //            result = adapter.run(select, memory);
@@ -100,6 +104,7 @@ public class StatementExecuter implements StatementVisitor{
             }
             var.setExecutionInfo(null); // remove the variable, its temporary and not needed anymore
         }
+        LoggerHelper.logDebug(MessageFormat.format("Statement {0} was run successfully on the {1} adapter .", select.getId(), adapter.getAdapterInfo().getId()));        
         return result;
     }
 
@@ -119,6 +124,7 @@ public class StatementExecuter implements StatementVisitor{
             
         }
         select.getExecutionInfo().getAdapter().prepare(select, null); // creates the source files but does not compile them 
+        LoggerHelper.logDebug(MessageFormat.format("Checkpoint: StatementExecuter.prepare {0}.", 1));                
         if(select.hasError()) // check after lazy construction and validations
             return;
         if(select.getComplementingStatement() != null){
@@ -241,10 +247,6 @@ public class StatementExecuter implements StatementVisitor{
                     } else { // can get the adapter info now and instantiate it.
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
-                            ClassLoader classLoader = new URLClassLoader(new URL[]{new URL(adapterInfo.getLocationType() + ":" + adapterInfo.getLocation())});
-                            Class cl = classLoader.loadClass(adapterInfo.getMainNamespace() + "." + adapterInfo.getMainClassName());
-                            Constructor<?> ctor = cl.getConstructor();
-                            ctor.setAccessible(true);
                             adapter = adapterInfo.load();
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);

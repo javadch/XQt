@@ -7,6 +7,8 @@ package xqt.engines.builtin;
 import com.vaiona.commons.compilation.ClassCompiler;
 import com.vaiona.commons.compilation.InMemoryCompiledObject;
 import com.vaiona.commons.compilation.InMemorySourceFile;
+import com.vaiona.commons.logging.LoggerHelper;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -153,10 +155,12 @@ public class DefaultQueryEngine  implements QueryEngine{
                         // so there is a chance to find some semantic errors here! and avoid executing the statement.
                         if(sm.hasError()){
                             erroneousStatements.add(sm); 
+                            LoggerHelper.logError(MessageFormat.format("The statement {0} has some errors.", sm.getId()));
                         } else {
                             // add the sources to the compilation unit
+                            LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Adding the sources to the compilation unit...", 1));                
                             if(sm.getExecutionInfo().getSources().values().stream().count() > 0){
-                                sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());
+                                sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());                                
                                 if(sm instanceof SelectDescriptor){ // do it also for the other types
                                     SelectDescriptor complementingStatement = ((SelectDescriptor)sm).getComplementingStatement();
                                     if(complementingStatement != null && complementingStatement.getExecutionInfo().getSources().values().stream().count() > 0){
@@ -168,6 +172,7 @@ public class DefaultQueryEngine  implements QueryEngine{
                                     }
                                 }
                             }
+                            LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Added {1} sources to the compilation unit.", 2, sourcesToBeCompiled.size()));                                            
                         }
                     }
                 }
@@ -175,12 +180,16 @@ public class DefaultQueryEngine  implements QueryEngine{
             JavaFileManager fileManager = null;
             if(sourcesToBeCompiled.size() > 0){
                 ClassCompiler compiler = new ClassCompiler();
+                LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. preparing to compile {1} sources.", 3, sourcesToBeCompiled.size()));
                 for (Map.Entry<String, InMemorySourceFile> entry : sourcesToBeCompiled.entrySet()) {
+                    LoggerHelper.logDebug(MessageFormat.format("The source file {0} was added to the compilation queue.", entry.getKey()));
                     InMemorySourceFile source = entry.getValue();
                     compiler.addSource(source);
                 }
                 fileManager = compiler.compile(null);
                 //fileManager.getClassLoader
+            } else {
+                LoggerHelper.logDebug(MessageFormat.format("There are {0} statements submitted but no source is generated for them!", model.getStatements().size()));                
             }
             for(StatementDescriptor sm: model.getStatements().values()){     
                 if(!sm.hasError() && !erroneousStatements.contains(sm)){ // the statement has no error and is not dependent upon an errorenous one.
