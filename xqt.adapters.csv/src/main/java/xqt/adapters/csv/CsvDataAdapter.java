@@ -73,12 +73,14 @@ public class CsvDataAdapter implements DataAdapter {
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started running the statement {0}.",select.getId()));        
-        Resultset resultset;
+        Resultset resultset = null;
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Single:
                 resultset = runForSingleContainer(select, context);
+                break;
             case Joined:
                 resultset = runForJoinedContainer(select, context);
+                break;
             case Variable:
                 if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
                     try {
@@ -87,7 +89,7 @@ public class CsvDataAdapter implements DataAdapter {
                         resultset = null;
                     }
                 }
-                resultset = null;
+                break;
             default:
                 resultset = null;
         }
