@@ -372,24 +372,43 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         }
         // -> expressions pointing to perpsective attributes should be transformed to their physical counterpart
 
-        if(target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
-            if(variablesUsedAsTarget.keySet().contains(((VariableContainer)target.getContainer()).getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
-                target.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Target variable %s is already in use! "
-                                + "Using one variable as the target of more than one statement is not allowed. ")
-                            .setContextInfo1(((VariableContainer)target.getContainer()).getVariableName())
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                            .build()
-                );
-            } else {                
-                variablesUsedAsTarget.put(((VariableContainer)target.getContainer()).getVariableName(), projection.getPerspective());
-            }
-        } else if((target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Single) &&
-                    (projection.getPerspective() != null)){
-            //set the perspective of the statement also for the target
-            ((SingleContainer)target.getContainer()).setPerspective(projection.getPerspective());
+        switch(target.getContainer().getDataContainerType()){
+            case Variable:
+                if(variablesUsedAsTarget.keySet().contains(((VariableContainer)target.getContainer()).getVariableName())){ // variables are immutable, using them in more than one target clause is not allowed
+                    target.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Target variable %s is already in use! "
+                                    + "Using one variable as the target of more than one statement is not allowed. ")
+                                .setContextInfo1(((VariableContainer)target.getContainer()).getVariableName())
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                                .build()
+                    );
+                } else {                
+                    variablesUsedAsTarget.put(((VariableContainer)target.getContainer()).getVariableName(), projection.getPerspective());
+                }
+                break;
+            case Single:
+                if(projection.getPerspective() != null){
+                    //set the perspective of the statement also for the target
+                    ((SingleContainer)target.getContainer()).setPerspective(projection.getPerspective());                    
+                }
+                break;
+            case Plot:
+                if(variablesUsedAsTarget.keySet().contains(((PlotContainer)target.getContainer()).getPlotName())){ // plot are immutable, using them in more than one target clause is not allowed
+                    target.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("The plot %s is already in use! "
+                                    + "Using one plot name as the target of more than one statement is not allowed. ")
+                                .setContextInfo1(((PlotContainer)target.getContainer()).getPlotName())
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                                .build()
+                    );
+                } else {                
+                    variablesUsedAsTarget.put(((PlotContainer)target.getContainer()).getPlotName(), null);
+                }
+                break;
         }
 
         
@@ -920,6 +939,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         plot.setvLabel(ctx.pvl == null? "" /*plot.getVaxes().get(0)*/: ctx.pvl.getText().replaceAll("\"", ""));
         plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText().replaceAll("\"", ""));
         
+       // variablesUsedAsTarget.put(plotName, null); // to prevent duplicate plot/variable names
         return plot;
     }
     
