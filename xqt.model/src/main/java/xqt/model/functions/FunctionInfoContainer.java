@@ -13,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -84,8 +86,9 @@ public class FunctionInfoContainer {
         xr.setContentHandler(unmarshallerHandler);
 
         // open and read all the function pack files in the config\\functionpacks folder
-        String functionPackRoot = "config\\adapters\\" + adapterId.toLowerCase() + "\\functionpacks";
-        File funcDir = new File(functionPackRoot);
+        //String functionPackRoot = "config\\adapters\\" + adapterId.toLowerCase() + "\\functionpacks";
+        Path functionPackRoot = Paths.get("config/adapters", adapterId.toLowerCase(), "functionpacks");
+        File funcDir = functionPackRoot.toFile();
         
         List<FunctionInfo> functions = new ArrayList<>();
         if (funcDir.exists() && funcDir.isDirectory()){
@@ -97,9 +100,10 @@ public class FunctionInfoContainer {
                                             }
             );
             for(String functionPackFileName: functionPackFileNames){
-                String packageFile = functionPackRoot + "\\" + functionPackFileName;
+                //String packageFile = functionPackRoot + "\\" + functionPackFileName;
+                Path packageFile = Paths.get(functionPackRoot.toString(), functionPackFileName);
                 String packageName = functionPackFileName.substring(0, functionPackFileName.lastIndexOf(".xml")).toLowerCase();
-                try (InputStream inputStream = new FileInputStream(packageFile)) {
+                try (InputStream inputStream = new FileInputStream(packageFile.toFile())) {
                     InputSource inputSource = new InputSource(inputStream);
                     xr.parse(inputSource);
                     FunctionInfoContainer temp = (FunctionInfoContainer)unmarshallerHandler.getResult();

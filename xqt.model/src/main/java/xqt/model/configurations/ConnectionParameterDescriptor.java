@@ -53,4 +53,12 @@ public class ConnectionParameterDescriptor extends PhraseDescriptor {
         this.value = value;
     }
     
+    public static ConnectionParameterDescriptor createEmpty(){
+        ConnectionParameterDescriptor empty = new ConnectionParameterDescriptor();
+        empty.setConnection(null);
+        empty.setId("");
+        empty.setValue("default");
+        return empty;
+    }
+    
 }

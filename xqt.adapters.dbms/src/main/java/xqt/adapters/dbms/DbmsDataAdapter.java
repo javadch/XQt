@@ -41,6 +41,7 @@ public class DbmsDataAdapter implements DataAdapter{
     private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
     private HashMap<String, Boolean> capabilities = new HashMap<>();
     private AdapterInfo adapterInfo;
+    private String dialect = "default";
         
     public DbmsDataAdapter(){
         convertSelect = new ConvertSelectElement();
@@ -50,6 +51,16 @@ public class DbmsDataAdapter implements DataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
+    }
+
+    @Override
+    public String getDialect() {
+        return dialect;
+    }
+
+    @Override
+    public void setDialect(String dialect) {
+        this.dialect = dialect;
     }
     
     @Override
@@ -217,7 +228,7 @@ public class DbmsDataAdapter implements DataAdapter{
             builder.connectionString(helper.getConnectionString(container))
                    .username(helper.getContainerUsername(container))
                    .password(helper.getContainerUsername(container))
-                   .dbProvider(DbmsDataAdapterHelper.getContainerDbProviderName(container));
+                   .dbProvider(DbmsDataAdapterHelper.getContainerDbDialectName(container));
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
@@ -225,11 +236,11 @@ public class DbmsDataAdapter implements DataAdapter{
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this.getAdapterInfo(), false);            
+                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 // maybe pareparation is not needed!!!!!!
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                     //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
@@ -277,7 +288,7 @@ public class DbmsDataAdapter implements DataAdapter{
             } else { // no aggregate is present
                 builder.readerResourceName("Reader");
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
                 builder.addResultAttributes(attributeInfos);
                 builder.getResultAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
@@ -304,7 +315,7 @@ public class DbmsDataAdapter implements DataAdapter{
             
             try{
                 if(isSupported("select.filter")) 
-                    builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
+                    builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), false);
                 else 
                     builder.where("", false);
             } catch(Exception ex){

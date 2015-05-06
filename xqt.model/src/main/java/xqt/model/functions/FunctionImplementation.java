@@ -14,32 +14,42 @@ import javax.xml.bind.annotation.XmlType;
  * @author Javad Chamanara
  */
 public class FunctionImplementation {
-    @XmlType(name = "ProviderType")
-    @XmlEnum
-    public enum ProviderType {
-        Adapter,
-        Container,
-        Fallback;
-        public String value() {
-            return name();
-        }
+//    @XmlType(name = "ProviderType")
+//    @XmlEnum
+//    public enum ProviderType {
+//        Adapter,
+//        Container,
+//        Fallback;
+//        public String value() {
+//            return name();
+//        }
+//
+//        public static ProviderType fromValue(String v) {
+//            return valueOf(v);
+//        }
+//    }    
+//    // one of this items: Adapter, Container, Fallback.
+//    // If Adapter: jar/namespace/class/method is used.
+//    // If Container: nativeCode is used to replace the function name (as defined in the script).
+//    // If Fallback: the definition of the default implementation as in the fallback adapter will be used.
+//    private ProviderType providerType = ProviderType.Adapter; //Adapter/ Container/ Fallback
+//    @XmlAttribute(name="providerType", required = false)
+//    public ProviderType getProvider() {
+//        return providerType;
+//    }
+//
+//    public void setProvider(ProviderType value) {
+//        this.providerType = value;
+//    }
 
-        public static ProviderType fromValue(String v) {
-            return valueOf(v);
-        }
-    }    
     
     private String modifier = "static";
     private String jarFile;
     private String namespace;
     private String className;
     private String methodName;
-    // one of this items: Adapter, Container, Fallback.
-    // If Adapter: jar/namespace/class/method is used.
-    // If Container: providerString is used to replace the function name (as defined in the script).
-    // If Fallback: the definition of the default implementation as in the fallback adapter will be used.
-    private ProviderType providerType = ProviderType.Adapter; //Adapter/ Container/ Fallback
-    private String providerString = "";
+    private String nativeCode = "";
+    private String dialect = ""; //in adapters that are working on various dialects, it can be used to determine which implementation should be used
 
     @XmlAttribute(name="modifier")        
     public String getModifier() {
@@ -86,21 +96,25 @@ public class FunctionImplementation {
         this.methodName = methodName;
     }        
 
-    @XmlAttribute(name="providerType", required = false)
-    public ProviderType getProvider() {
-        return providerType;
+    // there is a chance that the order of paramater passed to a native are different from dialect to dialect!
+    // but they are not currently considered.
+    @XmlAttribute(name="nativeCode", required = false)
+    public String getNativeCode() {
+        return nativeCode;
     }
 
-    public void setProvider(ProviderType value) {
-        this.providerType = value;
-    }
-
-    @XmlAttribute(name="providerString", required = false)
-    public String getProviderString() {
-        return providerString;
-    }
-
-    public void setProviderString(String providerString) {
-        this.providerString = providerString;
+    public void setNativeCode(String nativeCode) {
+        this.nativeCode = nativeCode;
     }        
+
+    @XmlAttribute(name="dialect", required = false)
+    public String getDialect() {
+        return dialect;
+    }
+
+    public void setDialect(String dialect) {
+        this.dialect = dialect;
+    }
+    
+    
 }

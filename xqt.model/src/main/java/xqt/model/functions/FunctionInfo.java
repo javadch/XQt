@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -26,18 +27,18 @@ public class FunctionInfo {
     private String returnType;
     private String packageName;
     private List<FunctionParameterInfo> parameters = new ArrayList<>();
-    private FunctionImplementation implementation;
+    private List<FunctionImplementation> implementations;
     
     public FunctionInfo(){        
     }
     
-    public FunctionInfo(String name, String appleisTo, String returnType, String packageName, List<FunctionParameterInfo> parameters, FunctionImplementation implementation){
+    public FunctionInfo(String name, String appleisTo, String returnType, String packageName, List<FunctionParameterInfo> parameters, List<FunctionImplementation> implementations){
         this.name = name;
         this.appliesTo = appleisTo;
         this.returnType = returnType;
         this.packageName = packageName;
         this.parameters = parameters;
-        this.implementation = implementation;
+        this.implementations = implementations;
     }
     
     @XmlAttribute(name="name")
@@ -81,6 +82,7 @@ public class FunctionInfo {
         this.packageName = packageName;
     }
     
+    @XmlElementWrapper(name="Parameters")
     @XmlElement(name="Parameter")
     public List<FunctionParameterInfo> getParameters() {
         return parameters;
@@ -90,12 +92,13 @@ public class FunctionInfo {
         this.parameters = parameters;
     }
 
+    @XmlElementWrapper(name="Implementations")
     @XmlElement(name="Implementation")
-    public FunctionImplementation getImplementation() {
-        return implementation;
+    public List<FunctionImplementation> getImplementations() {
+        return implementations;
     }
 
-    public void setImplementation(FunctionImplementation implementation) {
-        this.implementation = implementation;
+    public void setImplementations(List<FunctionImplementation> implementations) {
+        this.implementations = implementations;
     }
 }

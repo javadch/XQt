@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.text.MessageFormat;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import xqt.model.functions.FunctionInfoContainer;
 
 /**
@@ -101,11 +102,12 @@ public class AdapterInfo {
         return FunctionInfoContainer.getInstance(id);
     }
 
-    public DataAdapter load() throws Exception  {
+    public DataAdapter load(String dialect) throws Exception  {
         try{
             ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + location);
             Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
             DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
+            adapter.setDialect(dialect);
             LoggerHelper.logDebug(MessageFormat.format("The {0} adapter located at {1}:{2} was successfully loaded.", id, locationType, location));
         return adapter;
         } catch(Exception ex){

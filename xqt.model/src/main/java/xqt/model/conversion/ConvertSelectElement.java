@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
@@ -31,8 +32,8 @@ import xqt.model.statements.query.TargetClause;
 public class ConvertSelectElement {
     
     // take care when calling from adapters other than the default and CSV, because of the aggregate call redirection!!! in the convertor.visit method
-    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, AdapterInfo adapterInfo, boolean useOriginalNames) {
-        ExpressionLocalizer convertor = new ExpressionLocalizer(adapterInfo);
+    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, DataAdapter adapter, boolean useOriginalNames, String dialect) {
+        ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             convertor.reset();
@@ -60,8 +61,8 @@ public class ConvertSelectElement {
         return attributes;
     }
 
-    public String prepareWhere(FilterClause filter, AdapterInfo adapterInfo) {
-        ExpressionLocalizer convertor = new ExpressionLocalizer(adapterInfo);
+    public String prepareWhere(FilterClause filter, DataAdapter adapter) {
+        ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
         if(filter == null || filter.getPredicate() == null)
             return "";
         convertor.reset();

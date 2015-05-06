@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.DataAdapter;
+import xqt.model.exceptions.LanguageException;
 import xqt.model.expressions.BinaryExpression;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.ExpressionType;
@@ -25,6 +27,7 @@ import xqt.model.expressions.MemberExpression;
 import xqt.model.expressions.ParameterExpression;
 import xqt.model.expressions.UnaryExpression;
 import xqt.model.expressions.ValueExpression;
+import xqt.model.functions.FunctionImplementation;
 import xqt.model.functions.FunctionInfo;
 
 /**
@@ -34,7 +37,7 @@ import xqt.model.functions.FunctionInfo;
 public class ExpressionLocalizer { //implements ExpressionVisitor{
     private String source;
     private List<String> memeberNames = new ArrayList<>();
-    private final AdapterInfo adapterInfo;
+    private final DataAdapter adapter;
     private final static Map<ExpressionType, String> patterns = new HashMap<>();
     
     static {
@@ -68,8 +71,8 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         patterns.put(ExpressionType.IsEmpty, "((( {0} ) != null) && ({0} .length() <= 0))");
     }
 
-    public ExpressionLocalizer(AdapterInfo value){
-        adapterInfo = value;
+    public ExpressionLocalizer(DataAdapter value){
+        adapter = value;
     }
     
     public String getSource() {
@@ -124,32 +127,34 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
                 // the funcPattern still has placeholders for the function name and the parameter list.
                 return MessageFormat.format(funcPattern, functionPart, parameterPart);
             }
-            Optional <FunctionInfo> funcSpec =adapterInfo.getFunctionInfoContainer().getRegisteredFunctions().stream()
+            Optional <FunctionInfo> funcSpec =adapter.getAdapterInfo().getFunctionInfoContainer().getRegisteredFunctions().stream()
                     .filter(p->p.getName().equals(exp.getFunctionSpecification().getName())).findFirst();
-            if(!funcSpec.isPresent()) { // there should be also an option to fail on this case!      
-                // function implementation should be static
-                functionPart = MessageFormat.format("{0}.{1}.{2}", 
-                exp.getFunctionSpecification().getImplementation().getNamespace(), 
-                exp.getFunctionSpecification().getImplementation().getClassName(),
-                exp.getFunctionSpecification().getImplementation().getMethodName());                
-            } else { // the responsible adapter has a specification for the function. its spec should be used.
-                switch (funcSpec.get().getImplementation().getProvider()){
-                    case Adapter: // use the adapter specific implementation
-                        functionPart = MessageFormat.format("{0}.{1}.{2}", 
-                            funcSpec.get().getImplementation().getNamespace(), 
-                            funcSpec.get().getImplementation().getClassName(),
-                            funcSpec.get().getImplementation().getMethodName());
-                        break;
-                    case Container: // use the container/ data source specific impplementation
-                        functionPart = MessageFormat.format("{0}", 
-                            funcSpec.get().getImplementation().getProviderString());
-                        break;
-                    case Fallback: // use the fallback implementation provided by the fallback adapter.
-                        functionPart = MessageFormat.format("{0}.{1}.{2}", 
-                            exp.getFunctionSpecification().getImplementation().getNamespace(), 
-                            exp.getFunctionSpecification().getImplementation().getClassName(),
-                            exp.getFunctionSpecification().getImplementation().getMethodName());                        
-                        break;
+            // if there is no such a funtion, use the default one
+            // if there is one, try find the dialect specific implementation, if not use the default fallback one!
+            List<FunctionImplementation> impls;
+            if(!funcSpec.isPresent()){ // no adapter specific funtion! try use the fallback adapter
+                impls = exp.getFunctionSpecification().getImplementations();
+            } else {
+                impls = funcSpec.get().getImplementations();
+            }
+            if(impls != null && impls.size() >0){ // there are some implementations in one of the adapters!
+                Optional<FunctionImplementation> impl = impls.stream().filter(p->p.getDialect().equalsIgnoreCase(adapter.getDialect())).findFirst();
+                if(!impl.isPresent()){ // no dialcet specific implemntation, look for a generic one
+                    impl = impls.stream().filter(p->p.getDialect().equalsIgnoreCase("default")).findFirst();
+                }
+                if(!impl.isPresent()){ // the function has no proper implementation neither in its nor in the fallback adapters
+                    //throw new LanguageException
+                    return "noop()";
+                }
+                // the impl is the desired implementation
+                if(impl.get().getNativeCode().isEmpty()){
+                    functionPart = MessageFormat.format("{0}.{1}.{2}", 
+                    impl.get().getNamespace(), 
+                    impl.get().getClassName(),
+                    impl.get().getMethodName());                                    
+                } else {
+                    functionPart = MessageFormat.format("{0}", 
+                            impl.get().getNativeCode());
                 }
             }
             return MessageFormat.format(funcPattern, functionPart, parameterPart);
@@ -186,41 +191,4 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         source = "";
         memeberNames = new ArrayList<>();
     }
-
-/*
-    @Override
-    public void visit(BinaryExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(FunctionExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(InvalidExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(MemberExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(ParameterExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(UnaryExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void visit(ValueExpression expr) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-*/    
 }

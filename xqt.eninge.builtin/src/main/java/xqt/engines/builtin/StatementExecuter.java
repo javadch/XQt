@@ -20,6 +20,7 @@ import xqt.engine.QueryEngine;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.adapters.DataAdapter;
+import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.SingleContainer;
@@ -171,9 +172,10 @@ public class StatementExecuter implements StatementVisitor{
                      case Single: // in this case a memory variable should be written to a persistent container, hence the associated adapter should take the statement
                      {
                         String adapterType = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getAdapterName();
+                        String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                            adapter = adapterInfo.load();
+                            adapter = adapterInfo.load(adapterDialect);
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
@@ -200,7 +202,8 @@ public class StatementExecuter implements StatementVisitor{
                 String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                    adapter = adapterInfo.load();
+                    String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
+                    adapter = adapterInfo.load(adapterDialect);
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     adapter.setAdapterInfo(adapterInfo);
                     return adapter;
@@ -247,7 +250,8 @@ public class StatementExecuter implements StatementVisitor{
                     } else { // can get the adapter info now and instantiate it.
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
-                            adapter = adapterInfo.load();
+                            String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
+                            adapter = adapterInfo.load(adapterDialect);
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;

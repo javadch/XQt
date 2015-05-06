@@ -62,8 +62,8 @@ public abstract class DbmsDataAdapterHelper {
         return perspective.improve(fields);
     }    
 
-    public static DBMSDialect getContainerDbProviderName(SingleContainer container) {
-        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
+    public static DBMSDialect getContainerDbDialectName(SingleContainer container) {
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("dialect");
         if(p == null || p.getValue() == null || p.getValue().equals("")){
             return DBMSDialect.PostgreSQL;
         }
@@ -71,7 +71,7 @@ public abstract class DbmsDataAdapterHelper {
     }
     
     public static DbmsDataAdapterHelper getQueryHelper(SingleContainer container){
-        switch (getContainerDbProviderName(container)){
+        switch (getContainerDbDialectName(container)){
              case PostgreSQL:
                  return new PgSQueryHelper();
              default:
