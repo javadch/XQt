@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
@@ -1215,8 +1216,14 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             // there is an exception: when the parameter is a member, its a field of the physical data which its type is not defined yet. 
             // so I do trust it for the time being and wait to enouncter a possible type conversion exection later during the statement execution by the adapter.
             // enhancement: I will consider type determination at this stage when everything works as designed.
-            if(!((pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)) 
-                || (paramInfo.getPermittedDataTypes().contains(pa.getReturnType())))){                
+            
+            // If the parameter type is unknown, it is probably pointing to a field in the undelying data source
+            // which is typycally not known at this moment. for this situation, the best guess is that the parameter should be of the type of the first permitted type
+            if(pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)) {                
+                pa.setReturnType(paramInfo.getPermittedDataTypes().split(Pattern.quote("|"))[0].trim());
+            }
+            // this should not happen
+            if(!paramInfo.getPermittedDataTypes().contains(pa.getReturnType())){                
                 pa.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
                             .setMessageTemplate("Parameter \'%s\' is of type \'%s\' which does not match its function's specification.")
@@ -1267,7 +1274,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         } else if(ctx.operand.STRING() != null){
             exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.String);
             exp.setParserContext(ctx);
-        } else if(ctx.operand.DATE() != null){
+        } else if(ctx.operand.DateValue()!= null){
             exp = Expression.Value(ctx.operand.getText(), TypeSystem.TypeName.Date);
             exp.setParserContext(ctx);
         }        

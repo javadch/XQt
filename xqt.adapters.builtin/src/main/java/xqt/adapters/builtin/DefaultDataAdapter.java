@@ -49,7 +49,7 @@ import xqt.model.statements.query.SelectDescriptor;
  * @author standard
  */
 public class DefaultDataAdapter implements DataAdapter{
-  
+    private String dialect = "";
     private DataReaderBuilder builder = null;
     private ConvertSelectElement convertSelect = null;
     private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
@@ -427,14 +427,14 @@ public class DefaultDataAdapter implements DataAdapter{
         
         builder.readerResourceName("MemReader");
         builder.entityResourceName("MemJoinedEntity");        
-        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);            
+        Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
         builder.addResultAttributes(attributes);
 //        builder.getAttributes().values().stream().forEach(at -> {
 //            at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
 //        });
         try{
             if(isSupported("select.filter")) 
-                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
+                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), true);
             else 
                 builder.where("", false);
         } catch(Exception ex){
@@ -484,7 +484,7 @@ public class DefaultDataAdapter implements DataAdapter{
             if(sourceRowType.isEmpty())
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
             
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.adapterInfo, false);
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);
             builder.addResultAttributes(attributes);
             // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
@@ -496,7 +496,7 @@ public class DefaultDataAdapter implements DataAdapter{
             builder.sourceRowType(sourceRowType)
                 .readerResourceName("MemReader")
                 .entityResourceName("")
-                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), select.getProjectionClause().getPerspective()), false)
+                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause(), this), select.getProjectionClause().getPerspective()), false)
                 .orderBy(orderItems)
                 .writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
                 ;
@@ -524,6 +524,16 @@ public class DefaultDataAdapter implements DataAdapter{
             builder.skip(-1)
                    .take(-1);
         }
+    }
+
+    @Override
+    public String getDialect() {
+        return dialect;
+    }
+
+    @Override
+    public void setDialect(String dialect) {
+        dialect = dialect;
     }
     
 }

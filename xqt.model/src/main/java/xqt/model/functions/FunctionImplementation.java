@@ -49,7 +49,7 @@ public class FunctionImplementation {
     private String className;
     private String methodName;
     private String nativeCode = "";
-    private String dialect = ""; //in adapters that are working on various dialects, it can be used to determine which implementation should be used
+    private String dialect = "default"; //in adapters that are working on various dialects, it can be used to determine which implementation should be used
 
     @XmlAttribute(name="modifier")        
     public String getModifier() {

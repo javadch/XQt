@@ -32,7 +32,7 @@ import xqt.model.statements.query.TargetClause;
 public class ConvertSelectElement {
     
     // take care when calling from adapters other than the default and CSV, because of the aggregate call redirection!!! in the convertor.visit method
-    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, DataAdapter adapter, boolean useOriginalNames, String dialect) {
+    public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, DataAdapter adapter, boolean useOriginalNames) {
         ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){

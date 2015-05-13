@@ -236,11 +236,11 @@ public class DbmsDataAdapter implements DataAdapter{
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
+                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 // maybe pareparation is not needed!!!!!!
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                     //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
@@ -288,7 +288,7 @@ public class DbmsDataAdapter implements DataAdapter{
             } else { // no aggregate is present
                 builder.readerResourceName("Reader");
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false, DbmsDataAdapterHelper.getContainerDbDialectName(container).toString());            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
                 builder.getResultAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);

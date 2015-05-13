@@ -1,5 +1,6 @@
 d:
 cd D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\xqt\lang\grammar
+del /F *.class
 javac -cp D:\Tools\IDE\AntLR\antlr4\antlr-4.2.2-complete.jar D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\xqt\lang\grammar\*.java
 d:
 cd D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\

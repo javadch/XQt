@@ -51,6 +51,7 @@ import xqt.model.statements.query.SelectDescriptor;
  */
 public class CsvDataAdapter implements DataAdapter {
 
+    private String dialect = "";
     private ConvertSelectElement convertSelect = null;
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
@@ -141,6 +142,8 @@ public class CsvDataAdapter implements DataAdapter {
                 //.addProjection("MAX", "SN")// MIN, SUM, COUNT, AVG, 
                 .namespace("com.vaiona.csv.reader")
                 .entityResourceName("Entity")
+                .dialect(dialect)
+                .namesCaseSensitive(false)
             ;
             switch (select.getSourceClause().getContainer().getDataContainerType()) {
                 case Single:
@@ -278,11 +281,11 @@ public class CsvDataAdapter implements DataAdapter {
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this.getAdapterInfo(), false);            
+                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 // maybe pareparation is not needed!!!!!!
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                     //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
@@ -330,7 +333,7 @@ public class CsvDataAdapter implements DataAdapter {
             } else {
                 builder.readerResourceName("Reader");
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
                 builder.getResultAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
@@ -357,7 +360,7 @@ public class CsvDataAdapter implements DataAdapter {
             
             try{
                 if(isSupported("select.filter")) 
-                    builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), false);
+                    builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), false);
                 else 
                     builder.where("", false);
             } catch(Exception ex){
@@ -377,7 +380,7 @@ public class CsvDataAdapter implements DataAdapter {
             //if the perspective contains aggregate functions, all non aggregate attributes should be added to the goup by list
             // 
 
-            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));                    
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
             select.getLanguageExceptions().add(
@@ -460,7 +463,7 @@ public class CsvDataAdapter implements DataAdapter {
             //builder.leftClassName(select.getDependsUpon().getEntityType().getFullName());
             //builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
 
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
             builder.addResultAttributes(attributes);
             builder.getResultAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
@@ -468,7 +471,7 @@ public class CsvDataAdapter implements DataAdapter {
 
             try{
                 if(isSupported("select.filter")) 
-                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
+                builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), true);
                 else 
                     builder.where("", false);
             } catch(Exception ex){
@@ -548,13 +551,13 @@ public class CsvDataAdapter implements DataAdapter {
         try{
             //builder.addFields();
             // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this.getAdapterInfo(), false);            
+            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
             builder.addResultAttributes(attributes);
             builder.getResultAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
 
-            if(isSupported("select.filter")) builder.where(convertSelect.prepareWhere(select.getFilterClause(), this.adapterInfo), true);
+            if(isSupported("select.filter")) builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), true);
             else builder.where("", true);
             
             Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
@@ -810,6 +813,16 @@ public class CsvDataAdapter implements DataAdapter {
                 }            
             }
         }
+    }
+
+    @Override
+    public String getDialect() {
+        return dialect;
+    }
+
+    @Override
+    public void setDialect(String dialect) {
+        this.dialect = dialect;
     }
 
 }

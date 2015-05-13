@@ -172,7 +172,7 @@ public class StatementExecuter implements StatementVisitor{
                      case Single: // in this case a memory variable should be written to a persistent container, hence the associated adapter should take the statement
                      {
                         String adapterType = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getAdapterName();
-                        String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
+                        String adapterDialect = getConnectionDialect((SingleContainer)select.getTargetClause().getContainer());
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
                             adapter = adapterInfo.load(adapterDialect);
@@ -202,7 +202,7 @@ public class StatementExecuter implements StatementVisitor{
                 String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                    String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
+                    String adapterDialect = getConnectionDialect((SingleContainer)select.getSourceClause().getContainer());
                     adapter = adapterInfo.load(adapterDialect);
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     adapter.setAdapterInfo(adapterInfo);
@@ -225,7 +225,7 @@ public class StatementExecuter implements StatementVisitor{
                 if(joinedSource.getLeftContainer().getDataContainerType() != joinedSource.getRightContainer().getDataContainerType()){
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Left and right containers of the JOIN should be of a same type.")
+                            .setMessageTemplate("Left and right containers of the JOIN should be of same type.")
                             .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
                             .setColumnNumber(-1)
                             .build()
@@ -250,7 +250,7 @@ public class StatementExecuter implements StatementVisitor{
                     } else { // can get the adapter info now and instantiate it.
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
-                            String adapterDialect = ((SingleContainer)select.getTargetClause().getContainer()).getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
+                            String adapterDialect = getConnectionDialect((SingleContainer)joinedSource.getLeftContainer());//.getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
                             adapter = adapterInfo.load(adapterDialect);
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
@@ -273,6 +273,10 @@ public class StatementExecuter implements StatementVisitor{
         }
     }    
 
+    private String getConnectionDialect(SingleContainer container){
+        return container.getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
+    }
+    
     private SelectDescriptor buildComplementingStatement(SelectDescriptor select) {
         // check which capabilities are missing and check whether they are suppotrted by the completing adapter?
         // check the dependecies between the missing capabilities

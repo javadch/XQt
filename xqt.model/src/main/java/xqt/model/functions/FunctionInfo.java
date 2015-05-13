@@ -100,5 +100,6 @@ public class FunctionInfo {
 
     public void setImplementations(List<FunctionImplementation> implementations) {
         this.implementations = implementations;
+        //this.getImplementations().stream().filter(p->p.getDialect().equalsIgnoreCase("dialect")).findFirst().get().getNamespace();
     }
 }
