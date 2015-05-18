@@ -3697,6 +3697,7 @@ public class XQtParser extends Parser {
 
 	public static class SemanticKeyContext extends ParserRuleContext {
 		public TerminalNode ID() { return getToken(XQtParser.ID, 0); }
+		public TerminalNode STRING() { return getToken(XQtParser.STRING, 0); }
 		public SemanticKeyContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -3719,10 +3720,16 @@ public class XQtParser extends Parser {
 	public final SemanticKeyContext semanticKey() throws RecognitionException {
 		SemanticKeyContext _localctx = new SemanticKeyContext(_ctx, getState());
 		enterRule(_localctx, 88, RULE_semanticKey);
+		int _la;
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(549); match(ID);
+			setState(549);
+			_la = _input.LA(1);
+			if ( !(_la==STRING || _la==ID) ) {
+			_errHandler.recoverInline(this);
+			}
+			consume();
 			}
 		}
 		catch (RecognitionException re) {
@@ -4115,7 +4122,7 @@ public class XQtParser extends Parser {
 		public Token ID;
 		public List<Token> otherIds = new ArrayList<Token>();
 		public Token INT;
-		public Token _tset636;
+		public Token _tset642;
 		public TerminalNode INT(int i) {
 			return getToken(XQtParser.INT, i);
 		}
@@ -4166,13 +4173,13 @@ public class XQtParser extends Parser {
 					{
 					setState(571); match(DOT);
 					setState(572);
-					((QualifiedIdentifierContext)_localctx)._tset636 = _input.LT(1);
+					((QualifiedIdentifierContext)_localctx)._tset642 = _input.LT(1);
 					_la = _input.LA(1);
 					if ( !(_la==ID || _la==INT) ) {
-						((QualifiedIdentifierContext)_localctx)._tset636 = (Token)_errHandler.recoverInline(this);
+						((QualifiedIdentifierContext)_localctx)._tset642 = (Token)_errHandler.recoverInline(this);
 					}
 					consume();
-					((QualifiedIdentifierContext)_localctx).otherIds.add(((QualifiedIdentifierContext)_localctx)._tset636);
+					((QualifiedIdentifierContext)_localctx).otherIds.add(((QualifiedIdentifierContext)_localctx)._tset642);
 					}
 					}
 					break;
@@ -4547,25 +4554,25 @@ public class XQtParser extends Parser {
 		"\38\38\58\u024f\n8\38\38\38\78\u0254\n8\f8\168\u0257\138\38\38\38\38\3"+
 		"8\58\u025e\n8\38\38\38\58\u0263\n8\38\38\68\u0267\n8\r8\168\u0268\38\3"+
 		"8\38\38\58\u026f\n8\39\39\3:\3:\3:\2\3N;\2\4\6\b\n\f\16\20\22\24\26\30"+
-		"\32\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVXZ\\^`bdfhjlnpr\2\22\3\2"+
+		"\32\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVXZ\\^`bdfhjlnpr\2\23\3\2"+
 		"&\'\3\2IN\4\2qqtt\5\2\4\5\b\t\f\f\3\2\64\65\3\2SU\3\2PQ\3\2YZ\3\2IO\3"+
-		"\2de\4\2\66\66?A\3\2\r\23\4\2llrv\4\2%%ll\4\2\3\3\6\7\4\2qquu\u0296\2"+
-		"t\3\2\2\2\4y\3\2\2\2\6\u0095\3\2\2\2\b\u00a3\3\2\2\2\n\u00b1\3\2\2\2\f"+
-		"\u00c5\3\2\2\2\16\u00c9\3\2\2\2\20\u00df\3\2\2\2\22\u00e1\3\2\2\2\24\u00e3"+
-		"\3\2\2\2\26\u00e5\3\2\2\2\30\u00e7\3\2\2\2\32\u0101\3\2\2\2\34\u010f\3"+
-		"\2\2\2\36\u0111\3\2\2\2 \u0116\3\2\2\2\"\u011c\3\2\2\2$\u0124\3\2\2\2"+
-		"&\u013c\3\2\2\2(\u013e\3\2\2\2*\u0142\3\2\2\2,\u0146\3\2\2\2.\u0148\3"+
-		"\2\2\2\60\u0150\3\2\2\2\62\u0153\3\2\2\2\64\u0184\3\2\2\2\66\u018d\3\2"+
-		"\2\28\u0192\3\2\2\2:\u019b\3\2\2\2<\u01a2\3\2\2\2>\u01a4\3\2\2\2@\u01aa"+
-		"\3\2\2\2B\u01ac\3\2\2\2D\u01b5\3\2\2\2F\u01be\3\2\2\2H\u01c0\3\2\2\2J"+
-		"\u01c2\3\2\2\2L\u01c4\3\2\2\2N\u01d3\3\2\2\2P\u020e\3\2\2\2R\u0210\3\2"+
-		"\2\2T\u0212\3\2\2\2V\u0223\3\2\2\2X\u0225\3\2\2\2Z\u0227\3\2\2\2\\\u0229"+
-		"\3\2\2\2^\u022d\3\2\2\2`\u0231\3\2\2\2b\u0233\3\2\2\2d\u0235\3\2\2\2f"+
-		"\u0237\3\2\2\2h\u023a\3\2\2\2j\u023c\3\2\2\2l\u0243\3\2\2\2n\u026e\3\2"+
-		"\2\2p\u0270\3\2\2\2r\u0272\3\2\2\2tu\5\4\3\2u\3\3\2\2\2vx\5\6\4\2wv\3"+
-		"\2\2\2x{\3\2\2\2yw\3\2\2\2yz\3\2\2\2z\177\3\2\2\2{y\3\2\2\2|~\5\n\6\2"+
-		"}|\3\2\2\2~\u0081\3\2\2\2\177}\3\2\2\2\177\u0080\3\2\2\2\u0080\u0085\3"+
-		"\2\2\2\u0081\177\3\2\2\2\u0082\u0084\5\16\b\2\u0083\u0082\3\2\2\2\u0084"+
+		"\2de\4\2\66\66?A\3\2\r\23\4\2llqq\4\2llrv\4\2%%ll\4\2\3\3\6\7\4\2qquu"+
+		"\u0296\2t\3\2\2\2\4y\3\2\2\2\6\u0095\3\2\2\2\b\u00a3\3\2\2\2\n\u00b1\3"+
+		"\2\2\2\f\u00c5\3\2\2\2\16\u00c9\3\2\2\2\20\u00df\3\2\2\2\22\u00e1\3\2"+
+		"\2\2\24\u00e3\3\2\2\2\26\u00e5\3\2\2\2\30\u00e7\3\2\2\2\32\u0101\3\2\2"+
+		"\2\34\u010f\3\2\2\2\36\u0111\3\2\2\2 \u0116\3\2\2\2\"\u011c\3\2\2\2$\u0124"+
+		"\3\2\2\2&\u013c\3\2\2\2(\u013e\3\2\2\2*\u0142\3\2\2\2,\u0146\3\2\2\2."+
+		"\u0148\3\2\2\2\60\u0150\3\2\2\2\62\u0153\3\2\2\2\64\u0184\3\2\2\2\66\u018d"+
+		"\3\2\2\28\u0192\3\2\2\2:\u019b\3\2\2\2<\u01a2\3\2\2\2>\u01a4\3\2\2\2@"+
+		"\u01aa\3\2\2\2B\u01ac\3\2\2\2D\u01b5\3\2\2\2F\u01be\3\2\2\2H\u01c0\3\2"+
+		"\2\2J\u01c2\3\2\2\2L\u01c4\3\2\2\2N\u01d3\3\2\2\2P\u020e\3\2\2\2R\u0210"+
+		"\3\2\2\2T\u0212\3\2\2\2V\u0223\3\2\2\2X\u0225\3\2\2\2Z\u0227\3\2\2\2\\"+
+		"\u0229\3\2\2\2^\u022d\3\2\2\2`\u0231\3\2\2\2b\u0233\3\2\2\2d\u0235\3\2"+
+		"\2\2f\u0237\3\2\2\2h\u023a\3\2\2\2j\u023c\3\2\2\2l\u0243\3\2\2\2n\u026e"+
+		"\3\2\2\2p\u0270\3\2\2\2r\u0272\3\2\2\2tu\5\4\3\2u\3\3\2\2\2vx\5\6\4\2"+
+		"wv\3\2\2\2x{\3\2\2\2yw\3\2\2\2yz\3\2\2\2z\177\3\2\2\2{y\3\2\2\2|~\5\n"+
+		"\6\2}|\3\2\2\2~\u0081\3\2\2\2\177}\3\2\2\2\177\u0080\3\2\2\2\u0080\u0085"+
+		"\3\2\2\2\u0081\177\3\2\2\2\u0082\u0084\5\16\b\2\u0083\u0082\3\2\2\2\u0084"+
 		"\u0087\3\2\2\2\u0085\u0083\3\2\2\2\u0085\u0086\3\2\2\2\u0086\u008f\3\2"+
 		"\2\2\u0087\u0085\3\2\2\2\u0088\u008c\5\22\n\2\u0089\u008b\7o\2\2\u008a"+
 		"\u0089\3\2\2\2\u008b\u008e\3\2\2\2\u008c\u008a\3\2\2\2\u008c\u008d\3\2"+
@@ -4702,13 +4709,13 @@ public class XQtParser extends Parser {
 		"\u0220\7q\2\2\u0220\u0221\7c\2\2\u0221\u0224\5X-\2\u0222\u0224\7q\2\2"+
 		"\u0223\u0216\3\2\2\2\u0223\u021c\3\2\2\2\u0223\u021f\3\2\2\2\u0223\u0222"+
 		"\3\2\2\2\u0224W\3\2\2\2\u0225\u0226\t\r\2\2\u0226Y\3\2\2\2\u0227\u0228"+
-		"\7q\2\2\u0228[\3\2\2\2\u0229\u022a\t\16\2\2\u022a]\3\2\2\2\u022b\u022e"+
+		"\t\16\2\2\u0228[\3\2\2\2\u0229\u022a\t\17\2\2\u022a]\3\2\2\2\u022b\u022e"+
 		"\5j\66\2\u022c\u022e\5h\65\2\u022d\u022b\3\2\2\2\u022d\u022c\3\2\2\2\u022e"+
 		"_\3\2\2\2\u022f\u0232\5b\62\2\u0230\u0232\5d\63\2\u0231\u022f\3\2\2\2"+
-		"\u0231\u0230\3\2\2\2\u0232a\3\2\2\2\u0233\u0234\t\17\2\2\u0234c\3\2\2"+
-		"\2\u0235\u0236\7u\2\2\u0236e\3\2\2\2\u0237\u0238\t\20\2\2\u0238\u0239"+
+		"\u0231\u0230\3\2\2\2\u0232a\3\2\2\2\u0233\u0234\t\20\2\2\u0234c\3\2\2"+
+		"\2\u0235\u0236\7u\2\2\u0236e\3\2\2\2\u0237\u0238\t\21\2\2\u0238\u0239"+
 		"\7s\2\2\u0239g\3\2\2\2\u023a\u023b\7q\2\2\u023bi\3\2\2\2\u023c\u023f\7"+
-		"q\2\2\u023d\u023e\7_\2\2\u023e\u0240\t\21\2\2\u023f\u023d\3\2\2\2\u0240"+
+		"q\2\2\u023d\u023e\7_\2\2\u023e\u0240\t\22\2\2\u023f\u023d\3\2\2\2\u0240"+
 		"\u0241\3\2\2\2\u0241\u023f\3\2\2\2\u0241\u0242\3\2\2\2\u0242k\3\2\2\2"+
 		"\u0243\u0244\3\2\2\2\u0244m\3\2\2\2\u0245\u0248\5p9\2\u0246\u0247\7f\2"+
 		"\2\u0247\u0249\5p9\2\u0248\u0246\3\2\2\2\u0249\u024a\3\2\2\2\u024a\u0248"+

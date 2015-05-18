@@ -49,6 +49,7 @@ public class ConvertSelectElement {
                     ad.name = attribute.getId();
                 ad.conceptualDataType = attribute.getDataType();
                 ad.internalDataType = typeNameInAdapter;
+                ad.unit = attribute.getSemanticKey();
                 ad.forwardMap = exp;
                 ad.fields = members;
                 ad.index = attributes.size();

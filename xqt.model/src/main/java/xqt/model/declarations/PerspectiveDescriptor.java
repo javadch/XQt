@@ -43,7 +43,9 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
             PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
             attribute.setId(field.name);
             attribute.setDataType(field.conceptualDataType);
-            
+            if(field.unit != null && !field.name.isEmpty()){
+                attribute.setSemanticKey(field.unit);
+            }
             MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
             MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
             

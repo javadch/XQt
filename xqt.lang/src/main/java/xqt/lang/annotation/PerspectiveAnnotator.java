@@ -57,8 +57,10 @@ public class PerspectiveAnnotator {
                 String typeName = XQtParser.tokenNames[ctx.smartId().dataType().getStart().getType()];
                 attDesc.setDataType(typeName);
             }
-            if(ctx.smartId().semanticKey()!= null)
+            if(ctx.smartId().semanticKey()!= null){
                 attDesc.setSemanticKey(ctx.smartId().semanticKey().getText());
+                attDesc.setSemanticKey(attDesc.getSemanticKey().replace("\"", ""));
+            }
         } else { //Error: the attribute has no ID
             attDesc.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
