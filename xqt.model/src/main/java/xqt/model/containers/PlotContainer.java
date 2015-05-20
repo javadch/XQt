@@ -8,6 +8,7 @@ package xqt.model.containers;
 import java.util.ArrayList;
 import java.util.List;
 import xqt.model.declarations.PerspectiveDescriptor;
+import xqt.model.expressions.MemberExpression;
 
 /**
  *
@@ -15,8 +16,8 @@ import xqt.model.declarations.PerspectiveDescriptor;
  */
 public class PlotContainer extends DataContainer {
     private PerspectiveDescriptor linkedPerspective;
-    private String hax;
-    private List<String> vaxes = new ArrayList<>();
+    private MemberExpression hax;
+    private List<MemberExpression> vaxes = new ArrayList<>();
     private String plotType;
     private String hLabel;
     private String vLabel;
@@ -42,19 +43,19 @@ public class PlotContainer extends DataContainer {
         this.id = plotName;
     }
 
-    public String getHax() {
+    public MemberExpression getHax() {
         return hax;
     }
 
-    public void setHax(String hax) {
+    public void setHax(MemberExpression hax) {
         this.hax = hax;
     }
 
-    public List<String> getVaxes() {
+    public List<MemberExpression> getVaxes() {
         return vaxes;
     }
 
-    public void setVax(List<String> vaxes) {
+    public void setVax(List<MemberExpression> vaxes) {
         this.vaxes = vaxes;
     }
 

@@ -50,7 +50,7 @@ public class PerspectiveAnnotator {
         PerspectiveAttributeDescriptor attDesc = new PerspectiveAttributeDescriptor();  
         attDesc.setParserContext(ctx);
         if(ctx.smartId() != null){
-            attDesc.setId(ctx.smartId().ID().getText());
+            attDesc.setId(ctx.smartId().ID().getText().toLowerCase());
             //attDesc.setName(attDesc.getId());
 
             if(ctx.smartId().dataType() != null){

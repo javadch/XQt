@@ -17,6 +17,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.antlr.v4.runtime.misc.NotNull;
 import xqt.lang.annotation.BindingAnnotator;
 import xqt.lang.annotation.ConnectionAnnotator;
@@ -658,9 +659,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 //PerspectiveAnnotator.describePerspectiveAttribute(inlineAttribute, perspective.getId());
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
                 if(inlineAttribute.alias != null){
-                    attribute.setId(inlineAttribute.alias.getText());                    
+                    attribute.setId(inlineAttribute.alias.getText().toLowerCase());                    
                 } else {
-                    attribute.setId("Attribute" + index++);
+                    attribute.setId("attribute" + index++); // lower case
                 }
                 Expression exp = (Expression)visit(inlineAttribute.att);
                 // go through the expression and se whether there are any references to other perspectives' attributes
@@ -921,9 +922,13 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // check duplicate variable names!!!
         // it is not correct to check for duplicates here, as it is not clear whether the variable is used as source of target!
         plot.setPlotName(plotName);
-        plot.setHax(ctx.hx.getText());
+        
+        plot.setHax((MemberExpression)visit(ctx.hx));
+        if(plot.getHax().getMemberType() == MemberExpression.MemberType.Compound){ // to replace the R.X with R_X and make it lowecase
+            plot.getHax().setId(plot.getHax().getComponents().stream().collect(Collectors.joining("_")).toLowerCase());
+        }
         if(ctx.vx1 != null)
-            plot.getVaxes().add(ctx.vx1.getText()); // the first vertical axis, if exists!
+            plot.getVaxes().add((MemberExpression)visit(ctx.vx1)); // the first vertical axis, if exists!
         else{
             plot.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
@@ -933,10 +938,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     .build()
             );            
         }
-        for(XQtParser.VariableContext v: ctx.vxs2) // the second and more vertical axes 
-            plot.getVaxes().add(v.ID().getText());
+        for(XQtParser.IdentifierContext v: ctx.vxs2) // the second and more vertical axes 
+            plot.getVaxes().add((MemberExpression)visit(v));
+
+        for(MemberExpression vax: plot.getVaxes()){
+            if(vax.getMemberType() == MemberExpression.MemberType.Compound){ // to replace the R.X with R_X and make it lowecase
+                vax.setId(vax.getComponents().stream().collect(Collectors.joining("_")).toLowerCase());
+            }            
+        }
+
         plot.setPlotType(ctx.plotType == null? "l" : ctx.plotType.getText());
-        plot.sethLabel(ctx.pxl == null? plot.getHax(): ctx.pxl.getText().replaceAll("\"", ""));
+        plot.sethLabel(ctx.pxl == null? plot.getHax().toString(): ctx.pxl.getText().replaceAll("\"", ""));
         plot.setvLabel(ctx.pvl == null? "" /*plot.getVaxes().get(0)*/: ctx.pvl.getText().replaceAll("\"", ""));
         plot.setPlotLabel(ctx.pll == null? "": ctx.pll.getText().replaceAll("\"", ""));
         
@@ -1309,7 +1321,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             Expression exp = Expression.Invalid();        
             if(idComponents.size()== 2) { // the perspective name and the attribute name
                 PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
-                PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1), null): null;
+                PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1).toLowerCase(), null): null;
                 if(att != null){
                     //exp = Expression.CompoundMember(idComponents);
                     exp = att.getForwardExpression(); // replace the compound member with its counterpart attribute's forward mapping

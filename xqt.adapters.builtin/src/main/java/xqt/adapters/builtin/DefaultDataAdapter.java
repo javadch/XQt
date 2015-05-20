@@ -42,6 +42,7 @@ import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.expressions.MemberExpression;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -277,9 +278,9 @@ public class DefaultDataAdapter implements DataAdapter{
             try {
                  //x = clazz.getField(plotModel.getHax());
                  //y = clazz.getField(plotModel.getVaxes().get(0));
-                 axes.add(clazz.getField(plotModel.getHax()));
-                 for(String yAx: plotModel.getVaxes()) {
-                     axes.add(clazz.getField(yAx));
+                 axes.add(clazz.getField(plotModel.getHax().getId()));
+                 for(MemberExpression yAx: plotModel.getVaxes()) {
+                     axes.add(clazz.getField(yAx.getId()));
                  }                              
             } catch (NoSuchFieldException | SecurityException ex) {
                 Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
@@ -306,7 +307,7 @@ public class DefaultDataAdapter implements DataAdapter{
         //modelA.addPoint(170, 200);
         TableModel tableModel = new DefaultTableModel(data, axes.stream().map(p->p.getName()).collect(Collectors.toList()).toArray());
         SortableTable table = new SortableTable(tableModel);
-        String vLabel = plotModel.getVaxes().stream().map(p->p).collect(Collectors.joining(", "));
+        String vLabel = plotModel.getVaxes().stream().map(p->p.getId()).collect(Collectors.joining(", "));
         Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
         xAxis.setRange(0, 400);
         Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel()));

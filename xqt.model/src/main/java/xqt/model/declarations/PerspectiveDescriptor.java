@@ -120,7 +120,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
             renamedAttribute.setExtra("L"); // the attribute is marked, so that later during the repair process, it is possile to rename the referring attributes
             // because the left side is put to the list first, there shouldn't be any attribute prefixed with "L_"
             if(perspective.getAttributes().containsKey(key)){
-                renamedAttribute.setId("L_" + renamedAttribute.getId());
+                renamedAttribute.setId(("L_" + renamedAttribute.getId()).toLowerCase());
             }
             perspective.addAttribute(renamedAttribute);
         }        
@@ -133,7 +133,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
             PerspectiveAttributeDescriptor renamedAttribute = new PerspectiveAttributeDescriptor(value);
             renamedAttribute.setExtra("R"); // the attribute is marked, so that later during the repair process, it is possile to rename the referring attributes
             if(perspective.getAttributes().containsKey(key)){
-                renamedAttribute.setId("R_" + renamedAttribute.getId());
+                renamedAttribute.setId(("R_" + renamedAttribute.getId()).toLowerCase());
             }
             perspective.addAttribute(renamedAttribute);
         }        

@@ -27,7 +27,7 @@ public class MemberExpression extends Expression{
     }
     
     public MemberExpression(String name){
-        this.id = name;
+        this.id = name.toLowerCase();
         components.clear();
         components.add(name);
         this.expressionType = ExpressionType.Member;
@@ -35,7 +35,7 @@ public class MemberExpression extends Expression{
     }
     
     public MemberExpression(List<String> names){
-        this.id = names.stream().collect(Collectors.joining("."));
+        this.id = names.stream().collect(Collectors.joining(".")).toLowerCase();
         components.clear();
         components.addAll(names);
         this.expressionType = ExpressionType.Member;
@@ -51,7 +51,7 @@ public class MemberExpression extends Expression{
     
     @Override
     public String toString() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.id;
     }   
 
     public enum MemberType {

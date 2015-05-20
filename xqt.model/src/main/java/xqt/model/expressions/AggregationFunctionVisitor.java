@@ -50,10 +50,10 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
                             && p.isAggregate()).findFirst();
             if(fInfo.isPresent()){
                 AggregationCallInfo aggInfo = new AggregationCallInfo();
-                aggInfo.setAliasName(namingPrefix + "_Aggregate_" + aggregattionCallInfo.size());
+                aggInfo.setAliasName((namingPrefix + "_Aggregate_" + aggregattionCallInfo.size()).toLowerCase());
                 aggInfo.setFunction(expr);
                 aggInfo.setFunctionName(expr.getPackageId() + "." + expr.getId());
-                aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "P0"); // only one parameter is considered for the aggregate functions
+                aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "p0"); // all in lowercase. only one parameter is considered for the aggregate functions
                 if(expr.getParameters().size() > 0){
                     aggInfo.setParameter(expr.getParameters().get(0));
                 }

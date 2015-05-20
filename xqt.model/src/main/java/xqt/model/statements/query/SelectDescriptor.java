@@ -319,14 +319,15 @@ public class SelectDescriptor extends StatementDescriptor{
             if(repair){
                 // component 0: is the literal "L" or "R". component 1: is the actual attribute name
                 if(exp.getMemberType() == MemberExpression.MemberType.Compound 
-                    && perspective.getAttributes().containsKey(exp.getComponents().get(0) + "_" + exp.getComponents().get(1))){
+                    && perspective.getAttributes().containsKey((exp.getComponents().get(0) + "_" + exp.getComponents().get(1)).toLowerCase())){
                     // changing the id of the expression to match the perspective attribute.
                     // the id of the member does not follow x.y.z pattern anymore
-                    exp.setId(perspective.getAttributes().get(exp.getComponents().get(0) + "_" + exp.getComponents().get(1)).getId());
+                    exp.setId(perspective.getAttributes().get((exp.getComponents().get(0) + "_" + exp.getComponents().get(1)).toLowerCase()).getId());
                     return null;
                 }
             } 
-            if(perspective.getAttributes().containsKey(exp.getId())){
+            String expTempId = exp.getId().toLowerCase();
+            if(perspective.getAttributes().containsKey(expTempId)){
                 return null;
             }
             return exp;
