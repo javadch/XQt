@@ -10,6 +10,8 @@ import com.vaiona.commons.compilation.ObjectCreator;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -104,7 +106,13 @@ public class AdapterInfo {
 
     public DataAdapter load(String dialect) throws Exception  {
         try{
-            ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + location);
+            String absulotePath = location;
+            if(location.startsWith("/")){ // the path is relative
+                Path relative = Paths.get("config", "adapters", this.id.toLowerCase(), location.substring(1));
+                Path absulote =relative.toAbsolutePath();
+                absulotePath = absulote.toString();
+            }
+            ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + absulotePath);
             Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
             DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
             adapter.setDialect(dialect);

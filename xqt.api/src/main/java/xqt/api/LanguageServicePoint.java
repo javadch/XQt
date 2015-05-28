@@ -5,13 +5,23 @@
 package xqt.api;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import javafx.beans.binding.StringBinding;
 import xqt.engine.QueryEngine;
+import xqt.model.data.Resultset;
+import xqt.model.data.ResultsetType;
+import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.functions.FunctionInfoContainer;
 import xqt.model.statements.StatementDescriptor;
@@ -26,6 +36,7 @@ public class LanguageServicePoint {
     private InputStream inputStream;
     private RuntimeSystem runtime = null;
     private QueryEngine engine;
+    private StringBuilder processScript = new StringBuilder();
     protected List<Exception> exceptions = new ArrayList<>();
 
     public List<Exception> getExceptions() {
@@ -41,22 +52,49 @@ public class LanguageServicePoint {
     }
 
     
-    public LanguageServicePoint(String processScript) {
-        try{
-            InputStream stream = new ByteArrayInputStream(processScript.getBytes("UTF-8"));
-            init(stream);
-        } catch(Exception ex){
+    // this removes whatever in the inputstream
+    public String addScript(String statement){
+        inputStream = null;
+        if(statement != null && !statement.isEmpty())
+            processScript.append(statement).append("\r\n");
+        return statement;
+    }
+    
+    public void registerScript(InputStream script){        
+        processScript = new StringBuilder();
+        if(script != null)
+            inputStream = script;
+    }
+
+    public void registerScript(String fileName){        
+        processScript = new StringBuilder();
+        try {
+            inputStream = new FileInputStream(fileName);
+        } catch (FileNotFoundException ex) {
             this.exceptions.add(ex);
+            //Logger.getLogger(LanguageServicePoint.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
+    public LanguageServicePoint(){
         
-    public LanguageServicePoint(InputStream processScript) {
-        try{
-           init(processScript);
-        } catch(Exception ex){
-            this.exceptions.add(ex);
-        }
     }
+//    public LanguageServicePoint(String processScript) {
+//        try{
+//            InputStream stream = new ByteArrayInputStream(processScript.getBytes("UTF-8"));
+//            init(stream);
+//        } catch(Exception ex){
+//            this.exceptions.add(ex);
+//        }
+//    }
+//        
+//    public LanguageServicePoint(InputStream processScript) {
+//        try{
+//           init(processScript);
+//        } catch(Exception ex){
+//            this.exceptions.add(ex);
+//        }
+//    }
     
     // it is to keep the ctors clean
     private void init(InputStream processScript) throws Exception{
@@ -81,6 +119,17 @@ public class LanguageServicePoint {
     }
     
     public void process(){
+        try{
+            if(inputStream!= null){
+                init(inputStream);
+            } else {
+                InputStream stream = new ByteArrayInputStream(processScript.toString().getBytes("UTF-8"));
+                init(stream);
+            }
+        } catch(Exception ex){
+            this.exceptions.add(ex);
+        }
+        
         // process all the statements and store the results, but do not return anything
         if(exceptions == null || exceptions.size() <=0)
             engine.execute();
@@ -112,6 +161,88 @@ public class LanguageServicePoint {
 //        return getStatementDescriptor(id);
 //    }
 
+    public Object getVariable(String variableName){
+        if(variableName.equals("Diana")){
+            Object[] o = { new String[] { "a", "b", "c","d", "e" },
+                   new int[] { 1, 2, 3, 4, 5},
+                   new double[] { .5, 1.5, 2.0, 3.0, 3.5 } };
+            return o;
+        }
+        
+        Optional<StatementDescriptor> stmt = engine.getProcessModel().getStatements().values().stream()
+                .filter(p-> p.hasExecutionInfo() 
+                        && p.getExecutionInfo().hasVariable() 
+                        && p.getExecutionInfo().getVariable().getName().equalsIgnoreCase(variableName)
+                ).findFirst();
+        if(stmt.isPresent()){
+            Variable variable = stmt.get().getExecutionInfo().getVariable();
+            switch(variable.getResult().getResultsetType()){
+                case Tabular:
+                    return variable.getResultAsArray();
+                case Image:
+                    break;
+                default:
+                    break;
+            }
+        }
+        return null;
+    }
+    
+    public Object getVariableSchema(String variableName){
+        if(variableName.equals("Diana")){
+            return new String[] { "v1", "v2", "v3" };
+        }
+        
+        Optional<StatementDescriptor> stmt = engine.getProcessModel().getStatements().values().stream()
+                .filter(p-> p.hasExecutionInfo() 
+                        && p.getExecutionInfo().hasVariable() 
+                        && p.getExecutionInfo().getVariable().getName().equalsIgnoreCase(variableName)
+                ).findFirst();
+        if(stmt.isPresent()){
+            Variable variable = stmt.get().getExecutionInfo().getVariable();
+            switch(variable.getResult().getResultsetType()){
+                case Tabular:
+                    return variable.getResult().getSchema().stream().map(p->p.getName()).collect(Collectors.toList()).toArray();
+                case Image:
+                    break;
+                default:
+                    break;
+            }
+        }
+        return null;
+    }
+
+//    public class DataObject{
+//        private String s;
+//        private int number;
+//        private double x;
+//        public DataObject(String s, int  i, double d){
+//            this.s = s;
+//            this.number = i;
+//            this.x = d;
+//        }
+//        public void setS(String s) {
+//            this.s = s;
+//        }
+//
+//        public void setNumber(int number) {
+//            this.number = number;
+//        }
+//
+//        public void setX(double x) {
+//            this.x = x;
+//        }
+//        
+//        public  static DataObject[] createData(){
+//            DataObject[] cs = { new DataObject("a", 1, .5),
+//                                new DataObject("b", 2, 1.5),
+//                                new DataObject("c", 3, 3.4),
+//                                new DataObject("d", 4, 5.6),
+//            };
+//            return cs;
+//        }
+//    }
+    
     private StatementDescriptor getStatementDescriptor(int id){
         StatementDescriptor statement = engine.getProcessModel().getStatement(id);
         return statement;

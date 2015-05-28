@@ -135,8 +135,8 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     protected void buildJoinedSourceSegments(){
         // maybe it is needed to call buildSingleSourceSegments too.
         super.buildJoinedSourceSegments();
-        resultEntityContext.put("LeftClassName", this.leftClassName);
-        resultEntityContext.put("RightClassName", this.rightClassName);
+        entityContext.put("LeftClassName", this.leftClassName);
+        entityContext.put("RightClassName", this.rightClassName);
         readerContext.put("LeftClassName", this.leftClassName); 
         readerContext.put("RightClassName", this.rightClassName);
         readerContext.put("TargetRowType", (namespace + "." + baseClassName + "Entity"));

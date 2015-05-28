@@ -10,7 +10,7 @@ package xqt.api;
  */
 public class AppInfo {
     public static String getVersion(){
-        return "1.0-SNAPSHOT"; 
+        return "0.2.0-SNAPSHOT"; 
     }
     
     public static String getMaturityLevel(){

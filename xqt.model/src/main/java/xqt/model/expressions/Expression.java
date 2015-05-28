@@ -96,8 +96,8 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.And);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "and", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "and", false, true));
         return ex;
     }
 
@@ -105,8 +105,8 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Or);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "or", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "or", false, true));
         return ex;
     }
 
@@ -144,8 +144,8 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.GreaterThan);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "gt", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "gt", false, true));
         return ex;
     }
 
@@ -162,8 +162,8 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.LessThan);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lt", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lt", false, true));
         return ex;
     }
     
@@ -171,8 +171,8 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.LessThanOrEqual);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lteq", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lteq", false, true));
         return ex;
     }
 
@@ -180,8 +180,8 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Equal);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "eq", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "eq", false, true));
         return ex;
     }
 
@@ -189,8 +189,8 @@ return ex;
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Like);
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "like", false, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "like", false, true));
         return ex;
     }
 
@@ -199,7 +199,7 @@ return ex;
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "noteq", false, true));
+        //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "noteq", false, true));
         return ex;
     }
 
@@ -209,14 +209,15 @@ return ex;
         // check the types of the left and right expressiosns and merge them
         ex.getLanguageExceptions().addAll(x.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(y.getLanguageExceptions());
+        ex.returnType = TypeSystem.TypeName.Real;
         return ex;
     }
 
     public static UnaryExpression Not(Expression operand){
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.Not);
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "not", true, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "not", true, true));
         return ex;
     }
 
@@ -230,32 +231,32 @@ return ex;
 
     public static UnaryExpression IsNull(Expression operand){
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsNull);
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnull", true, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnull", true, true));
         return ex;
     }
     
     public static UnaryExpression IsNumber(Expression operand){
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsNumber);
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnumber", true, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnumber", true, true));
         return ex;
     }
 
     public static UnaryExpression IsDate(Expression operand){
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsDate);
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isdate", true, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isdate", true, true));
         return ex;
     }
     
     public static UnaryExpression IsEmpty(Expression operand){
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsEmpty);
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
-        //ex.returnType = TypeSystem.Boolean;
-        ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isempty", true, true));
+        ex.returnType = TypeSystem.TypeName.Boolean;
+        //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isempty", true, true));
         return ex;
     }
     

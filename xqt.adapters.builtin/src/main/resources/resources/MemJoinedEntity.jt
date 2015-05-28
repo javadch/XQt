@@ -5,6 +5,9 @@
 @args() {
     String namespace,
     String BaseClassName,
+    String RecordClassName,
+    String EntityClassName,
+    String ReaderClassName,
     String LeftClassName,
     String RightClassName,
     List<AttributeInfo> Attributes,
@@ -20,7 +23,7 @@ package @(namespace);
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class @(BaseClassName)Entity {
+public class @(EntityClassName) {
 
     @for(AttributeInfo ad : Attributes) {
         public @ad.runtimeType @ad.name;
@@ -30,7 +33,7 @@ public class @(BaseClassName)Entity {
     private @(LeftClassName) leftEntity; @/ should be a weak reference
     private @(RightClassName) rightEntity; @/ should be a weak reference
             
-    public @(BaseClassName)Entity (@(LeftClassName) left, @(RightClassName) right){
+    public @(EntityClassName) (@(LeftClassName) left, @(RightClassName) right){
         @/ if there is no where clause, usually there is no need for a pre population, hence, the Pre is empty
         @/ in case of JOIN, the ctor initializes the join keys
         this.leftEntity = left;
@@ -49,7 +52,7 @@ public class @(BaseClassName)Entity {
     }
 
     @if(Mid != null && Mid.size() > 0){ 
-        public @(BaseClassName)Entity midPopulate() {
+        public @(EntityClassName) midPopulate() {
             try {
                 @for(AttributeInfo ad : Mid) {
                     @ad.name = @ad.forwardMapTranslated;
@@ -61,7 +64,7 @@ public class @(BaseClassName)Entity {
         }    
     }
 
-    public @(BaseClassName)Entity populate(){
+    public @(EntityClassName) populate(){
         @// populate all other attributes and release row
         @// make the object invalid if something went wrong
         @// apply data conversion checks
@@ -77,7 +80,7 @@ public class @(BaseClassName)Entity {
         return this;
     }
 
-    public @(BaseClassName)Entity populateLeft(){
+    public @(EntityClassName) populateLeft(){
         try {
             @for(AttributeInfo ad : Post_Left) {
                 @ad.name = @ad.forwardMapTranslated;
@@ -90,7 +93,7 @@ public class @(BaseClassName)Entity {
         return this;
     }
 
-    public @(BaseClassName)Entity populateRight(){
+    public @(EntityClassName) populateRight(){
         try {
             @for(AttributeInfo ad : Post_Right) {
                 @ad.name = @ad.forwardMapTranslated;

@@ -9,6 +9,7 @@ package xqt.model.data;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -55,5 +56,5 @@ public class Resultset {
     public ResultsetType getResultsetType() {
         return resultsetType;
     }
-
+  
 }

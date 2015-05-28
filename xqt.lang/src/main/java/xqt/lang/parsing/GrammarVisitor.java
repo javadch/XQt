@@ -551,7 +551,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
         select.setOrderInParent(processModel.totalElementCount());
         processModel.addStatementDescriptor(select); //its better to return to visit processmodel and add the perspective there
-        select.validate();
+        //select.validate(); // should be back soon. its commented to test where clause attributes not defined in perspectives. 26.05.15
         stack.pop();
         
         return select;
