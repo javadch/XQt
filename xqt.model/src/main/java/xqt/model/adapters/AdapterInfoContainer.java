@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -57,6 +58,14 @@ public class AdapterInfoContainer {
         return instance;
     }
     
+    public String[] getAdapterNames(){ // would be better to return String[]
+        Object[] ads = instance.registeredAdapterInfos.stream().map(p-> p.getId()).toArray();
+        String[] adapterNames = new String[ads.length];
+        for(int i=0; i<ads.length;i++) {
+            adapterNames[i] = (String)ads[i];
+        }
+        return adapterNames;
+    }
 
     public void setRegisteredAdapterInfos(List<AdapterInfo> registeredAdapterInfos) {
         this.registeredAdapterInfos = registeredAdapterInfos;
@@ -71,7 +80,7 @@ public class AdapterInfoContainer {
     }
 
     public AdapterInfo getDefultAdapter(){
-         Optional<AdapterInfo> adapterInfo = registeredAdapterInfos.stream()
+         Optional<AdapterInfo> adapterInfo = instance.registeredAdapterInfos.stream()
                             .filter(p->p.getIsFallback()).findFirst();// .getId().equalsIgnoreCase("Default")).findFirst();
          if(adapterInfo.isPresent())
              return adapterInfo.get();
@@ -79,7 +88,7 @@ public class AdapterInfoContainer {
     }
     
     public AdapterInfo getAdapterInfo(String adapterId){
-        Optional<AdapterInfo> adapterInfo = registeredAdapterInfos.stream()
+        Optional<AdapterInfo> adapterInfo = instance.registeredAdapterInfos.stream()
                             .filter(p->p.getId().equalsIgnoreCase(adapterId)).findFirst(); 
         if(adapterInfo.isPresent())
              return adapterInfo.get();

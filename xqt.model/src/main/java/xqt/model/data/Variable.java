@@ -5,8 +5,15 @@
 
 package xqt.model.data;
 
+import com.vaiona.commons.data.DataTypeInfo;
+import com.vaiona.commons.types.TypeSystem;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import xqt.model.execution.ExecutionInfo;
 
@@ -44,7 +51,12 @@ public class Variable {
         this.executionInfo = executionInfo;
     }
 
-    public Object [][] getResultAsArray(){
+    public <T> T[] createColumn(Class clazz, int size) {
+        T[] array = (T[]) java.lang.reflect.Array.newInstance(clazz, size);
+        return (array);
+    }
+    
+    public Object[] getResultAsArray(){
         List<String> columnNames = result.getSchema().stream().map(p->p.getName()).collect(Collectors.toList());
         if (result.getTabularData()!= null && result.getTabularData().size() > 0) {
                         
@@ -60,22 +72,49 @@ public class Variable {
             
             int rowSize = result.getTabularData().size();
             int colSize = columnNames.size();
-            Object[/*columns*/][/*rows*/] table = new Object[rowSize][colSize];
+            //colSize =1;
+            Object[/*columns*/] table = new Object[colSize];
             Field[] fields = new Field[colSize];
+            //HashMap<Integer, Object[]> columnPointer = new HashMap<>();
+            
             for(int col =0; col<colSize; col++){ // store the fields in an array for faster pickup in the loops
                 try {
-                    fields[col] = clazz.getField(columnNames.get(col));
+                    Field fld = clazz.getField(columnNames.get(col));
+                    fields[col] = fld;
+                    //table[col] = createColumn(int.class, col);
+                    Optional<DataTypeInfo> typeInfo = TypeSystem.getTypes().values().stream()
+                            .filter(p->p.getRuntimeType().equals(fld.getType().getSimpleName())).findFirst();
+                    if(typeInfo.isPresent()){
+                        Class fieldType = typeInfo.get().getPrimitiveType();
+                        table[col] = java.lang.reflect.Array.newInstance(fieldType, rowSize);
+                    } else {
+                        throw new NoClassDefFoundError(fld.getType().getName());
+                    }
                 } catch(NoSuchFieldException | SecurityException ex){
                     
                 }
             }
+            
             for(int row=0; row<rowSize; row++){
                 Object rowData = result.getTabularData().get(row);
                 for(int col =0; col<colSize; col++){
                     try {
-                        table[row][col] = fields[col].get(rowData);
+                        Object value = fields[col].get(rowData);
+                        if(value.getClass().equals(Double.class)){
+                            ((double [])table[col])[row] = (double)value;                                
+                        } else if(value.getClass().equals(Long.class)){
+                            ((long [])table[col])[row] = (long)value;                                
+                        } else if(value.getClass().equals(Integer.class)){
+                            ((int [])table[col])[row] = (int)value;                                
+                        } else if(value.getClass().equals(Boolean.class)){
+                            ((boolean [])table[col])[row] = (boolean)value;                                
+                        } else if(value.getClass().equals(String.class)){
+                            ((String [])table[col])[row] = (String)value;                                
+                        } else if(value.getClass().equals(LocalDateTime.class)){
+                                ((LocalDateTime [])table[col])[row] = (LocalDateTime)value;                                
+                        }
                     } catch (IllegalArgumentException | IllegalAccessException ex) {
-                        table[col][row] = "ERROR";
+                        //columnPointer.get(col)[row] = "ERROR";
                     }
                 }
             }

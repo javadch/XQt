@@ -4,8 +4,10 @@
  */
 package xqt.lang;
 
+import com.vaiona.commons.logging.LoggerHelper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,7 @@ public class LanguageController {
             tree = parser.createProcessModel();        // the result is the parse tree            
             exceptions.addAll(errorListener.getExceptions());
         } catch (Exception ex){
+            LoggerHelper.logError(MessageFormat.format("Error: {0}.", ex.getMessage()));                
             LanguageException lx = 
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate(ex.getMessage())

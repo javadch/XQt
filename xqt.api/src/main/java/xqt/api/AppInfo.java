@@ -4,6 +4,8 @@
  */
 package xqt.api;
 
+import xqt.model.adapters.AdapterInfoContainer;
+
 /**
  *
  * @author jfd
@@ -23,5 +25,5 @@ public class AppInfo {
     
     public static String getFullName(){
         return (getName() + " Version " + getVersion() + " (" + getMaturityLevel() + ")");
-    }
+    }    
 }

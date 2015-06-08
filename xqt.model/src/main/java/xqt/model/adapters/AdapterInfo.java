@@ -8,14 +8,11 @@ package xqt.model.adapters;
 
 import com.vaiona.commons.compilation.ObjectCreator;
 import com.vaiona.commons.logging.LoggerHelper;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import xqt.model.functions.FunctionInfoContainer;
 
 /**
@@ -104,22 +101,29 @@ public class AdapterInfo {
         return FunctionInfoContainer.getInstance(id);
     }
 
-    public DataAdapter load(String dialect) throws Exception  {
-        try{
-            String absulotePath = location;
+    public DataAdapter load(String dialect, ClassLoader parentLoader) throws Exception  {
+        String absulotePath = location;
+        try{            
             if(location.startsWith("/")){ // the path is relative
                 Path relative = Paths.get("config", "adapters", this.id.toLowerCase(), location.substring(1));
                 Path absulote =relative.toAbsolutePath();
                 absulotePath = absulote.toString();
             }
-            ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + absulotePath);
+            //LoggerHelper.logDebug("Looking up adapater: " + id + " to load.");
+            LoggerHelper.logDebug(MessageFormat.format("The exeution engine is loading adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
+            ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + absulotePath, parentLoader);
+            LoggerHelper.logDebug(MessageFormat.format("Class loader is instantiated for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
             Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
-            DataAdapter adapter = (DataAdapter)ObjectCreator.createInstance(claz);
-            adapter.setDialect(dialect);
-            LoggerHelper.logDebug(MessageFormat.format("The {0} adapter located at {1}:{2} was successfully loaded.", id, locationType, location));
-        return adapter;
+            LoggerHelper.logDebug(MessageFormat.format("Adapter class definition is loaded for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
+            DataAdapter adapter = null;
+            adapter = (DataAdapter)ObjectCreator.createInstance(claz);
+            LoggerHelper.logDebug(MessageFormat.format("Adapter class is instantiated for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
+            if(adapter != null)
+                adapter.setDialect(dialect);
+            LoggerHelper.logDebug(MessageFormat.format("The {0} adapter located at {1}:{2} was successfully loaded.", id, locationType, absulotePath));
+            return adapter;
         } catch(Exception ex){
-            LoggerHelper.logError(MessageFormat.format("The {0} adapter located at {1}:{2} was NOT loaded. Cauase: {3}", id, locationType, location, ex.getMessage()));
+            LoggerHelper.logError(MessageFormat.format("The {0} adapter located at {1}:{2} was NOT loaded. Cauase: {3}", id, locationType, absulotePath, ex.getMessage()));
             throw ex;
             //return null;
         }

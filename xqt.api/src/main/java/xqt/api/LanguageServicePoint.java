@@ -4,21 +4,29 @@
  */
 package xqt.api;
 
+import com.vaiona.commons.io.MarkableFileInputStream;
+import com.vaiona.commons.logging.LoggerHelper;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javafx.beans.binding.StringBinding;
 import xqt.engine.QueryEngine;
+import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
@@ -38,7 +46,36 @@ public class LanguageServicePoint {
     private QueryEngine engine;
     private StringBuilder processScript = new StringBuilder();
     protected List<Exception> exceptions = new ArrayList<>();
+    protected ClassLoader classLoader = null;
+    
+    public LanguageServicePoint(){
+        
+    }
 
+    // it is to keep the ctors clean
+    private void init(InputStream processScript) throws Exception{
+        //prepare the parser/ annotator and create the DST use the runtime system for all the functions, 
+        // The API is just a facade over the runtime
+        // every statement should have an ID
+        // create dependencies of each element to the others especiallay statements.
+        //dstNode.getDependsUponElements(ElementType.Statement ...)
+        
+        // Load the function specifications from the packs
+        loadFunctionSpecifications();
+        // Load the jars of the adapters. maybe it can be deffered to the time they actually requested!
+        classLoader = this.getClass().getClassLoader();
+        
+        //this.inputStream = processScript;
+        runtime = new RuntimeSystem();
+        try{
+            engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work   
+            engine.setClassLoader(classLoader);
+        }
+        catch (Exception ex) {
+            this.exceptions.add(new Exception("Could not prepare the query engine! Likely there are some errors in the process syntax.", ex));
+        }       
+    }
+    
     public List<Exception> getExceptions() {
         return exceptions;
     }
@@ -59,66 +96,48 @@ public class LanguageServicePoint {
             processScript.append(statement).append("\r\n");
         return statement;
     }
-    
+
+    public String getScript(){
+        if(processScript == null || processScript.length() <=0){
+            StringBuilder sb=new StringBuilder();
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+            
+            String read;
+            try {
+                read = br.readLine();
+                while(read != null) {
+                    sb.append(read); sb.append("\n");
+                    read =br.readLine();
+                }
+                if(inputStream.markSupported()) // if not, susequent get or process calls may fail
+                    inputStream.reset();
+                return sb.toString();
+            } catch (IOException ex) {
+                return ex.getMessage();
+            }
+        } else {
+            return processScript.toString();
+        }
+    }
+ 
     public void registerScript(InputStream script){        
         processScript = new StringBuilder();
         if(script != null)
             inputStream = script;
     }
 
-    public void registerScript(String fileName){        
+    public String registerScript(String fileName){        
         processScript = new StringBuilder();
         try {
-            inputStream = new FileInputStream(fileName);
+            inputStream = new MarkableFileInputStream(new FileInputStream(fileName));
         } catch (FileNotFoundException ex) {
             this.exceptions.add(ex);
-            //Logger.getLogger(LanguageServicePoint.class.getName()).log(Level.SEVERE, null, ex);
+            return ex.getMessage();
         }
+        return "OK";
     }
 
-    public LanguageServicePoint(){
-        
-    }
-//    public LanguageServicePoint(String processScript) {
-//        try{
-//            InputStream stream = new ByteArrayInputStream(processScript.getBytes("UTF-8"));
-//            init(stream);
-//        } catch(Exception ex){
-//            this.exceptions.add(ex);
-//        }
-//    }
-//        
-//    public LanguageServicePoint(InputStream processScript) {
-//        try{
-//           init(processScript);
-//        } catch(Exception ex){
-//            this.exceptions.add(ex);
-//        }
-//    }
-    
-    // it is to keep the ctors clean
-    private void init(InputStream processScript) throws Exception{
-        //prepare the parser/ annotator and create the DST use the runtime system for all the functions, 
-        // The API is just a facade over the runtime
-        // every statement should have an ID
-        // create dependencies of each element to the others especiallay statements.
-        //dstNode.getDependsUponElements(ElementType.Statement ...)
-        
-        // Load the function specifications from the packs
-        loadFunctionSpecifications();
-        // Load the jars of the adapters. maybe it can be deffered to the time they actually requested!
-        
-        this.inputStream = processScript;
-        runtime = new RuntimeSystem();
-        try{
-            engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work           
-        }
-        catch (Exception ex) {
-            this.exceptions.add(new Exception("Could not prepare the query engine! Likely there are some errors in the process syntax.", ex));
-        }       
-    }
-    
-    public void process(){
+    public String process(){
         try{
             if(inputStream!= null){
                 init(inputStream);
@@ -128,11 +147,19 @@ public class LanguageServicePoint {
             }
         } catch(Exception ex){
             this.exceptions.add(ex);
+            return "Could not read the input stream: " + ex.getMessage();
         }
         
         // process all the statements and store the results, but do not return anything
         if(exceptions == null || exceptions.size() <=0)
             engine.execute();
+        if(engine == null || engine.getProcessModel() == null || engine.getProcessModel().hasError()){
+            exceptions.stream().forEach((exx) -> {
+                LoggerHelper.logError(MessageFormat.format("Error: {0}\r\n", exx.getMessage()));
+            });
+            return "Execution terminated by errors in the process. Call getErrors for more information.";
+        }
+        return "OK";
     }
     
     public Object process(Integer statementId, Boolean forceExecution, Boolean executeIfNeeded){
@@ -141,6 +168,7 @@ public class LanguageServicePoint {
         // if there is a dependency on some previous statements, process them also (recursive: they may have dependencies too)
         // after the execution of the statement, invalidate resultset that are dependant upon this one
         // also return the result set
+        // needs init to be done first, so this method should be called after the process method is called
         if(forceExecution)
         {
             Object result = engine.execute(statementId);
@@ -157,15 +185,11 @@ public class LanguageServicePoint {
         return null;
     }
     
-//    public StatementDescriptor getStatement(int id){
-//        return getStatementDescriptor(id);
-//    }
-
     public Object getVariable(String variableName){
         if(variableName.equals("Diana")){
-            Object[] o = { new String[] { "a", "b", "c","d", "e" },
-                   new int[] { 1, 2, 3, 4, 5},
-                   new double[] { .5, 1.5, 2.0, 3.0, 3.5 } };
+            Object[] o = {  new String[] { "a", "b", "c","d", "e" },
+                            new int[] { 1, 2, 3, 4, 5},
+                            new double[] { .5, 1.5, 2.0, 3.0, 3.5 } };
             return o;
         }
         
@@ -202,7 +226,12 @@ public class LanguageServicePoint {
             Variable variable = stmt.get().getExecutionInfo().getVariable();
             switch(variable.getResult().getResultsetType()){
                 case Tabular:
-                    return variable.getResult().getSchema().stream().map(p->p.getName()).collect(Collectors.toList()).toArray();
+                    String[] names = new String[variable.getResult().getSchema().size()];
+                    int index =0;
+                    for(String name :variable.getResult().getSchema().stream().map(p->p.getName()).collect(Collectors.toList())){
+                        names[index++] = name;
+                    }
+                    return names;
                 case Image:
                     break;
                 default:
@@ -211,38 +240,7 @@ public class LanguageServicePoint {
         }
         return null;
     }
-
-//    public class DataObject{
-//        private String s;
-//        private int number;
-//        private double x;
-//        public DataObject(String s, int  i, double d){
-//            this.s = s;
-//            this.number = i;
-//            this.x = d;
-//        }
-//        public void setS(String s) {
-//            this.s = s;
-//        }
-//
-//        public void setNumber(int number) {
-//            this.number = number;
-//        }
-//
-//        public void setX(double x) {
-//            this.x = x;
-//        }
-//        
-//        public  static DataObject[] createData(){
-//            DataObject[] cs = { new DataObject("a", 1, .5),
-//                                new DataObject("b", 2, 1.5),
-//                                new DataObject("c", 3, 3.4),
-//                                new DataObject("d", 4, 5.6),
-//            };
-//            return cs;
-//        }
-//    }
-    
+  
     private StatementDescriptor getStatementDescriptor(int id){
         StatementDescriptor statement = engine.getProcessModel().getStatement(id);
         return statement;
@@ -261,4 +259,64 @@ public class LanguageServicePoint {
         functionContainer = FunctionInfoContainer.getDefaultInstance();
     }
     
+    public Object getAdapterNames(){
+        try{
+            AdapterInfoContainer instance = AdapterInfoContainer.getInstance();
+            return instance.getAdapterNames();
+        } catch(Exception ex){
+            String[] problem = new String[1];
+            problem[0] = ex.getMessage();
+            return problem;
+        }
+    }
+
+    public String getErrors(){
+        StringBuilder errors = new StringBuilder();
+        int errorCount = 0;
+        if(hasError()){ // lexical, syntax and ... error
+            errors.append("**************************************************************************************\n");
+            errors.append("************************************ Lexical Errors ***********************************\n");
+            errors.append("**************************************************************************************\n");
+            for(Exception p : getExceptions()){
+                errors.append("Error " + ++errorCount + " : " + p.getMessage()+ "\n");
+            }
+        } 
+        if(getEngine() != null && getEngine().getProcessModel() != null) {
+            if(getEngine().getProcessModel().hasError()){ // semantic errors
+                errors.append("**************************************************************************************\n");
+                errors.append("******************************* Synatx and Semantic Errors *******************************\n");
+                errors.append("**************************************************************************************\n");
+                for(Exception p : getExceptions()){
+                    errors.append("Error " + ++errorCount + " : " + p.getMessage()+ "\n");
+                }
+            }             
+            errors.append("**************************************************************************************\n");
+            errors.append("****************************** Statement Execution Results ********************************\n");
+            errors.append("**************************************************************************************\n");
+            getEngine().getProcessModel().getStatements().values().stream().forEachOrdered((s) -> {
+                if(s.hasExecutionInfo()){
+                    if(!s.getExecutionInfo().isExecuted()){
+                        errors.append("Statement " + s.getId() + " was NOT executed.\n");
+                    } else if(s.hasResult()){
+                        Variable v = s.getExecutionInfo().getVariable();
+                        switch (v.getResult().getResultsetType()){
+                            case Tabular:{
+                                errors.append("Statement " + s.getId() + " was executed. Its result is in the variable: '" + v.getName() + "' and contains " + v.getResult().getTabularData().size() + " records.\n");                                     
+                                break;
+                            }
+                            case Image: {
+                                errors.append("Statement " + s.getId() + " was executed.  Its result is in the variable: '" + v.getName() + "'.\n"); 
+                                break;
+                            }
+                        }
+                    } else {
+                        errors.append("Statement " + s.getId() + " was executed but returned no result.\n");
+                    }                      
+                } else {
+                    errors.append("Statement " + s.getId() + " was NOT executed.\n");
+                }
+            });
+        }  
+        return errors.toString();
+    }
 }

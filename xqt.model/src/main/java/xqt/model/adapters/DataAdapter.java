@@ -6,11 +6,7 @@
 
 package xqt.model.adapters;
 
-import com.vaiona.commons.compilation.InMemorySourceFile;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import xqt.model.containers.JoinedContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
 import xqt.model.statements.query.SelectDescriptor;

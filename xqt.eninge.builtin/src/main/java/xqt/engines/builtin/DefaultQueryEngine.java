@@ -36,6 +36,7 @@ public class DefaultQueryEngine  implements QueryEngine{
     /** "memory" for variable/value pairs go here */
     private final Map<String, Variable> memory;    
     private ProcessModel model = null;
+    ClassLoader classLoader = null;
     
     public DefaultQueryEngine(ProcessModel processModel){
         this.memory = new HashMap<>();
@@ -47,6 +48,16 @@ public class DefaultQueryEngine  implements QueryEngine{
         // pre-fetch adapters' capabilities
     }
 
+    @Override
+    public void setClassLoader(ClassLoader classLoader){
+        this.classLoader = classLoader;
+    }
+
+    @Override
+    public ClassLoader getClassLoader(){
+        return classLoader != null? classLoader: this.getClass().getClassLoader();
+    }
+    
     @Override
     public Object getVariableValue(String variableName){
         if(this.memory.containsKey(variableName)){
@@ -179,7 +190,11 @@ public class DefaultQueryEngine  implements QueryEngine{
             }
             JavaFileManager fileManager = null;
             if(sourcesToBeCompiled.size() > 0){
-                ClassCompiler compiler = new ClassCompiler();
+                // intentionally used the class loader obtained from the API caller to load the compiler class
+                // so that the generated classes are in the same loader as the API caller.
+                ClassCompiler compiler = (ClassCompiler) classLoader.loadClass("com.vaiona.commons.compilation.ClassCompiler")
+                                            .getConstructor(ClassLoader.class)
+                                            .newInstance(classLoader);
                 LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. preparing to compile {1} sources.", 3, sourcesToBeCompiled.size()));
                 for (Map.Entry<String, InMemorySourceFile> entry : sourcesToBeCompiled.entrySet()) {
                     LoggerHelper.logDebug(MessageFormat.format("The source file {0} was added to the compilation queue.", entry.getKey()));
@@ -200,6 +215,11 @@ public class DefaultQueryEngine  implements QueryEngine{
                                     // some of the adapters may use no sources, or they may prepare in a non dynamic way for specific scenario
                                     // default adapater for example may use a predefined class(s), or ...
                                     source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
+                                    if(source.getCompiledClass() != null)
+                                        LoggerHelper.logDebug(MessageFormat.format("Compiled class is set for source {0}.", source.getFullName()));                
+                                    else
+                                        LoggerHelper.logError(MessageFormat.format("Compiled class is NOT set for source {0}.", source.getFullName()));                
+
                                     if(sm instanceof SelectDescriptor){ // do it also for the other types
                                         SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getComplementingStatement();
                                         if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
@@ -232,6 +252,7 @@ public class DefaultQueryEngine  implements QueryEngine{
             }
 
         } catch (Exception ex) {
+            LoggerHelper.logError(MessageFormat.format("An exception has occured in the DefaultQueryEngine. execute method. Details: {0}.", ex.getMessage()));                
             model.getLanguageExceptions().add(LanguageExceptionBuilder.builder()
                             .setMessageTemplate(ex.getMessage())
                             .build()

@@ -175,7 +175,7 @@ public class StatementExecuter implements StatementVisitor{
                         String adapterDialect = getConnectionDialect((SingleContainer)select.getTargetClause().getContainer());
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                            adapter = adapterInfo.load(adapterDialect);
+                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
@@ -203,7 +203,7 @@ public class StatementExecuter implements StatementVisitor{
                 try {
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
                     String adapterDialect = getConnectionDialect((SingleContainer)select.getSourceClause().getContainer());
-                    adapter = adapterInfo.load(adapterDialect);
+                    adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     adapter.setAdapterInfo(adapterInfo);
                     return adapter;
@@ -251,7 +251,7 @@ public class StatementExecuter implements StatementVisitor{
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
                             String adapterDialect = getConnectionDialect((SingleContainer)joinedSource.getLeftContainer());//.getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
-                            adapter = adapterInfo.load(adapterDialect);
+                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
