@@ -71,7 +71,7 @@ public class CsvDataAdapterHelper {
      */
     public LinkedHashMap<String, FieldInfo> prepareFields(SingleContainer container, String columnDelimiter, String typeDelimiter, String unitDelimiter) throws IOException {
             try {
-                String fileName = getCompleteSourceName(container);
+                String fileName = getCompleteHeaderName(container);
                 HeaderBuilder hb = new HeaderBuilder();
                 LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter);
                 fields.values().stream().forEach(field -> {
@@ -82,6 +82,26 @@ public class CsvDataAdapterHelper {
             return null;
     }
     
+    public String getCompleteHeaderName(SingleContainer container){ //may need a container index too!
+        String basePath = container.getBinding().getConnection().getSourceUri();
+        String container0 = container.getContainerName();
+        String fileExtention = "csv";
+        Boolean externalHeader = false;
+        String fileName = "";
+        try{
+            fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
+        } catch (Exception ex){}
+        try{
+            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalHeader").getValue());
+        } catch (Exception ex){}
+        if(externalHeader){
+            fileName = basePath.concat(container0).concat(".header.").concat(fileExtention);
+        } else {
+            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+        }
+        return fileName;
+    }
+
     public String getCompleteSourceName(SingleContainer container){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         String container0 = container.getContainerName();
