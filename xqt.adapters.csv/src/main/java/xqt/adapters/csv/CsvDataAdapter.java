@@ -263,7 +263,8 @@ public class CsvDataAdapter implements DataAdapter {
         try{
             builder.addFields(helper.prepareFields(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
-                    && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
+                    && select.getProjectionClause().getPerspective().getPerspectiveType() == 
+                    PerspectiveDescriptor.PerspectiveType.Implicit) {
                 select.getProjectionClause().setPerspective(
                         helper.createPhysicalPerspective(builder.getFields(), select.getProjectionClause().getPerspective(), select.getId()));
                 select.getProjectionClause().setPresent(true);

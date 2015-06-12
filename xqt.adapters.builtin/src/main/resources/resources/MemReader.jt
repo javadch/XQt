@@ -93,6 +93,9 @@ public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftCl
         @if(joinType.equalsIgnoreCase("")){
             List<@(TargetRowType)> result = 
             source1.stream()
+                @if(TargetRowType!= null && !TargetRowType.equals(LeftClassName)) {
+                    .map(p -> new @(TargetRowType)(p))
+                }
                 @if(Where!= null && !Where.isEmpty()) {
                     .filter(p -> (p.isValid == true) && (@Where))
                 }

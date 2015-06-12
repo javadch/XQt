@@ -19,6 +19,7 @@ import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.OrderClause;
 import xqt.model.statements.query.SelectDescriptor;
@@ -40,7 +41,22 @@ public class ConvertSelectElement {
             convertor.visit(attribute.getForwardExpression());
             String exp = convertor.getSource(); 
             List<String> members = convertor.getMemeberNames();
-            String typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
+            String typeNameInAdapter = attribute.getDataType();
+            String runtimeType = TypeSystem.getTypes().get(TypeSystem.TypeName.String).getRuntimeType();
+            if(TypeSystem.getTypes().containsKey(attribute.getDataType())){           
+                typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
+                runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
+            } else {
+                perspective.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate("Can not infer the data type of attribute '%s' in perspective '%s'! It has data type 'Unknown'")
+                        .setContextInfo1(attribute.getId())
+                        .setContextInfo2(perspective.getId())
+                        .setLineNumber(attribute.getParserContext().getStart().getLine())
+                        .setColumnNumber(-1)
+                        .build()
+                );   
+            }
             if(!attributes.containsKey(attribute.getId())){
                 AttributeInfo ad = new AttributeInfo();
                 if(useOriginalNames & attribute.getReference()!= null)
@@ -53,7 +69,7 @@ public class ConvertSelectElement {
                 ad.forwardMap = exp;
                 ad.fields = members;
                 ad.index = attributes.size();
-                ad.runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
+                ad.runtimeType = runtimeType;//TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
                 ad.reference = attribute; // keeping the reference for possible further processing.
                 ad.joinSide = attribute.getExtra();
                 attributes.put(attribute.getId(), ad);

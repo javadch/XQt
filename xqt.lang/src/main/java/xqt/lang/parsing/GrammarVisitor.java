@@ -271,23 +271,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         switch(source.getContainer().getDataContainerType()){
             // when the source is a variable it is not possible to have an explicitly declared perspective. 
             // So there should be an error message here if the perspective clause is present in the statement
+            // The statement is reading from a variable which has a perspective. So if there is an explicit or inline 
+            // perspective defined for the resultset (the target) it should be condiered.
+            // otherwise the source perspective is implicitly used for the target.
             case Variable:
-                if(projection.getPerspective() != null && projection.getPerspective().isExplicit()){
-                    source.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared variable '%s' and perspective '%s'")
-                            .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
-                            .setContextInfo2(projection.getPerspective().getId())
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
-                            .build()
-                    );                
-                } else { // the source variable should have already been defined as target in a previous statement
+                if(projection.getPerspective() == null){ // there is no target perspective defined, so use the source perspective by following where it was used as target
+                    // the source variable should have already been defined as target in a previous statement
                     PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)source.getContainer()).getVariableName());
                     if(pers != null){
                         projection.setPerspective(pers);
-                        // current statement would be depending on another. is that another statement is using an implicit perspective, it would be loaded lazily
-                        // so there is need to update the perspective and set the projection.isPresent to true
+                        // current statement would be depending on another. if that another statement is using an implicit perspective, it would be loaded lazily
+                        // so there is a need to update the perspective and set the projection.isPresent to true
                         projection.setPresent(false); 
                         variablesUsedAsTarget.put(((VariableContainer)source.getContainer()).getVariableName(), pers); 
                     } else {
@@ -300,9 +294,20 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                                     .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
                                     .build()
                         );                      
-                    }
+                    }         
+                    // the current perspective is there either explicit or inline. no need to do anything else here
+//                    if(projection.getPerspective().isExplicit()){ // 
+//                        source.getLanguageExceptions().add(
+//                            LanguageExceptionBuilder.builder()
+//                                .setMessageTemplate("It is not allowed to use a perspective when data source is a variable. The statement has declared variable '%s' and perspective '%s'")
+//                                .setContextInfo1(((VariableContainer)source.getContainer()).getVariableName())
+//                                .setContextInfo2(projection.getPerspective().getId())
+//                                .setLineNumber(ctx.getStart().getLine())
+//                                .setColumnNumber(source.getParserContext().getStop().getCharPositionInLine())
+//                                .build()
+//                        );                
+//                    } 
                 }
-                
                 break;
             // Joined source statements should have no perspective, it is constructed by merging the perspectives of the left and right containers.    
             case Joined:
@@ -658,6 +663,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(inlineAttribute.att != null){
                 //PerspectiveAnnotator.describePerspectiveAttribute(inlineAttribute, perspective.getId());
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+                attribute.setParserContext(inlineAttribute);
                 if(inlineAttribute.alias != null){
                     attribute.setId(inlineAttribute.alias.getText().toLowerCase());                    
                 } else {
@@ -1340,7 +1346,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             } else { // exception
                 exp.getLanguageExceptions().add(
                     LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("\'%s\' should refer to a perspective/ attribute cmbination, but only one of them is provided.")
+                        .setMessageTemplate("\'%s\' should refer to a perspective/ attribute combination, but only one of them is provided.")
                         .setContextInfo1(idComponents.get(0))                        
                         .setLineNumber(ctx.getStart().getLine())
                         .setColumnNumber(ctx.getStop().getCharPositionInLine())

@@ -217,7 +217,7 @@ public class DefaultDataAdapter implements DataAdapter{
                         if(result == null)
                             return null;
                         resultSet.setData(result);
-                        resultSet.setSchema(sourceVariable.getResult().getSchema());                               
+                        resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());                               
                     }
                     //resultSet.setSchema(prepareSchema(select));
                     return resultSet;
@@ -253,7 +253,7 @@ public class DefaultDataAdapter implements DataAdapter{
                 Range<?> yRange = adapter.getYRange();
                 nRange = NumericRange.union((NumericRange) nRange, (NumericRange) yRange);
             }        
-            if (nRange.getMin() == nRange.getMax()) {
+            if (nRange!= null && nRange.getMin() == nRange.getMax()) {
                 // Deal with the special case of only one point
                 yAxis = new NumericAxis(nRange.getMin(), nRange.getMax() + 1, vLabel);
             }
@@ -484,7 +484,9 @@ public class DefaultDataAdapter implements DataAdapter{
             String sourceRowType = select.getEntityType().getFullName();                    
             if(sourceRowType.isEmpty())
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
-            
+            if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
+                builder.recordPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective());
+            }
             Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);
             builder.addResultAttributes(attributes);
             // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
@@ -501,13 +503,18 @@ public class DefaultDataAdapter implements DataAdapter{
                 .orderBy(orderItems)
                 .writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
                 ;
+            if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Explicit
+                || select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
+                builder.entityResourceName("MemEntity");
+                builder.sourceOfData("variable");
+            }    
             prepareLimit(builder, select);
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (Exception ex) {
             // return a language exception
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("A depenedent statement is found but no dependency information found!")
+                    .setMessageTemplate("The depenedent statement '%s' is found but no dependency information found!")
                     .setContextInfo1(select.getId())
                     .setLineNumber(select.getParserContext().getStart().getLine())
                     .setColumnNumber(-1)
