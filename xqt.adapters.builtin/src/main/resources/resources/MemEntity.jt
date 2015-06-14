@@ -1,6 +1,7 @@
 @import xqt.adapters.builtin.*
 @import com.vaiona.commons.data.*;
 @import com.vaiona.commons.types.*;
+@import xqt.model.functions.*;
 
 @args() {
     String namespace,
@@ -8,12 +9,15 @@
     String RecordClassName,
     String EntityClassName,
     String ReaderClassName,
+    String LeftClassName,
+    String RightClassName,
     List<AttributeInfo> Attributes,
     List<AttributeInfo> Pre,
     List<AttributeInfo> Mid,
     List<AttributeInfo> Post,
     List<AttributeInfo> Post_Left,
-    List<AttributeInfo> Post_Right
+    List<AttributeInfo> Post_Right,
+    Boolean ConsiderAggregates,
 }
 
 package @(namespace);
@@ -25,25 +29,69 @@ import xqt.model.functions.aggregates.*;
 
 public class @(EntityClassName) {
 
-    @if(Attributes != null && Attributes.size() > 0){
-        @for(AttributeInfo ad : Attributes) {
-            public @ad.runtimeType @ad.name;
-        }
+    @for(AttributeInfo ad : Attributes) {
+        public @ad.runtimeType @ad.name;
     }
-    public boolean isValid = true; @//set it to false if the object is not valid for any reason    
-    
-    public @(EntityClassName) (@(RecordClassName) record){
-        @if(Pre != null && Pre.size() > 0){ 
-            try {
-                @for(AttributeInfo ad : Pre) {
-                    @ad.name = @ad.forwardMapTranslated;
+
+    public boolean isValid = true; @/ set it to false if the object is not valid for any reason    
+    private @(RecordClassName) rowEntity; @/ should be a weak reference
+            
+    @if(ConsiderAggregates == null || ConsiderAggregates == false){ @/ normal populate
+        public @(EntityClassName) (@(RecordClassName) rowEntity){
+            @/ if there is no where clause, usually there is no need for a pre population, hence, the Pre is empty
+            @/ in case of JOIN, the ctor initializes the join keys
+            this.rowEntity = rowEntity;
+            @if(Pre != null && Pre.size() > 0){ 
+                try {
+                    @for(AttributeInfo ad : Pre) {
+                        @ad.name = @ad.forwardMapTranslated;
+                    }
+                } catch (Exception ex) {
+                    isValid = false;
+                    this.rowEntity = null;
                 }
-            } catch (Exception ex) {
-                isValid = false;
             }
         }
 
-        @if(Mid != null && Mid.size() > 0){ 
+        public @(EntityClassName) populate(){
+            @// populate all other attributes and release the row object
+            @// make the object invalid if something went wrong
+            @// apply data conversion checks
+            @if(Post != null && Post.size() > 0){
+                try {
+                    @for(AttributeInfo ad : Post) {
+                        @ad.name = @ad.forwardMapTranslated;
+                    }
+                } catch (Exception ex) {
+                    isValid = false;
+                }
+            }
+            this.rowEntity = null;
+            return this;
+        }
+    } else { // aggregate functions are present. populate based on the row entity.
+        public @(EntityClassName) (){
+            @/ nothing to do here, the result entity constructed from the aggregation functions, via the following populate function 
+        }
+
+        public @(EntityClassName) populate(@(RecordClassName) rowEntity, java.util.Map<String, xqt.model.functions.AggregateFunction> functions){
+            @if(Post != null && Post.size() > 0){
+                try {
+                    @for(AttributeInfo ad : Post) {
+                        @ad.name = @ad.forwardMapTranslated;
+                    }
+                } catch (Exception ex) {
+                    isValid = false;
+                }
+            }
+            this.rowEntity = null;
+            return this;
+        }
+    }
+
+
+    @if(Mid != null && Mid.size() > 0){ 
+        public @(EntityClassName) midPopulate() {
             try {
                 @for(AttributeInfo ad : Mid) {
                     @ad.name = @ad.forwardMapTranslated;
@@ -51,19 +99,12 @@ public class @(EntityClassName) {
             } catch (Exception ex) {
                 isValid = false;
             }
-        }
+            return this;
+        }    
+    }
 
-        @if(Post != null && Post.size() > 0){
-            try {
-                @for(AttributeInfo ad : Post) {
-                    @ad.name = @ad.forwardMapTranslated;
-                }
-            } catch (Exception ex) {
-                isValid = false;
-            }
-        }
-        @*
-        @if(Post_Left != null && Post_Left.size() > 0){
+    @if(Post_Left != null && Post_Left.size() > 0){ 
+        public @(EntityClassName) populateLeft(){
             try {
                 @for(AttributeInfo ad : Post_Left) {
                     @ad.name = @ad.forwardMapTranslated;
@@ -71,9 +112,13 @@ public class @(EntityClassName) {
             } catch (Exception ex) {
                 isValid = false;
             }
+            this.rowEntity = null;
+            return this;
         }
+    }
 
-        @if(Post_Right != null && Post_Right.size() > 0){
+    @if(Post_Right != null && Post_Right.size() > 0){ 
+        public @(EntityClassName) populateRight(){
             try {
                 @for(AttributeInfo ad : Post_Right) {
                     @ad.name = @ad.forwardMapTranslated;
@@ -81,8 +126,8 @@ public class @(EntityClassName) {
             } catch (Exception ex) {
                 isValid = false;
             }
+            this.rowEntity = null;
+            return this;
         }
-        *@
     }
 }
-

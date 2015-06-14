@@ -112,14 +112,14 @@ public class ConvertSelectElement {
         );
     }
         
-    public String translateExpression(String expression, PerspectiveDescriptor perspective) {
+    public String translateExpression(String expression, PerspectiveDescriptor perspective, String prefix) {
         String expressionTranslated = "";
         for (StringTokenizer stringTokenizer = new StringTokenizer(expression, " ");
                 stringTokenizer.hasMoreTokens();) {
             String token = stringTokenizer.nextToken();
             // translate the wehre clause
             if(perspective.getAttributes().containsKey(token)){
-                expressionTranslated = expressionTranslated + " " + "p." + token;
+                expressionTranslated = expressionTranslated + " " + prefix + "." + token;
             }
             else {
                 expressionTranslated = expressionTranslated + " " + token;
@@ -127,4 +127,41 @@ public class ConvertSelectElement {
         }
         return expressionTranslated;
     }
+    
+    // should move here from DataReaderBuilderBase
+//    public String enhanceExpression(String expression, boolean isJoinMode, String nonJoinPrefix, String joinPrefix) throws Exception {
+//        String translated = "";
+//        for (StringTokenizer stringTokenizer = new StringTokenizer(expression, " ");
+//                stringTokenizer.hasMoreTokens();) {
+//            String token = stringTokenizer.nextToken();
+//            if(hasAggregate()){
+//                // non aggregate attributes apear in both row and result entities, so if an attribute apears in the result but not in the row 
+//                // entity, it is an aggregate attribute.
+//                // translate the expression
+//                if(rowEntityAttributes.containsKey(token)){
+//                    if(!isJoinMode)
+//                        translated = translated + " " + nonJoinPrefix + "." + token;
+//                    else
+//                        translated = translated + " " + joinPrefix + "." + token;
+//                }
+//                else {
+//                    translated = translated + " " + token;
+//                }                                      
+//            } else {
+//                // translate the wehre clause
+//                if(resultEntityAttributes.containsKey(token)){
+//                    if(!isJoinMode)
+//                        translated = translated + " " + nonJoinPrefix + "." + token;
+//                    else
+//                        translated = translated + " " + joinPrefix + "." + token;
+//                }
+//                else {
+//                    translated = translated + " " + token;
+//                }                      
+//            }
+//        }
+//        return translated;
+//    }
+//    
+    
 }

@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.stream.Collectors;
 import xqt.model.data.SchemaItem;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
@@ -161,19 +162,22 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         if(this == null){
             return null;
         }
-        this.getAttributes().values().stream()
-            .filter(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown))
-            .filter(p->p.getForwardExpression().getExpressionType() == ExpressionType.Member)
-            .filter(p-> ((MemberExpression)p.getForwardExpression()).getMemberType() == MemberExpression.MemberType.Simple)
-            .forEachOrdered(unknownTypedAttribute-> {
-                String fieldName = ((MemberExpression)unknownTypedAttribute.getForwardExpression()).getComponents().get(0);
+        for(PerspectiveAttributeDescriptor unknownTypedAttribute: 
+            this.getAttributes().values().stream()
+                .filter(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown))
+                .filter(p->p.getForwardExpression().getExpressionType() == ExpressionType.Member)
+                .filter(p-> ((MemberExpression)p.getForwardExpression()).getMemberType() == MemberExpression.MemberType.Simple)
+                .collect(Collectors.toList())
+                )
+            {
+                String fieldName = ((MemberExpression)unknownTypedAttribute.getForwardExpression()).getId().toLowerCase();
                 if(fields.containsKey(fieldName)){
                     FieldInfo field = fields.get(fieldName);
                     if(field!= null){
                         unknownTypedAttribute.setDataType(field.conceptualDataType);
                     }
                 }
-            });
+            }
         return this;
     }
     

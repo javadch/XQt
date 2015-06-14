@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.BaseDataAdapter;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -40,6 +41,7 @@ import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.MemberExpression;
@@ -49,14 +51,11 @@ import xqt.model.statements.query.SelectDescriptor;
  *
  * @author standard
  */
-public class DefaultDataAdapter implements DataAdapter{
-    private String dialect = "";
+public class DefaultDataAdapter extends BaseDataAdapter{
     private DataReaderBuilder builder = null;
-    private ConvertSelectElement convertSelect = null;
-    private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
     
     public DefaultDataAdapter(){
-        convertSelect = new ConvertSelectElement();
+        needsMemory = true;
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EQ, "==");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEQ, "!=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GT, ">");
@@ -90,11 +89,6 @@ public class DefaultDataAdapter implements DataAdapter{
     }
     
     @Override
-    public boolean needsMemory() {
-        return true;
-    }
-
-    @Override
     public void prepare(SelectDescriptor select, Object context) {
         builder = new DataReaderBuilder();
         switch (select.getSourceClause().getContainer().getDataContainerType()){
@@ -112,32 +106,6 @@ public class DefaultDataAdapter implements DataAdapter{
         }
     }       
 
-    private HashMap<String, Boolean> capabilities = new HashMap<>();
-    
-    @Override
-    public boolean isSupported(String capability) {
-        if(capabilities.containsKey(capability) && capabilities.get(capability) == true)
-            return true;
-        return false;
-    }
-
-    @Override
-    public void registerCapability(String capabilityKey, boolean isSupported) {
-        capabilities.put(capabilityKey, isSupported);
-    }    
-
-    private AdapterInfo adapterInfo;
-    
-    @Override
-    public AdapterInfo getAdapterInfo(){
-        return adapterInfo;
-    }
-    
-    @Override
-    public void setAdapterInfo(AdapterInfo value){
-        adapterInfo = value;
-    }
-    
     @Override
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", false);
@@ -163,12 +131,6 @@ public class DefaultDataAdapter implements DataAdapter{
         registerCapability("select.limit.skip", true);
     }
     
-    @Override
-    public boolean hasRequiredCapabilities(SelectDescriptor select) {
-        boolean allmatched = select.getRequiredCapabilities().stream().allMatch(p-> this.isSupported(p));
-        return allmatched;
-    }
-
     private Resultset internalRun(SelectDescriptor select, Variable sourceVariable) {
         try{
             List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
@@ -487,27 +449,69 @@ public class DefaultDataAdapter implements DataAdapter{
             if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
                 builder.recordPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective());
             }
-            Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);
-            builder.addResultAttributes(attributes);
-            // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
-            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
-            for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
-                    if(attributes.containsKey(entry.getKey())){
-                        orderItems.put(attributes.get(entry.getKey()), entry.getValue());
-                    }            
+            Boolean hasAggregates = prepareAggregates(builder, select);
+            if(hasAggregates){
+                builder.readerResourceName("MemAggregateReader")
+                       .entityResourceName("MemEntity");
+                builder.sourceRowType(sourceRowType);
+                builder.addAggregates(aggregattionCallInfo);
+                Map<String, AttributeInfo> rowEntityAttributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false); // should not be needed
+                //Map<String, AttributeInfo> rowEntityAttributeInfos = convertSelect.prepareAttributes(builder.getRecordPerspective(), this, false);            
+                // set the resultset perspective. 
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
+                for(AttributeInfo attInfo: attributeInfos.values()){
+                    String aggAttributeName = attInfo.forwardMap.replaceAll(".* DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\) .*", "$2").trim();
+                    AttributeInfo aggAttribute = rowEntityAttributeInfos.get(aggAttributeName);
+                    if(aggAttribute!= null){
+                        String newMap = convertSelect.translateExpression(aggAttribute.forwardMap, builder.getRecordPerspective(), "rowEntity");
+                        String pattern = "functions.get(\"$1\").move(" + newMap + ")";
+                        attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", pattern);
+                    }else{
+                        String newMap = convertSelect.translateExpression(attInfo.forwardMap, builder.getRecordPerspective(), "rowEntity");                       
+                        attInfo.forwardMap = newMap;
+                    }
+                }
+                prepareGroupBy(builder, select);
+
+                builder.addRowAttributes(rowEntityAttributeInfos);
+                builder.addResultAttributes(attributeInfos);
+                
+
+                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
+                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
+                    //replace the forward map of the resultentity to point to the same attribute in the row entity
+                    for(AttributeInfo attInfo: attributeInfos.values()){
+                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
+                            //AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
+                            //rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+                            // the attinfo.fowardmap should be translated to something like rowEntity.x+rowEntity.y/2 if the forwardmap is x+y/2
+                            // this value should be computed on the rowEntity during group key generation in getKey method of the MemAggregateReader
+                            String translated = builder.enhanceExpression(attInfo.forwardMap, true, "p", "rowEntity");                            
+                            attInfo.forwardMap = translated; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                        }
+                    }
+                } 
+                
+            } else {
+                Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);
+                builder.addResultAttributes(attributes);
+                // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
+                builder.sourceRowType(sourceRowType)
+                    .readerResourceName("MemReader")
+                    .entityResourceName("");
+                if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Explicit
+                    || select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
+                    builder.entityResourceName("MemEntity");
+                }    
+                    
             }
-            builder.sourceRowType(sourceRowType)
-                .readerResourceName("MemReader")
-                .entityResourceName("")
-                .where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause(), this), select.getProjectionClause().getPerspective()), false)
-                .orderBy(orderItems)
-                .writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
-                ;
             if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Explicit
                 || select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
-                builder.entityResourceName("MemEntity");
                 builder.sourceOfData("variable");
             }    
+            builder.where(convertSelect.translateExpression(convertSelect.prepareWhere(select.getFilterClause(), this), select.getProjectionClause().getPerspective(), "p"), false);
+            builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
+            prepareOrderBy(builder, select);
             prepareLimit(builder, select);
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (Exception ex) {
@@ -521,27 +525,6 @@ public class DefaultDataAdapter implements DataAdapter{
                     .build()
             );                        
         }
-    }
-    
-    private void prepareLimit(DataReaderBuilder builder, SelectDescriptor select) {
-        if(isSupported("select.limit")){
-            builder.skip(select.getLimitClause().getSkip())
-                   .take(select.getLimitClause().getTake());
-        }
-        else{
-            builder.skip(-1)
-                   .take(-1);
-        }
-    }
-
-    @Override
-    public String getDialect() {
-        return dialect;
-    }
-
-    @Override
-    public void setDialect(String dialect) {
-        dialect = dialect;
     }
     
 }

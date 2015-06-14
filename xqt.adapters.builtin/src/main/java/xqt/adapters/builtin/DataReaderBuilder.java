@@ -7,12 +7,16 @@ import com.vaiona.commons.data.DataReaderBuilderBase;
 import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.types.TypeSystem;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.expressions.MemberExpression;
+import xqt.model.functions.AggregationCallInfo;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -65,7 +69,7 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
                 if(!namesCaseSensitive)
                     properCaseToken = token.toLowerCase();
                 if(recordPerspective.getAttributes().containsKey(properCaseToken)){
-                    String temp = "record." + token;
+                    String temp = "rowEntity." + token;
                     translated = translated + " " + temp;
                 } else {
                     translated = translated + " " + token;
@@ -104,13 +108,17 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
         this.namespace("xqt.adapters.builtin");
         super.buildSharedSegments();
         
+        readerContext.put("ConsiderAggregates", false);
+        if(hasAggregate()){
+            entityContext.put("ConsiderAggregates", true);
+            readerContext.put("RecordClassName", this.leftClassName);
+        }
+        else
+            entityContext.put("ConsiderAggregates", false);
         readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
         readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
-        // the delimiter MUST come from the source->connection->... chain. if the direct source has no connection it should come from the upper ones
-//        String header = String.join(",", attributes.values().stream().map(p-> p.name + ":" + p.internalDataType).collect(Collectors.toList()));
-//        String linePattern = String.join(",", attributes.values().stream().map(p-> "String.valueOf(entity." + p.name + ")").collect(Collectors.toList()));
-//        readerContext.put("linePattern", linePattern);        
-//        readerContext.put("rowHeader", header);        
+        readerContext.put("AggregationCallInfos", this.aggregationCallInfo);
+        // do not move these items to the base class
     }
     
     @Override
@@ -118,9 +126,9 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
         super.buildSingleSourceSegments();
         if (sourceOfData.equalsIgnoreCase("variable")){
             // genarete a new entity class name
-
-            entityContext.put("RecordClassName", leftClassName );
-            
+            if(hasAggregate()){
+                entityContext.put("RecordClassName", leftClassName );
+            }
 //            readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
 //            readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
 //            readerContext.put("TargetRowType", entityClassName);    
@@ -129,7 +137,8 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
         } else {
             readerContext.put("TargetRowType", this.leftClassName);        
         }
-
+        // the memory adapter does not create intermedite records.
+        recordContext.clear();
     }
 
     @Override
@@ -144,11 +153,18 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
     }
         
     public PerspectiveDescriptor getRecordPerspective(){ return recordPerspective;}
+
     public DataReaderBuilder recordPerspective(PerspectiveDescriptor value){
         this.recordPerspective = value;
         return this;
     }
-        
+    
+    List<AggregationCallInfo> aggregationCallInfo = new ArrayList<>();
+    public DataReaderBuilder addAggregates(List<AggregationCallInfo> value) {
+        aggregationCallInfo = value;
+        return this;
+    }
+    
 //    LinkedHashMap<String, InMemorySourceFile> createSources1(SelectDescriptor select, String sourceRowType) throws IOException {
 //        // set the entrypoint
 //        // set the full name

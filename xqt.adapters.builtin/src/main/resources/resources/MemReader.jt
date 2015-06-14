@@ -95,6 +95,7 @@ public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftCl
             source1.stream()
                 @if(TargetRowType!= null && !TargetRowType.equals(LeftClassName)) {
                     .map(p -> new @(TargetRowType)(p))
+                    .map(p->p.populate())
                 }
                 @if(Where!= null && !Where.isEmpty()) {
                     .filter(p -> (p.isValid == true) && (@Where))
@@ -102,7 +103,6 @@ public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftCl
                 else{
                     .filter(p -> (p.isValid == true) )
                 }
-
                 @if(Ordering!= null && Ordering.size() > 0) {
                    .sorted(sorter)
                 }

@@ -1,0 +1,187 @@
+@import xqt.adapters.builtin.*
+@import com.vaiona.commons.data.*;
+@import com.vaiona.commons.types.*;
+@import xqt.model.functions.*;
+
+@args() {
+    List<AttributeInfo> GroupBy,
+    String namespace,
+    String BaseClassName,
+    String RecordClassName,
+    String EntityClassName,
+    String ReaderClassName,
+    String LeftClassName,
+    String RightClassName,
+    String TargetRowType,
+    String Where,
+    Map<AttributeInfo, String> Ordering,
+    Integer skip,
+    Integer take,
+    String joinType,
+    Boolean ConsiderAggregates,
+
+
+    List<xqt.model.functions.AggregationCallInfo> AggregationCallInfos,
+    String dialect
+}
+
+package @(namespace);
+
+import @(namespace).*;
+import com.vaiona.commons.data.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import xqt.model.functions.*;
+
+import java.util.HashMap;
+import xqt.model.functions.*;
+import xqt.model.functions.aggregates.*;
+import java.text.MessageFormat;
+
+public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> {
+
+    public List<@(TargetRowType)> read(List<@(LeftClassName)> source1, List<@(RightClassName)> source2)  throws FileNotFoundException, IOException {
+        @if(Ordering!= null && Ordering.size() > 0) {
+        Comparator<@(TargetRowType)> sorter = new Comparator<@(TargetRowType)>() {
+                    @@Override
+                    public int compare(@(TargetRowType) left, @(TargetRowType) right){
+                    @for (Map.Entry<AttributeInfo, String> entry : Ordering.entrySet()) {
+                        @{
+                            DataTypeInfo dti = TypeSystem.getTypes().get(entry.getKey().conceptualDataType);
+                            AttributeInfo ad = entry.getKey();
+                        }
+                        @if(Ordering.size() == 1) {                            
+                            @if(entry.getValue().toUpperCase().equals("ASC")){
+                                return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                            } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                            }
+                        } else {
+                            @if(entry_isFirst){
+                                if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (!entry_isFirst && !entry_isLast) { 
+                                else if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (entry_isLast) {
+                                else {
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+               }
+            };
+        }
+        @/ aggregate on joined resultsets is not yet supported
+        @if(joinType == null || joinType.equalsIgnoreCase("")){
+            @/ the actual result is in the resultset object, not in the result
+            long result = 
+            source1.stream()
+                @if(Where!= null && !Where.isEmpty()) {
+                    .filter(p -> (p.isValid == true) && (@Where))
+                }
+                else{
+                    .filter(p -> (p.isValid == true) )
+                }
+                .map(p-> updateResultRow(p)) @/ causes the aggregates to be computed and get stored in the resultset object
+                .count();
+                return (
+                    resultset.values().stream()
+                    @if(Ordering!= null && Ordering.size() > 0) {
+                        .sorted(sorter)
+                    }
+                    @if(skip > -1){
+                        .skip(@(skip))
+                    }
+                    @if(take > -1){
+                        .limit(@(take))
+                    }  
+                    .collect(Collectors.toList())
+                );
+        }
+    }
+
+    @/ keys are partitioning the resultsets to single entries, so that there is one result row per key and aggregate functions should work and update those rows
+    private String getKey(@(RecordClassName) rowEntity){
+        String key = "1"; @/ there is only one group, which means the query contains some aggregate functions but not grouping
+        @if(GroupBy!= null && GroupBy.size() > 0) {
+            // in the group by
+            @for(AttributeInfo ad : GroupBy) {
+                @/ in the loop
+                key = MessageFormat.format("{0}{1}", key, @(ad.forwardMap)); @/rowEntity.@(ad.name));
+                @/key = key + rowEntity.@(ad.name).toString(); // adds the values of the entity attribute, as determined by the group by, to the key
+            }
+        } 
+        return key;
+    }
+
+    @/ key, aggregate function name as in the result row attribute, the actual aggregate function as in the function specification
+    Map<String, Map<String, AggregateFunction>> runningAggregates = new HashMap<>(); 
+    Map<String, @(TargetRowType)> resultset = new HashMap<>();
+    
+    @/ create a list of aggregate functions as requested by the aggregate function references of the query, one instance per group
+    private void createRunningAggregates(String key){
+        if(!runningAggregates.containsKey(key)){
+            Map<String, AggregateFunction> aggregatesForKey = new HashMap<>();
+            @/ create a new agg. map for the key
+            @{int counter =0;}
+            @for(AggregationCallInfo callInfo : AggregationCallInfos) {
+                @/ consider loading the jar library!
+                @{
+                    FunctionImplementation fImp = null;
+                    for(FunctionImplementation fm : callInfo.getFunction().getFunctionSpecification().getImplementations()){
+                        if(fm.getDialect().equalsIgnoreCase(dialect)){
+                            fImp = fm;
+                        }
+                    }
+                }
+                @if(fImp != null) {// OK}
+                AggregateFunction agg@(counter) = new @(fImp.getNamespace()).@(fImp.getClassName())();
+                aggregatesForKey.put("@(callInfo.getAliasName())", agg@(counter++));
+            }
+
+            runningAggregates.put(key, aggregatesForKey);
+        }
+    }
+
+    private @(TargetRowType) updateResultRow(@(RecordClassName) rowEntity){
+        String key = getKey(rowEntity);
+        @(TargetRowType) resultRow;
+        if(resultset.containsKey(key)){
+            resultRow = resultset.get(key);
+        } else {
+            resultRow = new @(TargetRowType)();
+            resultset.put(key, resultRow);
+            createRunningAggregates(key);
+        }
+        resultRow.populate(rowEntity, runningAggregates.get(key));
+        return resultRow;
+    }
+}
