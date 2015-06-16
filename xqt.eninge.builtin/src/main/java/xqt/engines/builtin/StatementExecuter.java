@@ -35,6 +35,7 @@ import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.GroupClause;
 import xqt.model.statements.query.LimitClause;
 import xqt.model.statements.query.OrderClause;
+import xqt.model.statements.query.ProjectionClause;
 import xqt.model.statements.query.SelectDescriptor;
 import xqt.model.statements.query.SetQualifierClause;
 import xqt.model.statements.query.SourceClause;
@@ -136,31 +137,6 @@ public class StatementExecuter implements StatementVisitor{
             }
         }
     }
-    
-    public void prepare_del(SelectDescriptor select) {
-        if(select.hasError())
-            return;
-        ExecutionInfo eix = new ExecutionInfo();
-        select.setExecutionInfo(eix);
-        eix.setExecuted(false);
-        DataAdapter adapter = chooseAdapter(select); // create the adapter based on its registration info and the statement's bindinf info
-        eix.setAdapter(adapter);
-        adapter.prepare(select, null); // creates the source files but does not compile them 
-        if(select.hasError()) // check after lazy construction and validations
-            return;
-        if(!adapter.hasRequiredCapabilities(select)){
-            SelectDescriptor comp = buildComplementingStatement(select);
-            comp.getExecutionInfo().getAdapter().prepare(comp, null);      
-            if(comp.getComplementingStatement() != null){
-                comp.getComplementingStatement().getExecutionInfo().getAdapter().prepare(comp.getComplementingStatement(), comp);
-            }
-            // check if the orginal query's target clause is a persistent data source, and the origianl adapter supports wirting to data containers
-            // create another complementing query over the first complementing query to delegate the write to the original adapter
-            
-        }
-    }
-    
-    //private static HashMap<String, DataAdapter> loadedAdapters = new HashMap<>();
     
     private DataAdapter chooseAdapter(SelectDescriptor select) {
         DataAdapter adapter = null;
@@ -293,7 +269,12 @@ public class StatementExecuter implements StatementVisitor{
         select.setComplementingStatement(comp);
         
         comp.addClause(new SetQualifierClause());
-        comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
+        // commented on 15.06.15 because I think a canonic perspective made form the select's perspective would do the job better
+        //comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
+        ProjectionClause   projection       = new ProjectionClause();
+        projection.setPerspective(select.getProjectionClause().getPerspective().createCanonicPerspective());
+        projection.setPresent(true);
+        comp.addClause(projection);
         
         // create a source of type variable and name it as "Tempvar"+select.id+ time.ticks
         String variableName = "TempVar_" + select.getId() +  "_" + System.currentTimeMillis();
@@ -389,126 +370,4 @@ public class StatementExecuter implements StatementVisitor{
         return comp;
     }
 
-    private SelectDescriptor buildComplementingStatement_del(SelectDescriptor select) {
-        // check which capabilities are missing and check whether they are suppotrted by the completing adapter?
-        // check the dependecies between the missing capabilities
-        // build a completing query
-        // adopt the main query to the changes.
-        
-        SelectDescriptor comp = new SelectDescriptor();
-        comp.setDependsUpon(select);
-        select.setComplementingStatement(comp);
-        
-        comp.addClause(new SetQualifierClause());
-        comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
-        
-        // create a source of type variable and name it as "Tempvar"+select.id+ time.ticks
-        String variableName = "TempVar_" + select.getId() +  "_" + System.currentTimeMillis();
-        SourceClause source = new SourceClause();
-        source.setContainer(new VariableContainer(variableName));
-        
-        comp.addClause(source);
-        if(select.getTargetClause().getContainer().getDataContainerType() != DataContainer.DataContainerType.Single){
-            comp.addClause(select.getTargetClause());
-        } else { 
-            // the target is a single continer. the fallback adapter is not able/allowed to write into a container
-            // so the fallback mechanism, should create another inner statement to write the query result into the container
-            // using the original select's adapter.
-            TargetClause target2 = new TargetClause();
-            target2.setContainer(new VariableContainer(variableName + "_2"));
-            comp.addClause(target2);
-
-            SelectDescriptor targetComp = new SelectDescriptor();
-            targetComp.setDependsUpon(comp);
-            comp.setComplementingStatement(targetComp);
-
-            targetComp.addClause(new SetQualifierClause());
-            targetComp.addClause(comp.getProjectionClause());            
-            targetComp.addClause(new AnchorClause());
-            targetComp.addClause(new FilterClause());
-            targetComp.addClause(new OrderClause());
-            targetComp.addClause(new GroupClause());
-            targetComp.addClause(new LimitClause());
-        
-            SourceClause source2 = new SourceClause();
-            source2.setContainer(new VariableContainer(variableName + "_2"));
-            targetComp.addClause(source2);
-            
-            targetComp.addClause(select.getTargetClause());
-            
-            ExecutionInfo executionInfo = new ExecutionInfo();
-            targetComp.setExecutionInfo(executionInfo);
-            executionInfo.setExecuted(false);
-            executionInfo.setAdapter(select.getExecutionInfo().getAdapter());            
-        }
-        //replace the main's target clause with the temp var, so that the main query puts the result in the tempvar.
-        // the temp var should be deleted after the query is executed.
-        
-        // if there is any non supprted capability, the target clause will be compensated automatically. this includes the case when only the target clause 
-        // is not supported.
-        // speciall care is needed for the target clauses that persist resultsets into an external media! the default adapter may not know how to perform it.
-        select.getClauses().remove(select.getTargetClause().getType());
-        TargetClause target = new TargetClause();
-        target.setContainer(new VariableContainer(variableName));
-        select.addClause(target);
-        
-        ExecutionInfo executionInfo = new ExecutionInfo();
-        comp.setExecutionInfo(executionInfo);
-        executionInfo.setExecuted(false);
-        DataAdapter adapter = chooseAdapter(comp); // this call must be made after setting the source clause, because the choose adpater function needs to know the source clause
-        executionInfo.setAdapter(adapter);
-
-        if(select.getAnchorClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.anchor")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){                
-                comp.addClause(select.getAnchorClause());
-                select.getClauses().remove(select.getAnchorClause().getType());
-                select.addClause(new AnchorClause());  // added an empty/neutral clause              
-            }
-        } else { // add default clauses to the compensation query
-            comp.addClause(new AnchorClause());
-        }
-
-        if(select.getFilterClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.filter")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.filter")){
-                comp.addClause(select.getFilterClause());
-                select.getClauses().remove(select.getFilterClause().getType());
-                select.addClause(new FilterClause());  // added an empty/neutral clause              
-            }
-        } else {
-            comp.addClause(new FilterClause());
-        }
-        
-        if(select.getOrderClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.orderby")){
-                comp.addClause(select.getOrderClause());
-                select.getClauses().remove(select.getOrderClause().getType());
-                select.addClause(new OrderClause());  // added an empty/neutral clause              
-            }
-        } else {
-            comp.addClause(new OrderClause());
-        }
-
-        if(select.getGroupClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.groupby")){
-                comp.addClause(select.getGroupClause());
-                select.getClauses().remove(select.getGroupClause().getType());
-                select.addClause(new GroupClause());  // added an empty/neutral clause              
-            }
-        } else {
-            comp.addClause(new GroupClause());
-        }
-                
-        if(select.getLimitClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.limit")){
-            if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
-                comp.addClause(select.getLimitClause());
-                select.getClauses().remove(select.getLimitClause().getType());
-                select.addClause(new LimitClause());  // added an empty/neutral clause              
-            }
-        } else {
-            comp.addClause(new LimitClause());
-        }
-        
-        // update/ enhance MemReader.it
-        return comp;
-    }
 }

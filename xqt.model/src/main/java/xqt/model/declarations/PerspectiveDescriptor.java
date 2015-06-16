@@ -56,6 +56,26 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         }
     }
     
+    // Canonic perpective is a perpective which its conceptual and pyhisical side are equal and taken from the 
+    // input perpective. It is used in complementing scenarios
+    public PerspectiveDescriptor createCanonicPerspective() {
+        PerspectiveDescriptor canonic = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+        canonic.setId("canonic_Perspective_"+ id);
+        for (Map.Entry<String, PerspectiveAttributeDescriptor> entrySet : attributes.entrySet()) {
+            PerspectiveAttributeDescriptor sourceAtt = entrySet.getValue();
+            PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+            attribute.setId(sourceAtt.getId());
+            attribute.setDataType(sourceAtt.getDataType());
+            MemberExpression fwd = Expression.Member(sourceAtt.getId(), sourceAtt.getDataType());
+            MemberExpression rvs = Expression.Member(sourceAtt.getId(), sourceAtt.getDataType());
+            
+            attribute.setForwardExpression(fwd);
+            attribute.setReverseExpression(rvs);
+            canonic.addAttribute(attribute);            
+        }
+        return canonic;
+    }
+
     public PerspectiveType getPerspectiveType() {
         return perspectiveType;
     }

@@ -70,16 +70,17 @@ public class CsvDataAdapterHelper {
      * @throws IOException
      */
     public LinkedHashMap<String, FieldInfo> prepareFields(SingleContainer container, String columnDelimiter, String typeDelimiter, String unitDelimiter) throws IOException {
-            try {
-                String fileName = getCompleteHeaderName(container);
-                HeaderBuilder hb = new HeaderBuilder();
-                LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter);
-                fields.values().stream().forEach(field -> {
-                    field.conceptualDataType = getConceptualType(field.internalDataType);
-                });
-                return fields;
-            } catch (Exception ex){}
+        try {
+            String fileName = getCompleteHeaderName(container);
+            HeaderBuilder hb = new HeaderBuilder();
+            LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter);
+            fields.values().stream().forEach(field -> {
+                field.conceptualDataType = getConceptualType(field.internalDataType);
+            });
+            return fields;
+        } catch (Exception ex){
             return null;
+        }
     }
     
     public String getCompleteHeaderName(SingleContainer container){ //may need a container index too!

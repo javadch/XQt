@@ -279,7 +279,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     // the source variable should have already been defined as target in a previous statement
                     PerspectiveDescriptor pers = variablesUsedAsTarget.get(((VariableContainer)source.getContainer()).getVariableName());
                     if(pers != null){
-                        projection.setPerspective(pers);
+                        //projection.setPerspective(pers);
+                        projection.setPerspective(pers.createCanonicPerspective());
                         // current statement would be depending on another. if that another statement is using an implicit perspective, it would be loaded lazily
                         // so there is a need to update the perspective and set the projection.isPresent to true
                         projection.setPresent(false); 

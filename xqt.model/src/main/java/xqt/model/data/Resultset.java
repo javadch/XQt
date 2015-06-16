@@ -57,4 +57,7 @@ public class Resultset {
         return resultsetType;
     }
   
+    public void setResultsetType(ResultsetType value){
+        this.resultsetType = value;
+    }    
 }

@@ -106,6 +106,10 @@ public abstract class BaseDataAdapter implements DataAdapter {
     protected final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
     protected final List<String> groupByImplicitAttributes = new ArrayList<>();
     
+    public boolean hasAggregate(){
+       return (aggregattionCallInfo.size() > 0 );
+    }
+    
     protected Boolean prepareAggregates(DataReaderBuilderBase builder, SelectDescriptor select) {
         // adopt for other types of queries, variable, join, etc
         for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
@@ -183,11 +187,11 @@ public abstract class BaseDataAdapter implements DataAdapter {
 
     protected void prepareOrderBy(DataReaderBuilderBase builder, SelectDescriptor select) {
         if(isSupported("select.orderby")) {
-            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+            Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();    
             for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
-                if(attributeInfos.containsKey(entry.getKey())){
-                    orderItems.put(attributeInfos.get(entry.getKey()), entry.getValue());
-                }            
+                if(builder.getResultAttributes().containsKey(entry.getKey())){
+                    orderItems.put(builder.getResultAttributes().get(entry.getKey()), entry.getValue());
+                }                                
             }
             builder.orderBy(orderItems);
         }else {

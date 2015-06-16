@@ -69,9 +69,13 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         Map<String, Variable> memory = (Map<String, Variable>)context;
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Variable:
-                return runForSingleContainer(select, memory);
+                Variable sourceVariable = (Variable)memory.get(((VariableContainer)select.getSourceClause().getContainer()).getVariableName());
+                return runForSingleContainer(select, sourceVariable);
             case Joined:
-                return runForJoinedContainer(select, memory);
+                JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+                Variable leftVariable = (Variable)memory.get(((VariableContainer)join.getLeftContainer()).getVariableName());
+                Variable rightVariable = (Variable)memory.get(((VariableContainer)join.getRightContainer()).getVariableName());
+                return runForJoinedContainer(select, leftVariable, rightVariable);
             default:
                 return null;
         }
@@ -81,7 +85,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
     public Resultset complement(SelectDescriptor select, Variable variable){
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Variable:
-                Resultset resultSet = internalRun(select, variable);
+                Resultset resultSet = runForSingleContainer(select, variable); // internalRun(select, variable);
                 return resultSet;
             default:
                 return null;
@@ -117,7 +121,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         registerCapability("select.projection.perspective.explicit", true);
         registerCapability("select.projection.perspective.inline", true);
         registerCapability("select.source.single", true);
-        registerCapability("select.source.joined", false);
+        registerCapability("select.source.joined", true);
         registerCapability("select.source.variable", true);
         registerCapability("select.target.variable", true);
         registerCapability("select.target.persist", false);
@@ -131,66 +135,6 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         registerCapability("select.limit.skip", true);
     }
     
-    private Resultset internalRun(SelectDescriptor select, Variable sourceVariable) {
-        try{
-            List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
-            switch (select.getTargetClause().getContainer().getDataContainerType()){
-                case Plot:{
-                    Resultset resultSet = new Resultset(ResultsetType.Image); 
-                    // create a reader, much like the Variable case.
-                    // get data from the reader
-                    // draw data into a plot. drawing here makes the template easier!
-                    // return the plot
-                    PlotContainer plotModel = (PlotContainer)select.getTargetClause().getContainer();
-                    if(source == null || source.stream().count() <= 0){                    
-                        resultSet.setData(null);
-                        resultSet.setSchema(sourceVariable.getResult().getSchema());
-                    } else {
-                        Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
-                        DataReader reader = builder.build(entryPoint);
-                        List<Object> result = reader.read(source, null);
-                        resultSet.setSchema(sourceVariable.getResult().getSchema()); 
-                        // use the plot clause (model) in order to build the chart's data model
-                        //DefaultChartModel modelA = new DefaultChartModel("ModelA"); 
-                        //DefaultTableModel b = new DefaultTableModel();   
-                        // investigate using a table model and a TableToChartAdapter object ...            
-                        Chart chart = createChart(result, plotModel);
-                        //ChartStyle styleA = new ChartStyle(Color.blue, false, true); 
-                        //chart.addModel(modelA, styleA); 
-                        resultSet.setData(chart);
-                    }
-                    
-                    return resultSet;
-                }
-                case Joined:
-                    break;
-                case Single:
-                    break;
-                case Variable:{
-                    Resultset resultSet = new Resultset(ResultsetType.Tabular); 
-                    if(source == null || source.stream().count() <= 0){  
-                        return null;
-//                        resultSet.setData(null);
-//                        resultSet.setSchema(sourceVariable.getResult().getSchema());
-                    } else {
-                        Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
-                        DataReader reader = builder.build(entryPoint);
-                        List<Object> result = reader.read(source, null);
-                        if(result == null)
-                            return null;
-                        resultSet.setData(result);
-                        resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());                               
-                    }
-                    //resultSet.setSchema(prepareSchema(select));
-                    return resultSet;
-                }
-                //// END OF MAPPER AREA                //// END OF MAPPER AREA
-            }
-        } catch (Exception ex) {
-            // do something here!!
-        }       
-        return null;    
-    }
 
     @SuppressWarnings("unchecked")
     private void updateXRange(List<TableToChartAdapter> adapters, String hLabel, Chart chart) {
@@ -303,22 +247,29 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         return pallet;
     }
 
-    private Resultset runForSingleContainer(SelectDescriptor select, Map<String, Variable> memory) {
-        // check whether the data is tabular!
-        Variable sourceVariable = (Variable)memory.get(((VariableContainer)select.getSourceClause().getContainer()).getVariableName());
-        // do something with the source data using the select definition
-        Resultset resultSet = internalRun(select, sourceVariable);
-        return resultSet;
+    private Resultset runForSingleContainer(SelectDescriptor select, Variable sourceVariable) {
+        try{
+            List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData();
+            Resultset resultSet = new Resultset(ResultsetType.Tabular); 
+            if(source == null || source.stream().count() <= 0){  
+                return null;
+            } 
+            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
+            DataReader reader = builder.build(entryPoint);
+            List<Object> result = reader.read(source, null);
+            if(result == null)
+                return null;
+            resultSet.setData(result);
+            resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());                               
+            return refineTargetAfterRun(select, resultSet);
+        } catch (Exception ex){
+            return null;
+        }
     }
 
-    private Resultset runForJoinedContainer(SelectDescriptor select, Map<String, Variable> memory){
+    private Resultset runForJoinedContainer(SelectDescriptor select, Variable leftVariable, Variable rightVariable){
         try {
-            JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
-            
-            Variable leftVariable = (Variable)memory.get(((VariableContainer)join.getLeftContainer()).getVariableName());
-            List<Object> leftSource = (List<Object>)leftVariable.getResult().getTabularData();
-            
-            Variable rightVariable = (Variable)memory.get(((VariableContainer)join.getRightContainer()).getVariableName());
+            List<Object> leftSource = (List<Object>)leftVariable.getResult().getTabularData();            
             List<Object> rightSource = (List<Object>)rightVariable.getResult().getTabularData();
             
             Resultset resultSet = new Resultset(ResultsetType.Tabular);
@@ -328,14 +279,48 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             result = reader.read(leftSource, rightSource);          
             resultSet.setData(result);
             resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
-            //resultSet.setSchema(prepareSchema(select));
-            return resultSet;
+            return refineTargetAfterRun(select, resultSet);
        } catch (Exception ex) {
-            
+        return null;
        }
-       return null;
     }
 
+    private Resultset refineTargetAfterRun(SelectDescriptor select, Resultset resultset) {
+        try{
+            switch (select.getTargetClause().getContainer().getDataContainerType()){
+                case Plot:{
+                    List<Object> source = (List<Object>)resultset.getTabularData();
+                    resultset.setResultsetType(ResultsetType.Image); 
+                    PlotContainer plotModel = (PlotContainer)select.getTargetClause().getContainer();
+                    if(source == null || source.stream().count() <= 0){                    
+                        resultset.setData(null);
+                        //resultSet.setSchema(sourceVariable.getResult().getSchema());
+                    } else {
+                        // use the plot clause (model) in order to build the chart's data model
+                        //DefaultChartModel modelA = new DefaultChartModel("ModelA"); 
+                        //DefaultTableModel b = new DefaultTableModel();   
+                        // investigate using a table model and a TableToChartAdapter object ...            
+                        Chart chart = createChart(source, plotModel);
+                        //ChartStyle styleA = new ChartStyle(Color.blue, false, true); 
+                        //chart.addModel(modelA, styleA); 
+                        resultset.setData(chart);
+                    }                    
+                    return resultset;
+                }
+                case Joined:
+                    return resultset;
+                case Single:
+                    return resultset;
+                case Variable:{
+                    return resultset;
+                }
+            }
+        } catch (Exception ex) {
+            // do something here!!
+        }       
+        return null;    
+    }
+    
     private void prepareJoined(SelectDescriptor select, Object context) {
         JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
         
@@ -411,13 +396,14 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 );                
         }
 
-        Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
-        for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
-                if(attributes.containsKey(entry.getKey())){
-                    orderItems.put(attributes.get(entry.getKey()), entry.getValue());
-                }            
-        }
-        builder.orderBy(orderItems);
+//        Map<AttributeInfo, String> orderItems = new LinkedHashMap<>();        
+//        for (Map.Entry<String, String> entry : convertSelect.prepareOrdering(select.getOrderClause()).entrySet()) {
+//                if(attributes.containsKey(entry.getKey())){
+//                    orderItems.put(attributes.get(entry.getKey()), entry.getValue());
+//                }            
+//        }
+//        builder.orderBy(orderItems);
+        prepareOrderBy(builder, select);
         prepareLimit(builder, select);
         builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
 
@@ -448,7 +434,15 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
             if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
                 builder.recordPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective());
+                if(select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
+                    // The current variable based statement is reading data from another statement's output sx, so that sx was having a physical schema
+                    // This is why the select has no attribute! in perspective less statemets, the schema is lazily extracted from the data container, which causes the
+                    // depending satetement remain attribute less!
+                    // the master statement's perspective is now avaialable in builder
+                    select.getProjectionClause().setPerspective(builder.getRecordPerspective().createCanonicPerspective());
+                }
             }
+            
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
                 builder.readerResourceName("MemAggregateReader")
@@ -477,20 +471,20 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 builder.addResultAttributes(attributeInfos);
                 
 
-                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
-                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
-                    //replace the forward map of the resultentity to point to the same attribute in the row entity
-                    for(AttributeInfo attInfo: attributeInfos.values()){
-                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
-                            //AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
-                            //rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
-                            // the attinfo.fowardmap should be translated to something like rowEntity.x+rowEntity.y/2 if the forwardmap is x+y/2
-                            // this value should be computed on the rowEntity during group key generation in getKey method of the MemAggregateReader
-                            String translated = builder.enhanceExpression(attInfo.forwardMap, true, "p", "rowEntity");                            
-                            attInfo.forwardMap = translated; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
-                        }
-                    }
-                } 
+//                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
+//                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
+//                    //replace the forward map of the resultentity to point to the same attribute in the row entity
+//                    for(AttributeInfo attInfo: attributeInfos.values()){
+//                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
+//                            //AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
+//                            //rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+//                            // the attinfo.fowardmap should be translated to something like rowEntity.x+rowEntity.y/2 if the forwardmap is x+y/2
+//                            // this value should be computed on the rowEntity during group key generation in getKey method of the MemAggregateReader
+//                            String translated = builder.enhanceExpression(attInfo.forwardMap, true, "p", "rowEntity");                            
+//                            attInfo.forwardMap = translated; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+//                        }
+//                    }
+//                } 
                 
             } else {
                 Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);

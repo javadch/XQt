@@ -90,7 +90,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             default:
                 resultset = null;
         }
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter finished running the statement {0}.",select.getId()));
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter finished running statement {0}.",select.getId()));
         LoggerHelper.logDebug(MessageFormat.format("statement {0} execution had {1} result.", select.getId(), resultset == null? "no": "a"));        
         return resultset;
     }
@@ -129,7 +129,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     @Override
     public void prepare(SelectDescriptor select, Object context) {
         // check whether the source is a simple or a joined one!
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing the statement {0}",select.getId()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}",select.getId()));        
         try{
             builder = new DataReaderBuilder();
             builder
@@ -179,9 +179,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
                     .build();
             select.getLanguageExceptions().add(lex);
-            LoggerHelper.logError(MessageFormat.format("The CSV adapter was not able to prepare the statement {0}. Cause: {1}",select.getId(), lex.getMessage()));                    
+            LoggerHelper.logError(MessageFormat.format("The CSV adapter was not able to prepare statement {0}. Cause: {1}",select.getId(), lex.getMessage()));                    
         }      
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter prepared the statement {0}",select.getId()));                
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter prepared statement {0}",select.getId()));                
     }
 
     @Override

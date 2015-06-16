@@ -126,9 +126,10 @@ public class DataReaderBuilder extends DataReaderBuilderBase {
         super.buildSingleSourceSegments();
         if (sourceOfData.equalsIgnoreCase("variable")){
             // genarete a new entity class name
-            if(hasAggregate()){
-                entityContext.put("RecordClassName", leftClassName );
-            }
+            entityContext.put("RecordClassName", leftClassName );
+//            if(hasAggregate()){
+//                entityContext.put("RecordClassName", leftClassName );
+//            }
 //            readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
 //            readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
 //            readerContext.put("TargetRowType", entityClassName);    
