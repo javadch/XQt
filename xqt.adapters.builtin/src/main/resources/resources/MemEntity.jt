@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import xqt.model.functions.*;
 import xqt.model.functions.aggregates.*;
+import com.vaiona.commons.logging.*;
 
 public class @(EntityClassName) {
 
@@ -51,6 +52,7 @@ public class @(EntityClassName) {
                     this.rowEntity = null;
                 }
             }
+            //JTag.probe(this);   
         }
 
         public @(EntityClassName) populate(){

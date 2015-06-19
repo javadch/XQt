@@ -8,6 +8,7 @@ package xqt.adapters.csv;
 
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.logging.LoggerHelper;
+import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
 import java.io.IOException;
@@ -64,6 +65,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         runtimeJoinOperators.put(JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinOperator.LTEQ, "<=");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
+        
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
     }
 
@@ -356,7 +360,24 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             return;
         }
         SingleContainer rightContainer = (SingleContainer)join.getRightContainer();
+        
+        if(leftContainer.getPerspective() == null) {
+            // error
+        }
+        if(rightContainer.getPerspective() == null) {
+            // error
+        }
 
+        if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+            String dataType = leftContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            join.getLeftKey().setReturnType(dataType);
+        }
+
+        if(join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+            String dataType = rightContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            join.getRightKey().setReturnType(dataType);
+        }
+        
         try {
             String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
             builder.leftColumnDelimiter(determineDeleimiter(columnDelimiter));                
@@ -432,9 +453,23 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
 
             builder.joinType(join.getJoinType().toString())
-                    .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()))
                     .leftJoinKey(join.getLeftKey().getId())
-                    .rightJoinKey(join.getRightKey().getId());
+                    .rightJoinKey(join.getRightKey().getId())
+                    .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()));
+        if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String) || join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String)){
+            switch (join.getJoinOperator()){
+                case EQ:
+                case EqString:
+                    builder.joinOperator(runtimeJoinOperators.get(JoinedContainer.JoinOperator.EqString));
+                    break;
+                case NotEQ:
+                case NotEqString:
+                    builder.joinOperator(runtimeJoinOperators.get(JoinedContainer.JoinOperator.NotEqString));
+                    break;
+                // more options for LIKE etc, later. needs an stable solution!
+            }
+        }
+        
             
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){
@@ -476,6 +511,15 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         builder.entityResourceName("");
         builder.readerResourceName("Reader");
         builder.sourceOfData("variable");
+        
+        boolean hasUnknownAttribute = select.getProjectionClause().getPerspective().getAttributes().values()
+                .stream().anyMatch(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown));
+        if(hasUnknownAttribute){
+            if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
+                // The current variable based statement is reading data from another statement's output
+                select.getProjectionClause().setPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective().createCanonicPerspective());
+            }            
+        }
         
         String sourceRowType = select.getEntityType().getFullName();                    
         if(sourceRowType.isEmpty())

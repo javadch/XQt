@@ -34,5 +34,7 @@ public enum ExpressionType {
         IsNumber,
         IsDate,
         IsEmpty, 
-        Invalid
+        Invalid,
+        StringEqual,
+        StringNotEqual,
 }

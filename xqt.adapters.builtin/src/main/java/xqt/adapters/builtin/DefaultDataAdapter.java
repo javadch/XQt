@@ -16,6 +16,7 @@ import com.jidesoft.grid.SortableTable;
 import com.jidesoft.range.NumericRange;
 import com.jidesoft.range.Range;
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.types.TypeSystem;
 import java.awt.Color;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -62,6 +63,8 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
     }
     
     @Override
@@ -357,6 +360,16 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             // error
         }
 
+        if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+            String dataType = leftContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            join.getLeftKey().setReturnType(dataType);
+        }
+
+        if(join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+            String dataType = rightContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            join.getRightKey().setReturnType(dataType);
+        }
+
         // create an implicit perspective for the whole select statement
         select.getProjectionClause().setPerspective(
                 PerspectiveDescriptor.combinePerspective(
@@ -408,10 +421,23 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         builder.writeResultsToFile(convertSelect.shouldResultBeWrittenIntoFile(select.getTargetClause()));
 
         builder.joinType(join.getJoinType().toString())
-                .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()))
                 .leftJoinKey(join.getLeftKey().getId())
-                .rightJoinKey(join.getRightKey().getId());
-
+                .rightJoinKey(join.getRightKey().getId())
+                .joinOperator(runtimeJoinOperators.get(join.getJoinOperator()));
+        if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String) || join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String)){
+            switch (join.getJoinOperator()){
+                case EQ:
+                case EqString:
+                    builder.joinOperator(runtimeJoinOperators.get(JoinedContainer.JoinOperator.EqString));
+                    break;
+                case NotEQ:
+                case NotEqString:
+                    builder.joinOperator(runtimeJoinOperators.get(JoinedContainer.JoinOperator.NotEqString));
+                    break;
+                // more options for LIKE etc, later. needs an stable solution!
+            }
+        }
+        
         try {
             select.getExecutionInfo().setSources(builder.createSources());
         } catch (IOException ex){

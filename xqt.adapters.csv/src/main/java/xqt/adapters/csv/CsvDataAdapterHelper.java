@@ -96,7 +96,7 @@ public class CsvDataAdapterHelper {
             externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalHeader").getValue());
         } catch (Exception ex){}
         if(externalHeader){
-            fileName = basePath.concat(container0).concat(".header.").concat(fileExtention);
+            fileName = basePath.concat(container0).concat(".").concat(fileExtention).concat(".hdr");
         } else {
             fileName = basePath.concat(container0).concat(".").concat(fileExtention);
         }

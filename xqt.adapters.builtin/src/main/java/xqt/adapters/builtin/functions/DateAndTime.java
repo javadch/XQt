@@ -73,4 +73,33 @@ public class DateAndTime {
         return dfs.getMonths()[cal.get(Calendar.MONTH)];
     }
 
+    public static int hourOf(LocalDateTime date){
+        return date.getHour();
+    }
+
+    public static int hourOf(Date date){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date); 
+        return cal.get(Calendar.HOUR_OF_DAY);
+    }
+
+    public static int minuteOf(LocalDateTime date){
+        return date.getMinute();
+    }
+
+    public static int minuteOf(Date date){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date); 
+        return cal.get(Calendar.MINUTE);
+    }
+
+    public static int secondOf(LocalDateTime date){
+        return date.getSecond();
+    }
+
+    public static int secondOf(Date date){
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date); 
+        return cal.get(Calendar.SECOND);
+    }
 }

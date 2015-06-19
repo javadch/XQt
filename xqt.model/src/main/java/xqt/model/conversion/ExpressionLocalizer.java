@@ -50,6 +50,7 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         patterns.put(ExpressionType.Constant, " {0} ");
         patterns.put(ExpressionType.Divide, "(( {0} ) / ( {1} ))");
         patterns.put(ExpressionType.Equal, "(( {0} ) == ( {1} ))");
+        patterns.put(ExpressionType.StringEqual, "(( {0} ) .equals ( {1} ))"); 
         patterns.put(ExpressionType.Function, "( {0} ( {1} ) )"); // the second arg is the parameters' source
         patterns.put(ExpressionType.GreaterThan, "(( {0} ) > ( {1} ))");
         patterns.put(ExpressionType.GreaterThanOrEqual, "(( {0} ) >= ( {1} ))");
@@ -61,6 +62,7 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         patterns.put(ExpressionType.Negate, "( - ( {0} ))");
         patterns.put(ExpressionType.Not, "( ! ( {0} ))");
         patterns.put(ExpressionType.NotEqual, "(( {0} ) != ( {1} ))");
+        patterns.put(ExpressionType.StringNotEqual, "(!(( {0} ) .equals ( {1} )))"); 
         patterns.put(ExpressionType.Or, "(( {0} ) || ( {1} ))");
         patterns.put(ExpressionType.Parameter, " {0} ");
         patterns.put(ExpressionType.Power, "(java.lang.Math.pow( {0} , {1} ))");
@@ -97,6 +99,13 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
             String left = visitAll(exp.getLeft());
             String right = visitAll(exp.getRight());
             String pattern = patterns.get(exp.getExpressionType());
+            if(exp.getLeft().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String) || exp.getRight().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.String)){
+                if(exp.getExpressionType() == ExpressionType.Equal || exp.getExpressionType() == ExpressionType.StringEqual){
+                    pattern = patterns.get(ExpressionType.StringEqual);
+                } else if (exp.getExpressionType() == ExpressionType.NotEqual | exp.getExpressionType() == ExpressionType.StringNotEqual){
+                    pattern = patterns.get(ExpressionType.StringNotEqual);
+                }                
+            }
             return MessageFormat.format(pattern, left, right); 
             
         } else if(expression instanceof FunctionExpression){

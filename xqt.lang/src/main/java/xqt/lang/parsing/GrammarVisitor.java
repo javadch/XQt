@@ -1263,7 +1263,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitExpression_nest(@NotNull XQtParser.Expression_nestContext ctx) { 
-        return visitChildren(ctx.operand); 
+        return visit(ctx.operand); 
     }
     
     @Override
