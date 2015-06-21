@@ -18,6 +18,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class FunctionParameterInfo {
     private String name;
     private String permittedDataTypes;
+    private boolean varArg = false;
 
     public FunctionParameterInfo(){
         
@@ -44,6 +45,15 @@ public class FunctionParameterInfo {
 
     public void setPermittedDataTypes(String permittedDataTypes) {
         this.permittedDataTypes = permittedDataTypes;
+    }
+
+    @XmlAttribute(name="varArg")
+    public boolean isVarArg() {
+        return varArg;
+    }
+
+    public void setVarArg(boolean varArg) {
+        this.varArg = varArg;
     }
         
 }

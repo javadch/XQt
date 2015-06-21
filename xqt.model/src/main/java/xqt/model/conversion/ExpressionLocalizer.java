@@ -179,6 +179,8 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
                 memeberNames.add(exp.getId());
             }
             String pattern = patterns.get(exp.getExpressionType());
+            if(exp.getMemberType() == MemberExpression.MemberType.Compound)
+                return MessageFormat.format(pattern, exp.getComponents().get(0).toLowerCase() + "_" + exp.getComponents().get(1).toLowerCase());
             return MessageFormat.format(pattern, exp.getId());
             
         } else if(expression instanceof UnaryExpression){

@@ -136,6 +136,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}",select.getId()));        
         try{
             builder = new DataReaderBuilder();
+            builder.statementId(select.getId());
             builder
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
@@ -368,16 +369,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             // error
         }
 
-        if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-            String dataType = leftContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
-            join.getLeftKey().setReturnType(dataType);
-        }
-
-        if(join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-            String dataType = rightContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
-            join.getRightKey().setReturnType(dataType);
-        }
-        
         try {
             String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
             builder.leftColumnDelimiter(determineDeleimiter(columnDelimiter));                
@@ -400,6 +391,22 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 rightContainer.setPerspective(helper.createPhysicalPerspective(builder.getRightFields(), null, "right_" + select.getId()));
             }
             
+            if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+                //get the latest component of the name, as the identifier may be a compound having R or L prefix
+                String memberName = join.getLeftKey().getComponents().get(join.getLeftKey().getComponents().size()-1).toLowerCase();
+                //String memberName = join.getLeftKey().getId().replace(join.getLeftKey().getId(), "l.");
+                String dataType = leftContainer.getPerspective().getAttributes().get(memberName).getDataType();
+                join.getLeftKey().setReturnType(dataType);
+            }
+
+            if(join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+                String memberName = join.getRightKey().getComponents().get(join.getRightKey().getComponents().size()-1).toLowerCase();
+                //String memberName = join.getRightKey().getId().replace(join.getRightKey().getId(), "l.");
+                String dataType = rightContainer.getPerspective().getAttributes().get(memberName).getDataType();
+                join.getRightKey().setReturnType(dataType);
+            }
+
+
             // compile an implicit perspective for the whole select statement
             select.getProjectionClause().setPerspective(
                     PerspectiveDescriptor.combinePerspective(
@@ -511,6 +518,17 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         builder.entityResourceName("");
         builder.readerResourceName("Reader");
         builder.sourceOfData("variable");
+        
+        if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
+            PerspectiveDescriptor master =((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective();
+            if(select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
+                // The current variable based statement is reading data from another statement's output sx, so that sx was having a physical schema
+                // This is why the select has no attribute! in perspective less statemets, the schema is lazily extracted from the data container, which causes the
+                // depending satetement remain attribute less!
+                // the master statement's perspective is now avaialable in builder
+                select.getProjectionClause().setPerspective(master.createCanonicPerspective());
+            }
+        }
         
         boolean hasUnknownAttribute = select.getProjectionClause().getPerspective().getAttributes().values()
                 .stream().anyMatch(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown));

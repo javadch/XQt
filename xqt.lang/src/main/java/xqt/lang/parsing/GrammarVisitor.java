@@ -665,12 +665,23 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 //PerspectiveAnnotator.describePerspectiveAttribute(inlineAttribute, perspective.getId());
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
                 attribute.setParserContext(inlineAttribute);
+                Expression exp = (Expression)visit(inlineAttribute.att);
                 if(inlineAttribute.alias != null){
                     attribute.setId(inlineAttribute.alias.getText().toLowerCase());                    
                 } else {
-                    attribute.setId("attribute" + index++); // lower case
+                    if(exp instanceof MemberExpression){
+                        MemberExpression expAttr  = (MemberExpression)exp;
+                        String name = expAttr.getId().replace(".", "_");
+                        if(!perspective.getAttributes().containsKey(name)){
+                            attribute.setId(name);
+                        } else{
+                            attribute.setId(name + index++); // lower case
+                        }
+                    } else {
+                        attribute.setId("attribute" + index++); // lower case
+                    }
                 }
-                Expression exp = (Expression)visit(inlineAttribute.att);
+                
                 // go through the expression and se whether there are any references to other perspectives' attributes
                 // if so replace the forward and reverse mappings of the sub/ expression with their counterparts
                 //exp = replaceReferencedAttributes(exp);
@@ -1253,8 +1264,11 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                             .build()
                     );                
             }
-            parameters.add(pa);              
-            paramIndex++;
+            parameters.add(pa);  
+            // The last parameter can be a varargs (like java). If it is the case the paramindex should not proceed
+            // and all the arguments are matched with it.
+            if(!paramInfo.isVarArg() && paramIndex < fInfo.get().getParameters().size())
+                paramIndex++;
         }
         FunctionExpression exp = Expression.Function(packageId, id, fInfo.get().getReturnType(), parameters);
         exp.setFunctionSpecification(fInfo.get());        
@@ -1325,37 +1339,34 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // this is because it is only this oint that it is known that the id has a quilified name. Later this id would be part of a bigger
         // expression and validating it need traversing the whole expression tree.
         if(parsingContext.equalsIgnoreCase("Inline_Perspective")){ 
-            Expression exp = Expression.Invalid();        
-            if(idComponents.size()== 2) { // the perspective name and the attribute name
-                PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
-                PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1).toLowerCase(), null): null;
-                if(att != null){
-                    //exp = Expression.CompoundMember(idComponents);
-                    exp = att.getForwardExpression(); // replace the compound member with its counterpart attribute's forward mapping
-                    exp.setReturnType(att.getDataType());
-                } else { // no such a perspective / attribute
-                    exp.getLanguageExceptions().add(
-                        LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Either perspective \'%s\' or attribute \'%s\' not found!")
-                            .setContextInfo1(idComponents.get(0))
-                            .setContextInfo2(idComponents.get(1))    
-                            .setLineNumber(ctx.getStart().getLine())
-                            .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                            .build()
-                    );
-                }                
-            } else { // exception
-                exp.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("\'%s\' should refer to a perspective/ attribute combination, but only one of them is provided.")
-                        .setContextInfo1(idComponents.get(0))                        
-                        .setLineNumber(ctx.getStart().getLine())
-                        .setColumnNumber(ctx.getStop().getCharPositionInLine())
-                        .build()
-                );
-            }
-            exp.setParserContext(ctx);        
-            return exp;             
+            if(idComponents.size()== 2) { 
+                if(idComponents.get(0).equalsIgnoreCase("L") || idComponents.get(0).equalsIgnoreCase("R")){ // Left/ Right sides of JOIN
+                    MemberExpression exp = Expression.CompoundMember(idComponents);
+                    exp.setParserContext(ctx);
+                    return exp;               
+                } else { // the perspective name and the attribute name
+                    Expression exp = Expression.Invalid();        
+                    PerspectiveDescriptor pers = (PerspectiveDescriptor)processModel.getDeclarations().getOrDefault(idComponents.get(0), null);
+                    PerspectiveAttributeDescriptor att = pers != null? pers.getAttributes().getOrDefault(idComponents.get(1).toLowerCase(), null): null;
+                    if(att != null){
+                        //exp = Expression.CompoundMember(idComponents);
+                        exp = att.getForwardExpression(); // replace the compound member with its counterpart attribute's forward mapping
+                        exp.setReturnType(att.getDataType());
+                    } else { // no such a perspective / attribute
+                        exp.getLanguageExceptions().add(
+                            LanguageExceptionBuilder.builder()
+                                .setMessageTemplate("Either perspective \'%s\' or attribute \'%s\' not found!")
+                                .setContextInfo1(idComponents.get(0))
+                                .setContextInfo2(idComponents.get(1))    
+                                .setLineNumber(ctx.getStart().getLine())
+                                .setColumnNumber(ctx.getStop().getCharPositionInLine())
+                                .build()
+                        );
+                    }
+                    exp.setParserContext(ctx);        
+                    return exp;   
+                }
+            }          
         }
         // do the normal task
         MemberExpression exp = Expression.CompoundMember(idComponents);

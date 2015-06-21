@@ -98,6 +98,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
     @Override
     public void prepare(SelectDescriptor select, Object context) {
         builder = new DataReaderBuilder();
+        builder.statementId(select.getId());
         switch (select.getSourceClause().getContainer().getDataContainerType()){
             case Plot:{
                 break;
@@ -361,12 +362,17 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         }
 
         if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-            String dataType = leftContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            //get the latest component of the name, as the identifier may be a compound having R or L prefix
+            String memberName = join.getLeftKey().getComponents().get(join.getLeftKey().getComponents().size()-1).toLowerCase();
+            //String memberName = join.getLeftKey().getId().replace(join.getLeftKey().getId(), "l.");
+            String dataType = leftContainer.getPerspective().getAttributes().get(memberName).getDataType();
             join.getLeftKey().setReturnType(dataType);
         }
 
         if(join.getRightKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-            String dataType = rightContainer.getPerspective().getAttributes().get(join.getLeftKey().getId()).getDataType();
+            String memberName = join.getRightKey().getComponents().get(join.getRightKey().getComponents().size()-1).toLowerCase();
+            //String memberName = join.getRightKey().getId().replace(join.getRightKey().getId(), "l.");
+            String dataType = rightContainer.getPerspective().getAttributes().get(memberName).getDataType();
             join.getRightKey().setReturnType(dataType);
         }
 

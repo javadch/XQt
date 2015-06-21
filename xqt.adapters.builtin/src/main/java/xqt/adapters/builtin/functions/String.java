@@ -1,5 +1,6 @@
 package xqt.adapters.builtin.functions;
 
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -231,6 +232,10 @@ public class String {
             }
 //        }
 //        return null;
+    }
+    
+    public static java.lang.String format(java.lang.String pattern, Object... arguments){
+        return MessageFormat.format(pattern, arguments);
     }
      
 }

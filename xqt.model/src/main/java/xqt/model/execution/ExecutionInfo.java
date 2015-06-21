@@ -14,6 +14,7 @@ import java.util.Optional;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Variable;
 import xqt.model.statements.StatementDescriptor;
+import xqt.model.statements.query.SelectDescriptor;
 
 /**
  *
@@ -40,7 +41,9 @@ public class ExecutionInfo {
         Optional<InMemorySourceFile> source = sources.values().stream()
                     .filter(p-> !p.isEntryPoint() && p.getFullName().endsWith("Entity")).findFirst();
         if(source.isPresent())
-            return source.get();
+            return source.get(); 
+        if(statement.getDependsUpon()!= null )//&& statement.getDependsUpon() instanceof SelectDescriptor)
+            return statement.getDependsUpon().getExecutionInfo().getEntitySource();
         return null;
     }
     
