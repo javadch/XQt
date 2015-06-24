@@ -499,6 +499,18 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 }
                 prepareGroupBy(builder, select);
 
+                List<PerspectiveAttributeDescriptor> auxiliaryAttributes = select.getProjectionClause().getPerspective().getAttributes().values().stream().filter(p-> p.isAuxiliary()).collect(Collectors.toList());
+                // in the aggregate mode, all auxiliary attributes should be taken out, so that they do not apear 
+                for(PerspectiveAttributeDescriptor p: auxiliaryAttributes) {
+                    if(attributeInfos.containsKey(p.getId())){
+                        AttributeInfo tobeAddedToTheRowEntity = convertSelect.convert(select.getProjectionClause().getPerspective(), p, p.getId(), this);
+                                //new AttributeInfo(attributeInfos.get(p.getId()));                        
+                        rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+                        //tobeAddedToTheRowEntity.forwardMap = "rowEntity." + tobeAddedToTheRowEntity.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                        attributeInfos.remove(p.getId());
+                    }
+                }
+                
                 builder.addRowAttributes(rowEntityAttributeInfos);
                 builder.addResultAttributes(attributeInfos);
                 
@@ -544,7 +556,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             // return a language exception
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("The depenedent statement '%s' is found but no dependency information found!")
+                    .setMessageTemplate("The depenedent statement '%s' is found but no dependency information found! detail: " + ex.getMessage())
                     .setContextInfo1(select.getId())
                     .setLineNumber(select.getParserContext().getStart().getLine())
                     .setColumnNumber(-1)

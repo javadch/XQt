@@ -434,83 +434,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         }
 
         // if the target is going to be a plot, check whther h, v are pointing to the attributes of the associated perspective. also set the linked perspective
-        //if()
-            // -> the target variable should point to its statement.
-//            if(target.getVariable() != null) // select may have no target
-//                target.getVariable().setStatement(selectDesc);
-
-//        // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
-//        MemberExpression faultyAttribute = null;
-//        if(projection.getPerspective().isExplicit() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit){
-//            faultyAttribute = validateAttributesInExpression(((FilterClause)filter).getPredicate(), projection.getPerspective());
-//            if(faultyAttribute != null){
-//                select.getLanguageExceptions().add(
-//                    LanguageExceptionBuilder.builder()
-//                           .setMessageTemplate("The WHERE clause is using attribute '%s' but it is not defined in the associated perspective '%s'.")
-//                           .setContextInfo1(faultyAttribute.getId())
-//                           .setContextInfo2(projection.getPerspective().getId())
-//                           .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-//                           .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-//                           .build()
-//                );
-//            }
-//        }
-//        // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
-//        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStartAnchor(), projection.getPerspective());
-//        if(faultyAttribute != null){
-//            select.getLanguageExceptions().add(
-//                LanguageExceptionBuilder.builder()
-//                       .setMessageTemplate("The ANCHOR START clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-//                       .setContextInfo1(faultyAttribute.getId())
-//                       .setContextInfo2(projection.getPerspective().getId())
-//                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-//                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-//                       .build()
-//            );
-//        }
-//
-//        faultyAttribute = validateAttributesInExpression(((AnchorClause)anchor).getStopAnchor(), projection.getPerspective());
-//        if(faultyAttribute != null){
-//            select.getLanguageExceptions().add(
-//                LanguageExceptionBuilder.builder()
-//                       .setMessageTemplate("The ANCHOR STOP clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-//                       .setContextInfo1(faultyAttribute.getId())
-//                       .setContextInfo2(projection.getPerspective().getId())
-//                       .setLineNumber(faultyAttribute.getParserContext().getStart().getLine())
-//                       .setColumnNumber(faultyAttribute.getParserContext().getStart().getCharPositionInLine())
-//                       .build()
-//            );
-//        }
-//
-//        // -> check whether Ids defined in the ordering clause are defined as an attribute in the associated perspective
-//        for(OrderEntry orderItem : order.getOrderItems().values()){
-//            if(!projection.getPerspective().getAttributes().containsKey(orderItem.getSortKey())){
-//                select.getLanguageExceptions().add(
-//                    LanguageExceptionBuilder.builder()
-//                       .setMessageTemplate("The ORDER BY clause is using attribute '%s' but it is not defined in the associated perspective '%s'")
-//                        .setContextInfo1(orderItem.getSortKey())
-//                        .setContextInfo2(projection.getPerspective().getId())
-//                        .setLineNumber(orderItem.getParserContext().getStart().getLine())
-//                        .setColumnNumber(orderItem.getParserContext().getStop().getCharPositionInLine())
-//                       .build()
-//                );
-//            }
-//        }
-//        // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
-//        for(GroupEntry groupItem : group.getGroupIds().values()){
-//            if(!projection.getPerspective().getAttributes().containsKey(groupItem.getId())){
-//                select.getLanguageExceptions().add(
-//                    LanguageExceptionBuilder.builder()
-//                        .setMessageTemplate("The group by clause refers to attribute %s "
-//                             + ", which is not defined in the associated perspective ")
-//                        .setContextInfo1(groupItem.getId())
-//                        .setContextInfo2(projection.getPerspective().getId())
-//                        .setLineNumber(groupItem.getParserContext().getStart().getLine())
-//                        .setColumnNumber(groupItem.getParserContext().getStart().getCharPositionInLine())
-//                       .build()
-//                );
-//            }
-//        }
+        // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
+        // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
+        // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
         // check postponed validations
         for(PostponedValidationRecord record: selectLateValidations){
             if(record.getContext3().toUpperCase().equals("TYPE-CHECK")){
@@ -557,7 +483,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
         select.setOrderInParent(processModel.totalElementCount());
         processModel.addStatementDescriptor(select); //its better to return to visit processmodel and add the perspective there
-        //select.validate(); // should be back soon. its commented to test where clause attributes not defined in perspectives. 26.05.15
+        select.validate(); // should be back soon. its commented to test where clause attributes not defined in perspectives. 26.05.15
         stack.pop();
         
         return select;

@@ -15,6 +15,7 @@ import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
@@ -328,6 +329,12 @@ public class SelectDescriptor extends StatementDescriptor{
             } 
             String expTempId = exp.getId().toLowerCase();
             if(perspective.getAttributes().containsKey(expTempId)){
+                return null;
+            } else if(repair) {
+                // craete a canonic auxiliary statement and add it to the perespective
+                PerspectiveAttributeDescriptor missing = PerspectiveAttributeDescriptor.createCanonic(expTempId, exp.getReturnType(), true);
+                missing.setParserContext(exp.getParserContext());
+                perspective.addAttribute(missing);
                 return null;
             }
             return exp;

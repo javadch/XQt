@@ -34,46 +34,17 @@ public class ConvertSelectElement {
     
     // take care when calling from adapters other than the default and CSV, because of the aggregate call redirection!!! in the convertor.visit method
     public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, DataAdapter adapter, boolean useOriginalNames) {
-        ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
+        //ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
-            convertor.reset();
-            convertor.visit(attribute.getForwardExpression());
-            String exp = convertor.getSource(); 
-            List<String> members = convertor.getMemeberNames();
-            String typeNameInAdapter = attribute.getDataType();
-            String runtimeType = TypeSystem.getTypes().get(TypeSystem.TypeName.String).getRuntimeType();
-            if(TypeSystem.getTypes().containsKey(attribute.getDataType())){           
-                typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
-                runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
-            } else {
-                perspective.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("Can not infer the data type of attribute '%s' in perspective '%s'! It has data type 'Unknown'")
-                        .setContextInfo1(attribute.getId())
-                        .setContextInfo2(perspective.getId())
-                        .setLineNumber(attribute.getParserContext().getStart().getLine())
-                        .setColumnNumber(-1)
-                        .build()
-                );   
-            }
             if(!attributes.containsKey(attribute.getId())){
-                AttributeInfo ad = new AttributeInfo();
+                String newId = attribute.getId();
                 if(useOriginalNames & attribute.getReference()!= null)
-                    ad.name = attribute.getReference().getId();
-                else
-                    ad.name = attribute.getId();
-                ad.conceptualDataType = attribute.getDataType();
-                ad.internalDataType = typeNameInAdapter;
-                ad.unit = attribute.getSemanticKey();
-                ad.forwardMap = exp;
-                ad.fields = members;
+                    newId = attribute.getReference().getId();
+                AttributeInfo ad = convert(perspective, attribute, newId, adapter);
                 ad.index = attributes.size();
-                ad.runtimeType = runtimeType;//TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
-                ad.reference = attribute; // keeping the reference for possible further processing.
-                ad.joinSide = attribute.getExtra();
                 attributes.put(attribute.getId(), ad);
-            }            
+            }
         }        
         return attributes;
     }
@@ -128,6 +99,41 @@ public class ConvertSelectElement {
         return expressionTranslated;
     }
     
+    public AttributeInfo convert(PerspectiveDescriptor perspective, PerspectiveAttributeDescriptor attribute, String newId, DataAdapter adapter){
+        ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
+        convertor.reset();
+        convertor.visit(attribute.getForwardExpression());
+        String exp = convertor.getSource(); 
+        List<String> members = convertor.getMemeberNames();
+        String typeNameInAdapter = attribute.getDataType();
+        String runtimeType = TypeSystem.getTypes().get(TypeSystem.TypeName.String).getRuntimeType();
+        if(TypeSystem.getTypes().containsKey(attribute.getDataType())){           
+            typeNameInAdapter = TypeSystem.getTypes().get(attribute.getDataType()).getName();
+            runtimeType = TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
+        } else {
+            perspective.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Can not infer the data type of attribute '%s' in perspective '%s'! It has data type 'Unknown'.")
+                    .setContextInfo1(attribute.getId())
+                    .setContextInfo2(perspective.getId())
+                    .setLineNumber(attribute.getParserContext().getStart().getLine())
+                    .setColumnNumber(-1)
+                    .build()
+            );   
+        }
+        AttributeInfo ad = new AttributeInfo();
+        ad.name = newId;
+        ad.conceptualDataType = attribute.getDataType();
+        ad.internalDataType = typeNameInAdapter;
+        ad.unit = attribute.getSemanticKey();
+        ad.forwardMap = exp;
+        ad.fields = members;
+        ad.runtimeType = runtimeType;//TypeSystem.getTypes().get(attribute.getDataType()).getRuntimeType();
+        ad.reference = attribute; // keeping the reference for possible further processing.
+        ad.joinSide = attribute.getExtra();
+        return (ad);                   
+    }
+
     // should move here from DataReaderBuilderBase
 //    public String enhanceExpression(String expression, boolean isJoinMode, String nonJoinPrefix, String joinPrefix) throws Exception {
 //        String translated = "";

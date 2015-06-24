@@ -249,11 +249,11 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
+                Map<String, AttributeInfo> rowEntityAttributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 // maybe pareparation is not needed!!!!!!
-                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
+                attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);                
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                     //attInfo.forwardMap = attInfo.forwardMap.replaceAll("move ( ([^<]*) )", "move(rowEntity.$1 ) ");
@@ -264,14 +264,26 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
                     //replace the forward map of the resultentity to point to the same attribute in the row entity
                     for(AttributeInfo attInfo: attributeInfos.values()){
-                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
+                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name)) 
+                            //&& !(auxiliaryAttributes.stream().anyMatch(pp -> pp.getId().equals(attInfo.name)))
+                          ){
                             AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
-                            rowEntityattributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+                            rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
                             attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                         }
                     }
                 } 
-                builder.addRowAttributes(rowEntityattributeInfos);
+                List<PerspectiveAttributeDescriptor> auxiliaryAttributes = select.getProjectionClause().getPerspective().getAttributes().values().stream().filter(p-> p.isAuxiliary()).collect(Collectors.toList());
+                // in the aggregate mode, all auxiliary attributes should be taken out, so that they do not apear 
+                for(PerspectiveAttributeDescriptor p: auxiliaryAttributes) {
+                    if(attributeInfos.containsKey(p.getId())){
+                        AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attributeInfos.get(p.getId()));                        
+                        rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+                        //tobeAddedToTheRowEntity.forwardMap = "rowEntity." + tobeAddedToTheRowEntity.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                        attributeInfos.remove(p.getId());
+                    }
+                }
+                builder.addRowAttributes(rowEntityAttributeInfos);
                 builder.getRowAttributes().values().stream().forEach(at -> {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
                 });

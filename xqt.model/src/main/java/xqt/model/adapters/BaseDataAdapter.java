@@ -118,7 +118,8 @@ public abstract class BaseDataAdapter implements DataAdapter {
             if(visitor.getAggregattionCallInfo().size() > 0){
                 aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
             } else {// the attribute is not containg aggregate, it should be considered as a group by item. preserve and check it withe group by list, later
-                groupByImplicitAttributes.add(attribute.getId());
+                if(!attribute.isAuxiliary())
+                    groupByImplicitAttributes.add(attribute.getId());
             }
         }
         // if there is no aggregate function discovered, there is no need to do anything else, 

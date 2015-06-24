@@ -3,6 +3,7 @@ package xqt.model.declarations;
 import java.util.ArrayList;
 import xqt.model.PhraseDescriptor;
 import xqt.model.expressions.Expression;
+import xqt.model.expressions.MemberExpression;
 
 /**
  *
@@ -16,6 +17,7 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
     private Expression forwardExpression;
     private Expression reverseExpression;
     private PerspectiveAttributeDescriptor reference;
+    private boolean auxiliary = false; // aux attributes are those used in the where, orderby or group clauses witout appearing in the result set
     
     public PerspectiveAttributeDescriptor(){
         
@@ -79,4 +81,25 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
     public void setPerspective(PerspectiveDescriptor perspective) {
         this.perspective = perspective;
     }
+
+    public boolean isAuxiliary() {
+        return auxiliary;
+    }
+
+    public void setAuxiliary(boolean auxiliary) {
+        this.auxiliary = auxiliary;
+    }
+    
+    public static PerspectiveAttributeDescriptor createCanonic(String name, String dataType, boolean auxiliary){
+        PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+        attribute.setAuxiliary(auxiliary);
+        attribute.setId(name);
+        attribute.setDataType(dataType);
+        MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
+        MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
+        attribute.setForwardExpression(fwd);
+        attribute.setReverseExpression(rvs);
+        return attribute;
+    }
+        
 }

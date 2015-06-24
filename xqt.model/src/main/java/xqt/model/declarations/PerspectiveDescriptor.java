@@ -135,6 +135,8 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         }
         perspective.setId("generated_Perspective_"+ id);
         for (Map.Entry<String, PerspectiveAttributeDescriptor> entrySet : left.getAttributes().entrySet()) {
+            if(entrySet.getValue().isAuxiliary())
+                continue;
             String key = entrySet.getKey();
             PerspectiveAttributeDescriptor value = entrySet.getValue();
             PerspectiveAttributeDescriptor renamedAttribute = new PerspectiveAttributeDescriptor(value);
@@ -146,6 +148,8 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
             perspective.addAttribute(renamedAttribute);
         }        
         for (Map.Entry<String, PerspectiveAttributeDescriptor> entrySet : right.getAttributes().entrySet()) {
+            if(entrySet.getValue().isAuxiliary())
+                continue;
             String key = entrySet.getKey();
             PerspectiveAttributeDescriptor value = entrySet.getValue();
             // if the name already exists in the combined perspective, the name is prefixed by "R_" because it happens to the right side perspectives.
@@ -166,12 +170,14 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         HashSet<SchemaItem> schema = new LinkedHashSet<>();
         // do not use the functional counterpart, as it uses the streaming method, which doe not guarantee to preserve the order
         for(PerspectiveAttributeDescriptor attribute: this.getAttributes().values()){
-            SchemaItem sItem = new SchemaItem();
-            sItem.setDataType(attribute.getDataType());
-            sItem.setName(attribute.getId());
-            sItem.setSystemType(TypeSystem.getTypes().get(attribute.getDataType()).getName());
-            sItem.setIndex(schema.size());            
-            schema.add(sItem); 
+            if(!attribute.isAuxiliary()){
+                SchemaItem sItem = new SchemaItem();
+                sItem.setDataType(attribute.getDataType());
+                sItem.setName(attribute.getId());
+                sItem.setSystemType(TypeSystem.getTypes().get(attribute.getDataType()).getName());
+                sItem.setIndex(schema.size());            
+                schema.add(sItem); 
+            }
         }
         return schema;
     }   
