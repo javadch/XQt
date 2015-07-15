@@ -157,10 +157,18 @@ public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftCl
                             fImp = fm;
                         }
                     }
+                    if(fImp == null){ // dialect specific implementation does not exist, try the default one                    
+                        for(FunctionImplementation fm : callInfo.getFunction().getFunctionSpecification().getImplementations()){
+                            if(fm.getDialect().equalsIgnoreCase("default")){
+                                fImp = fm;
+                            }
+                        }
+                    }
                 }
-                @if(fImp != null) {// OK}
-                AggregateFunction agg@(counter) = new @(fImp.getNamespace()).@(fImp.getClassName())();
-                aggregatesForKey.put("@(callInfo.getAliasName())", agg@(counter++));
+                @if(fImp != null) {// OK
+                    AggregateFunction agg@(counter) = new @(fImp.getNamespace()).@(fImp.getClassName())();
+                    aggregatesForKey.put("@(callInfo.getAliasName())", agg@(counter++));
+                }
             }
 
             runningAggregates.put(key, aggregatesForKey);

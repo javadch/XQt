@@ -7,6 +7,7 @@
 package xqt.adapters.builtin;
 
 import com.jidesoft.chart.Chart;
+import com.jidesoft.chart.Legend;
 import com.jidesoft.chart.annotation.AutoPositionedLabel;
 import com.jidesoft.chart.axis.Axis;
 import com.jidesoft.chart.axis.NumericAxis;
@@ -17,28 +18,24 @@ import com.jidesoft.range.NumericRange;
 import com.jidesoft.range.Range;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.types.TypeSystem;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javax.swing.JPanel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.BaseDataAdapter;
-import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.PlotContainer;
 import xqt.model.containers.VariableContainer;
-import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
@@ -177,7 +174,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         }
     }
 
-    private Chart createChart( List<Object> result, PlotContainer plotModel){
+    private JPanel createChart( List<Object> result, PlotContainer plotModel){
         Object [][] data = null;
         List<Field> axes = new ArrayList<>();
         if (result != null && result.size() > 0) {
@@ -224,6 +221,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         yAxis.setRange(0, 200);
 
         Chart chart = new Chart(); 
+        chart.setTitle(plotModel.getPlotLabel());
         chart.setXAxis(xAxis);
         chart.setYAxis(yAxis);
 
@@ -232,7 +230,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         int adapterCounter = 0;
         List<Color> colorPallet = getDrawingColorPallet((int)axes.stream().count()-1);
         for(Field ax: axes.stream().skip(1).collect(Collectors.toList())){ // the first filed is the X variable
-            TableToChartAdapter adapter = new TableToChartAdapter(ax.getName() + "Series", table.getModel());
+            TableToChartAdapter adapter = new TableToChartAdapter(ax.getName() /*+ " Series"*/, table.getModel());
             ChartStyle style = new ChartStyle(colorPallet.get(adapterCounter++), false, true); 
             adapter.setXColumn(0);
             adapter.setYColumn(adapterCounter);  // the first y column starts from 1, which is incremented at the color setting line                          
@@ -240,8 +238,19 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             chart.addModel(adapter, style); // and the style
         }
         updateXRange(adapters, plotModel.gethLabel(), chart);
-        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);        
-        return chart;
+        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);  
+        
+        JPanel chartPanel = new JPanel();
+        chartPanel.setLayout(new BorderLayout());
+        chartPanel.add(chart, BorderLayout.CENTER);
+        
+        JPanel legendPanel = new JPanel();
+        chartPanel.add(legendPanel, BorderLayout.EAST);
+
+        Legend legend = new Legend(chart);
+        legendPanel.add(legend);
+        
+        return chartPanel;
     }
     
     private List<Color> getDrawingColorPallet(int palletSize) {
@@ -304,7 +313,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                         //DefaultChartModel modelA = new DefaultChartModel("ModelA"); 
                         //DefaultTableModel b = new DefaultTableModel();   
                         // investigate using a table model and a TableToChartAdapter object ...            
-                        Chart chart = createChart(source, plotModel);
+                        JPanel chart = createChart(source, plotModel);
                         //ChartStyle styleA = new ChartStyle(Color.blue, false, true); 
                         //chart.addModel(modelA, styleA); 
                         resultset.setData(chart);

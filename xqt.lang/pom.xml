@@ -37,7 +37,7 @@
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>4.2.2</version>
+            <version>4.5</version>
             <exclusions>
                 <exclusion>
                     <artifactId>antlr4-annotations</artifactId>
@@ -46,12 +46,7 @@
             </exclusions>
             <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-annotations</artifactId>
-            <version>4.2.2</version>
-            <type>jar</type>
-        </dependency>
+
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>xqt.model</artifactId>

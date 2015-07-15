@@ -6,6 +6,8 @@ package xqt.api;
 
 import com.vaiona.commons.io.MarkableFileInputStream;
 import com.vaiona.commons.logging.LoggerHelper;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.swing.JPanel;
 import xqt.engine.QueryEngine;
 import xqt.model.adapters.AdapterInfoContainer;
 import xqt.model.data.Variable;
@@ -194,7 +197,7 @@ public class LanguageServicePoint {
                 case Tabular:
                     return variable.getResultAsArray();
                 case Image:
-                    break;
+                    return createImage((JPanel)variable.getResult().getData());
                 default:
                     break;
             }
@@ -231,6 +234,17 @@ public class LanguageServicePoint {
         return null;
     }
   
+    // https://tips4java.wordpress.com/2008/10/13/screen-image/
+    // http://stackoverflow.com/questions/1349220/convert-jpanel-to-image
+    private BufferedImage createImage(JPanel panel) {
+        int w = panel.getWidth();
+        int h = panel.getHeight();
+        BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = bi.createGraphics();
+        panel.printAll(g);
+        return bi;
+    }
+    
     private StatementDescriptor getStatementDescriptor(int id){
         StatementDescriptor statement = engine.getProcessModel().getStatement(id);
         return statement;

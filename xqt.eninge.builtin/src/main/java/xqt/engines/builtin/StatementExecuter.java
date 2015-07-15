@@ -250,7 +250,8 @@ public class StatementExecuter implements StatementVisitor{
     }    
 
     private String getConnectionDialect(SingleContainer container){
-        return container.getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
+        return container.getBinding().getConnection().getParameters()
+                .getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
     }
     
     private SelectDescriptor buildComplementingStatement(SelectDescriptor select) {

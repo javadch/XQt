@@ -8,12 +8,6 @@
     <name>Default Query Engine (xqt.engines.builtin)</name>
     <dependencies>
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.2.2</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>xqt</groupId>
             <artifactId>xqt.engine.interface</artifactId>
             <version>1.0-SNAPSHOT</version>

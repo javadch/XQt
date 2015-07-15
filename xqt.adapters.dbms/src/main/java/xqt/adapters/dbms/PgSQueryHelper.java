@@ -25,7 +25,7 @@ import xqt.model.containers.SingleContainer;
 public class PgSQueryHelper extends DbmsDataAdapterHelper{
     
     @Override
-    public LinkedHashMap<String, FieldInfo> getContinerSchema(SingleContainer container) {
+    public LinkedHashMap<String, FieldInfo> getContinerSchema(SingleContainer container, Object... params) {
         LinkedHashMap<String, FieldInfo> fields = new LinkedHashMap<>();
         Connection connection = null;
         try {

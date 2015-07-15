@@ -11,26 +11,21 @@ import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
+import com.vaiona.test.ExcelTest;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.BaseDataAdapter;
-import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.JoinedContainer.JoinOperator;
 import xqt.model.containers.SingleContainer;
 import xqt.model.containers.VariableContainer;
-import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
@@ -38,13 +33,6 @@ import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-import xqt.model.expressions.AggregationFunctionVisitor;
-import xqt.model.expressions.Expression;
-import xqt.model.functions.AggregationCallInfo;
-import xqt.model.functions.aggregates.Average;
-import xqt.model.functions.aggregates.Minimum;
-import xqt.model.functions.aggregates.Sum;
-import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -58,7 +46,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     
     public CsvDataAdapter(){
         needsMemory = false; // default is false, too.
-        helper = new CsvDataAdapterHelper();
         runtimeJoinOperators.put(JoinOperator.EQ, "==");
         runtimeJoinOperators.put(JoinOperator.NotEQ, "!=");
         runtimeJoinOperators.put(JoinOperator.GT, ">");
@@ -69,7 +56,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
         
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
-    }
+        
+        //ExcelTest exTest = new ExcelTest();
+        //exTest.read();
+   }
 
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
@@ -220,6 +210,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
 
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
+        helper = CsvDataAdapterHelper.getConcreteHelper(container);
         try {
             String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
             builder.columnDelimiter(determineDeleimiter(columnDelimiter));
@@ -227,8 +218,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.columnDelimiter(",");
         }
         builder.sourceOfData("container");
+        builder.containerName(container.getContainerName());        
         try{
-            builder.addFields(helper.prepareFields(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addFields(helper.getContinerSchema(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == 
                     PerspectiveDescriptor.PerspectiveType.Implicit) {
@@ -245,7 +237,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
-                builder.readerResourceName("AggregateReader");
+                builder.readerResourceName(helper.getAggregateReader());
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
@@ -296,7 +288,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 prepareOrderBy(builder, select);
                 
             } else {
-                builder.readerResourceName("Reader");
+                builder.readerResourceName(helper.getReader());
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
@@ -345,7 +337,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     }
 
     private void prepareJoined(SelectDescriptor select) {
-        builder.readerResourceName("JoinReader");
         JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
         
         if(join.getLeftContainer().getDataContainerType() != DataContainer.DataContainerType.Single){
@@ -380,6 +371,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         if(rightContainer.getPerspective() == null) {
             // error
         }
+        // it is assumed that the left and right containers are both using a same dialect!
+        // In heterogeneous joins this should be properly handled
+        helper = CsvDataAdapterHelper.getConcreteHelper(leftContainer);
+        builder.readerResourceName(helper.getJoinReader());
 
         try {
             String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
@@ -392,8 +387,8 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         }
 
         try{
-            builder.addLeftFields(helper.prepareFields(leftContainer, builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
-            builder.addRightFields(helper.prepareFields(rightContainer, builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addLeftFields(helper.getContinerSchema(leftContainer, builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addRightFields(helper.getContinerSchema(rightContainer, builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
            
             // it is sopposed that the perspective oject is set to null during the gramar visitation, if not appreaed in the join statement
             if(leftContainer.getPerspective() == null) {
@@ -441,7 +436,8 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.getResultAttributes().values().stream().forEach(at -> {
                 at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
             });
-
+            builder.containerName(leftContainer.getContainerName()); 
+            builder.rightContainerName(rightContainer.getContainerName()); 
             try{
                 if(isSupported("select.filter")) 
                 builder.where(convertSelect.prepareWhere(select.getFilterClause(), this), true);

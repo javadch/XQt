@@ -8,12 +8,6 @@
     <name>Query Engine Interface (xqt.engine.interface)</name>
     <dependencies>
         <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>4.2.2</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>xqt.model</artifactId>
             <version>${project.version}</version>

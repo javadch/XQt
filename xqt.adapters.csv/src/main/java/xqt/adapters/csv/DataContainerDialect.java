@@ -3,18 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xqt.adapters.dbms;
+package xqt.adapters.csv;
 
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
  */
-public enum DBMSDialect {
-    PostgreSQL(1),
-    MSSQL(2),
-    MySQL5(4);
+public enum DataContainerDialect {
+    CSV(1),
+    MSExcel(2),
+    OpenOffice(4);
     private final int value;
-    private DBMSDialect(int value){
+    private DataContainerDialect(int value){
         this.value = value;
     }
     
@@ -22,7 +22,7 @@ public enum DBMSDialect {
         return value;
     }
     
-    public static DBMSDialect getEnum(int index){
-        return DBMSDialect.values()[index];
-    }
+    public static DataContainerDialect getEnum(int index){
+        return DataContainerDialect.values()[index];
+    }    
 }

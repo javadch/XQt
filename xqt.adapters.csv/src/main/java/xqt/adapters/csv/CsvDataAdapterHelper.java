@@ -8,27 +8,23 @@ package xqt.adapters.csv;
 import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.HeaderBuilder;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import xqt.model.adapters.BaseAdapterHelper;
+import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
-import xqt.model.declarations.PerspectiveAttributeDescriptor;
-import xqt.model.declarations.PerspectiveDescriptor;
-import xqt.model.expressions.Expression;
-import xqt.model.expressions.ExpressionType;
-import xqt.model.expressions.MemberExpression;
 import xqt.model.statements.query.TargetClause;
 
 /**
  *
  * @author Javad Chamanara <chamanara@gmail.com>
  */
-public class CsvDataAdapterHelper {
+public class CsvDataAdapterHelper extends BaseAdapterHelper{
     
     private static final HashMap<String, List<String>> typeConversion = new HashMap<>();
     
@@ -41,7 +37,35 @@ public class CsvDataAdapterHelper {
         typeConversion.put(TypeSystem.TypeName.Real,     new ArrayList<String>() {{add("double");add("real");add("float");}});
         typeConversion.put(TypeSystem.TypeName.String,   new ArrayList<String>() {{add("string");add("char");}});        
     }
+
+    @Override
+    public int getContainerDialectId(SingleContainer container) {
+        DataContainerDialect ret = getContainerDialectName(container);
+        return ret.getValue();
+    }
     
+    public static CsvDataAdapterHelper getConcreteHelper(SingleContainer container){
+        switch (getContainerDialectName(container)){
+             case CSV:
+                 return new CsvDataAdapterHelper();
+             default:
+                 return new MSExcelDataAdapterHelper();
+         }          
+    }
+
+    private static DataContainerDialect getContainerDialectName(SingleContainer container) {
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("dialect");
+        if(p == null || p.getValue() == null || p.getValue().equals("")  || p.getValue().equalsIgnoreCase("default")){
+            return DataContainerDialect.CSV;
+        }
+        if(p.getValue().equalsIgnoreCase("MsExcel"))
+            return DataContainerDialect.MSExcel;    
+        else if (p.getValue().equalsIgnoreCase("CSV"))
+            return DataContainerDialect.CSV;
+        return DataContainerDialect.CSV;
+    }
+    
+    @Override
     public String getConceptualType(String physicalType){
         Optional<Map.Entry<String, List<String>>> entry = typeConversion.entrySet().stream()
                 .filter(p-> p.getValue().contains(physicalType.toLowerCase())).findFirst();
@@ -52,6 +76,7 @@ public class CsvDataAdapterHelper {
             return TypeSystem.TypeName.Unknown;
     }
 
+    @Override
     public String getPhysicalType(String conceptualType){
         if(typeConversion.containsKey(conceptualType)){
             return typeConversion.get(conceptualType).get(0); // returns first physical data type by default.
@@ -63,15 +88,16 @@ public class CsvDataAdapterHelper {
     /**
      *
      * @param container : must be a Single container
-     * @param columnDelimiter
-     * @param typeDelimiter
-     * @param unitDelimiter
+     * @param params
      * @return a map on the physical fields declared in the associated container. in this case a csv file
-     * @throws IOException
      */
-    public LinkedHashMap<String, FieldInfo> prepareFields(SingleContainer container, String columnDelimiter, String typeDelimiter, String unitDelimiter) throws IOException {
+    @Override
+    public LinkedHashMap<String, FieldInfo> getContinerSchema(SingleContainer container, Object... params) {
         try {
-            String fileName = getCompleteHeaderName(container);
+            String columnDelimiter =    String.valueOf(params[0]);
+            String typeDelimiter =      String.valueOf(params[1]);
+            String unitDelimiter =      String.valueOf(params[2]);
+            String fileName = getContainerSchemaHolder(container);
             HeaderBuilder hb = new HeaderBuilder();
             LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter);
             fields.values().stream().forEach(field -> {
@@ -83,7 +109,7 @@ public class CsvDataAdapterHelper {
         }
     }
     
-    public String getCompleteHeaderName(SingleContainer container){ //may need a container index too!
+    public String getContainerSchemaHolder(SingleContainer container){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         String container0 = container.getContainerName();
         String fileExtention = "csv";
@@ -136,28 +162,19 @@ public class CsvDataAdapterHelper {
         boolean firstRowIsHeader = Boolean.valueOf(container.getBinding().getConnection().getParameters().get("firstRowIsHeader").getValue());
         return firstRowIsHeader;
     }
-    
-    public PerspectiveDescriptor createPhysicalPerspective(Map<String, FieldInfo> fields, PerspectiveDescriptor perspective, String id) {
-        for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
-            FieldInfo field = entrySet.getValue();
-            field.conceptualDataType = getConceptualType(field.internalDataType);
-        }
-        perspective = new PerspectiveDescriptor(fields, id);
-        return perspective;
+
+    public String getAggregateReader() {
+        return "AggregateReader";
     }
-    
-    // looks for simple members in the expressions and checks whether they refer to a physical field,
-    // if yes, the data type of the the field is set for the members
-    public PerspectiveDescriptor improvePerspective(Map<String, FieldInfo> fields, PerspectiveDescriptor perspective) {
-        if(perspective == null){
-            return null;
-        }
-        for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
-            FieldInfo field = entrySet.getValue();
-            field.conceptualDataType = getConceptualType(field.internalDataType);
-        }
-        return perspective.improve(fields);
+
+    public String getReader() {
+        return "Reader";
     }
+
+    public String getJoinReader() {
+        return "JoinReader";
+    }
+
 }    
 
     

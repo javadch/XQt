@@ -12,7 +12,8 @@ import xqt.model.adapters.AdapterInfoContainer;
  */
 public class AppInfo {
     public static String getVersion(){
-        return "0.2.0-SNAPSHOT"; 
+        // grab this information from a config file that is used by other parts of the software too. DRY please.
+        return "0.3.0"; 
     }
     
     public static String getMaturityLevel(){
