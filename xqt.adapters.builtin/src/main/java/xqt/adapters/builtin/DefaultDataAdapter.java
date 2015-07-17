@@ -362,12 +362,22 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             return;
         }
         VariableContainer rightContainer = (VariableContainer)join.getRightContainer();
-
-        if(leftContainer.getPerspective() == null) {
-            // error
+   
+        if(leftContainer.getPerspective() == null || leftContainer.getPerspective().getAttributes().size() <= 0) {
+            if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
+                leftContainer.setPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective().createCanonicPerspective());
+                leftContainer.getPerspective().setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+            } else {
+                // error
+            }
         }
-        if(rightContainer.getPerspective() == null) {
-            // error
+        if(rightContainer.getPerspective() == null || rightContainer.getPerspective().getAttributes().size() <= 0) {
+            if(select.getDependsUpon2()!= null && select.getDependsUpon2() instanceof SelectDescriptor ){
+                rightContainer.setPerspective(((SelectDescriptor)select.getDependsUpon2()).getProjectionClause().getPerspective().createCanonicPerspective());
+                rightContainer.getPerspective().setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+            } else {
+                // error
+            }
         }
 
         if(join.getLeftKey().getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){

@@ -365,12 +365,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         }
         SingleContainer rightContainer = (SingleContainer)join.getRightContainer();
         
-        if(leftContainer.getPerspective() == null) {
-            // error
-        }
-        if(rightContainer.getPerspective() == null) {
-            // error
-        }
         // it is assumed that the left and right containers are both using a same dialect!
         // In heterogeneous joins this should be properly handled
         helper = CsvDataAdapterHelper.getConcreteHelper(leftContainer);

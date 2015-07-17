@@ -19,7 +19,11 @@
     String joinOperator,
     String leftJoinKey,
     String rightJoinKey,
-    List<AttributeInfo> Mid
+    List<AttributeInfo> Mid,
+    String ContainerName,
+    String RightContainerName,
+    Integer LeftFieldsNo,
+    Integer RightFieldsNo
 }
 
 package @(namespace);
@@ -121,115 +125,148 @@ public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftCl
             return result;
         } else { 
         @/ here is the code block to read data from both the left and right sources, merge and apply the present clauses.
-        @//////////////////////////////////////////////////////////////////////
-            long skipped =0, taken =0;
-            List<@(TargetRowType)> result = new ArrayList<>();
-            for(@(LeftClassName) leftEntity: source1){
-                @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
-                    if(taken >= @(take)) break;
-                }
-                for(@(RightClassName) rightEntity: source2){
-                    @/ if you rename the rowEntity, then its reference in DataReaderBuilder.extractUsedAttributes method should also change.
-                    @(TargetRowType) rowEntity = new @(TargetRowType)(leftEntity, rightEntity); // PRE: populate the keys
-                    if(!rowEntity.isValid) continue; // filter rows with wrong keys
-                    @/ check the join type here
-                    @if(joinType.equalsIgnoreCase("InnerJoin")){
-                        @if(joinOperator.equalsIgnoreCase("!equals")){ // speciall check not NOT EQUALS on strings!
-                            if(((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
-                        } else {
-                            if(!((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
-                        }
-                            continue; 
-                        @if(Mid != null && Mid.size() > 0){
-                            rowEntity.midPopulate(); // populate attributes required by the where clause.
-                        }
-                        @if(Where!= null && !Where.isEmpty()) {
-                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
-                        } else {
-                            if(!rowEntity.isValid) continue; // check population validity only
-                        }
-                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
-                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
-                            if(skipped++ < @(skip)) continue;
-                        }
-                        rowEntity.populate(); // populate the remaining attributes.
-                        result.add(rowEntity);
-                        @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
-                            if(taken++ >= @(take)) break;
-                        }
-                    }   
-                    else if(joinType.equalsIgnoreCase("LeftOuterJoin")){
-                        @if(Mid != null && Mid.size() > 0){
-                            rowEntity.midPopulate(); // populate attributes required by the where clause.
-                        }
-                        @if(Where!= null && !Where.isEmpty()) {
-                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
-                        } else {
-                            if(!rowEntity.isValid) continue; // check population validity only
-                        }
-                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
-                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
-                            if(skipped++ < @(skip)) continue;
-                        }
-                        @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
-                            if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))) @/ JOIN operator here!
-                                rowEntity.populate();
-                            else
-                                rowEntity.populateLeft();
-                        } else {
-                            if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))) @/ JOIN operator here!
-                                rowEntity.populate();
-                            else
-                                rowEntity.populateLeft();
-                        }	
-                        result.add(rowEntity);
-                        @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
-                            if(taken++ >= @(take)) break;
-                        }
-                    }
-                    else if(joinType.equalsIgnoreCase("RightOuterJoin")){
-                        @if(Mid != null && Mid.size() > 0){
-                            rowEntity.midPopulate(); // populate attributes required by the where clause.
-                        }
-                        @if(Where!= null && !Where.isEmpty()) {
-                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
-                        } else {
-                            if(!rowEntity.isValid) continue; // check population validity only
-                        }
-                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
-                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
-                            if(skipped++ < @(skip)) continue;
-                        }
-                        @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
-                            if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))) @/ JOIN operator here!
-                                rowEntity.populate();
-                            else
-                                rowEntity.populateRight();                        
-                        } else {
-                            if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))) @/ JOIN operator here!
-                                rowEntity.populate();
-                            else
-                                rowEntity.populateRight();                        
-                        }	
-                        result.add(rowEntity);
-                        @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
-                            if(taken++ >= @(take)) break;
-                        }
-                    }
-                }
+        long skipped =0, taken =0;
+        List<@(TargetRowType)> result = new ArrayList<>();
 
+        @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+            for(@(RightClassName) leftEntity: source2) @/ right and left sources are swapped
+        } else {
+            for(@(LeftClassName) leftEntity: source1)
+        }
+            {
+            @(TargetRowType) nonMatching = null;
+            @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                if(taken >= @(take)) break;
             }
-            @if(Ordering!= null && Ordering.size() > 0){ // the result should be sorted. in this case, the limit clause has not been applied yet
-                result = result.stream().sorted(sorter)
-                @if(skip > -1){
-                    .skip(@(skip))
+            Boolean recordMatched = false;
+        @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+            for(@(LeftClassName) rightEntity: source1) @/ right and left sources are swapped
+        } else {
+            for(@(RightClassName) rightEntity: source2)
+        }
+            {
+                @/ if you rename the rowEntity, then its reference in DataReaderBuilder.extractUsedAttributes method should also change.
+                @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+                    @(TargetRowType) rowEntity = new @(TargetRowType)(rightEntity, leftEntity); // PRE: populate the keys
+                } else {
+                    @(TargetRowType) rowEntity = new @(TargetRowType)(leftEntity, rightEntity); // PRE: populate the keys
                 }
-                @if(take > -1){
-                    .limit(@(take))
+                if(!rowEntity.isValid) continue; // filter rows with wrong keys
+                @/ check the join type here
+                @if(joinType.equalsIgnoreCase("InnerJoin")){
+                    @if(joinOperator.equalsIgnoreCase("!equals")){ // speciall check not NOT EQUALS on strings!
+                        if(((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
+                    } else {
+                        if(!((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
+                    }
+                        continue; @/ based on the join key comparison results, skip the row
+                    @if(Mid != null && Mid.size() > 0){
+                        rowEntity.midPopulate(); // populate attributes required by the where clause.
+                    }
+                    @if(Where!= null && !Where.isEmpty()) {
+                        if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                    } else {
+                        if(!rowEntity.isValid) continue; // check population validity only
+                    }
+                    @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                    @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
+                        if(skipped++ < @(skip)) continue;
+                    }
+                    rowEntity.populate(); // populate the remaining attributes.
+                    result.add(rowEntity);
+                    @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                        if(taken++ >= @(take)) break;
+                    }
+                }   
+                else if(joinType.equalsIgnoreCase("LeftOuterJoin")){
+                    @if(Mid != null && Mid.size() > 0){
+                        rowEntity.midPopulate(); // populate attributes required by the where clause.
+                    }
+                    @if(Where!= null && !Where.isEmpty()) {
+                        if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                    } else {
+                        if(!rowEntity.isValid) continue; // check population validity only
+                    }
+                    @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                    @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
+                        if(skipped++ < @(skip)) continue;
+                    }
+                    @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
+                        if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                            rowEntity.populate();
+                            result.add(rowEntity);
+                            //nonMatching = null;
+                            recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                            //break;
+                        } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+                            nonMatching = rowEntity.populateLeft();
+                        }
+                    } else {
+                        if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                            rowEntity.populate();
+                            result.add(rowEntity);
+                            //nonMatching = null;
+                            recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                            //break;
+                        } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+                            nonMatching = rowEntity.populateLeft();
+                        }
+                    }	
                 }
-                .collect(Collectors.toList());
+                else if(joinType.equalsIgnoreCase("RightOuterJoin")){
+                    @if(Mid != null && Mid.size() > 0){
+                        rowEntity.midPopulate(); // populate attributes required by the where clause.
+                    }
+                    @if(Where!= null && !Where.isEmpty()) {
+                        if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                    } else {
+                        if(!rowEntity.isValid) continue; // check population validity only
+                    }
+                    @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                    @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
+                        if(skipped++ < @(skip)) continue;
+                    }
+                    @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
+                        if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                            rowEntity.populate();
+                            result.add(rowEntity);
+                            //nonMatching = null;
+                            recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                            //break;
+                        } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+                            nonMatching = rowEntity.populateRight();
+                        }                                     
+                    } else {
+                        if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                            rowEntity.populate();
+                            result.add(rowEntity);
+                            //nonMatching = null;
+                            recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                            //break;
+                        }
+                        else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+                            nonMatching = rowEntity.populateRight();
+                        }                            
+                    }	
+                }
             }
-            return result;
+            if(nonMatching != null && recordMatched == false)
+                    result.add(nonMatching);
+            @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                if(taken++ >= @(take)) break;
+            }
+        }
+        @if(Ordering!= null && Ordering.size() > 0){ // the result should be sorted. in this case, the limit clause has not been applied yet
+            result = result.stream().sorted(sorter)
+            @if(skip > -1){
+                .skip(@(skip))
+            }
+            @if(take > -1){
+                .limit(@(take))
+            }
+            .collect(Collectors.toList());
+        }
+        return result;
                     
         @//////////////////////////////////////////////////////////////////////
         }
