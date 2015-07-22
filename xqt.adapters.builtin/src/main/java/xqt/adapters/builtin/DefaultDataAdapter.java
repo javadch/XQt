@@ -485,7 +485,9 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 throw new Exception("No dependecy trace is found"); // is caught by the next catch block
             if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
                 builder.recordPerspective(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective());
-                if(select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
+                // this IF may cause some issues, take care or it!!!
+                if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit
+                        || select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
                     // The current variable based statement is reading data from another statement's output sx, so that sx was having a physical schema
                     // This is why the select has no attribute! in perspective less statemets, the schema is lazily extracted from the data container, which causes the
                     // depending satetement remain attribute less!

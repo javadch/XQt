@@ -61,14 +61,15 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     public PerspectiveDescriptor createCanonicPerspective() {
         PerspectiveDescriptor canonic = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
         canonic.setId("canonic_Perspective_"+ id);
-        for (Map.Entry<String, PerspectiveAttributeDescriptor> entrySet : attributes.entrySet()) {
-            PerspectiveAttributeDescriptor sourceAtt = entrySet.getValue();
+        for (PerspectiveAttributeDescriptor sourceAtt : attributes.values()
+                .stream().filter(p->p.isAuxiliary() == false).collect(Collectors.toList())) {
+            //PerspectiveAttributeDescriptor sourceAtt = entry;
             PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
             attribute.setId(sourceAtt.getId());
             attribute.setDataType(sourceAtt.getDataType());
             MemberExpression fwd = Expression.Member(sourceAtt.getId(), sourceAtt.getDataType());
             MemberExpression rvs = Expression.Member(sourceAtt.getId(), sourceAtt.getDataType());
-            
+            attribute.setAuxiliary(sourceAtt.isAuxiliary());
             attribute.setForwardExpression(fwd);
             attribute.setReverseExpression(rvs);
             canonic.addAttribute(attribute);            
