@@ -42,7 +42,9 @@ public class LanguageServicePoint {
     protected ClassLoader classLoader = null;
     
     public LanguageServicePoint(){
-        
+        // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!
+        // 
+        com.jidesoft.utils.Lm.verifyLicense("Friedrich Schiller University of Jena", "SciQuest", "iBVmHbKikKMgQhcRthIhOwcUROnqer3");
     }
 
     // it is to keep the ctors clean
