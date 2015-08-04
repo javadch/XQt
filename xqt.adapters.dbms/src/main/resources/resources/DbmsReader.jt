@@ -1,0 +1,126 @@
+@import com.vaiona.commons.data.*
+@import com.vaiona.commons.types.*;
+
+@args() {
+    String sourceOfData,
+    boolean writeResultsToFile,
+    String rowHeader,
+    String linePattern,
+    String namespace,
+    String BaseClassName,
+    String RecordClassName,
+    String EntityClassName,
+    String ReaderClassName,
+    String LeftClassName,
+    String RightClassName,
+    String TargetRowType,
+    String Where,
+    Map<AttributeInfo, String> Ordering,
+    Integer skip,
+    Integer take,
+    String ContainerName,
+    String NativeQuery
+}
+
+package @(namespace);
+
+import @(namespace).*;
+import com.vaiona.commons.logging.*;
+import com.vaiona.commons.data.*;
+import java.io.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import xqt.adapters.dbms.DbmsDataReader;
+
+public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> {
+
+    String  connectionString = "";
+    String  userName = "";
+    String  password = "";
+    List<FieldInfo> fields = null;
+
+    public List<@(TargetRowType)> read(List<@(LeftClassName)> source1, List<@(RightClassName)> source2)  throws FileNotFoundException, IOException {
+        ResultSet rs = null;
+        @if(sourceOfData.equalsIgnoreCase("container")){
+            Connection connection = null;
+            try {
+                Class.forName("org.postgresql.Driver");
+            } catch (Exception e) {
+                System.err.println(e.getClass().getName()+ ": " + e.getMessage()); // change to better exceptions
+                return null;
+            }        
+            try {
+                connection = DriverManager.getConnection(connectionString, userName, password);
+            } catch (SQLException e) {
+                    System.err.println("Connection Failed! Check output console");
+                    return null;
+            }
+
+            if (connection != null) {
+                try{
+                    try (Statement stmt = connection.createStatement()) {
+                        rs = stmt.executeQuery("@(NativeQuery)");
+                        List<@(EntityClassName)> result = new ArrayList<>();
+                        int rowCounter = 0;
+                        while(rs.next()){
+                            System.out.println("Processing row #" + rowCounter);
+                            rowCounter++;
+                            @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, fields));
+                            if(entity.isValid == true){
+                                entity.populate();
+                                if(entity.isValid == true){
+                                    result.add(entity);
+                                }
+                            } 
+                        }
+                        connection.close();
+                        return result;
+                    }
+                } catch (SQLException ex){
+                    System.err.println("Failed to obtain the result set! " + ex.getMessage());
+                    return null;
+                }
+            } else {
+                    System.out.println("Failed to make a connection!");
+                    return null;
+            }            
+        }
+    }
+
+
+    @@Override
+    public DbmsDataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> connectionString(String value) {
+        connectionString = value;
+        return this;
+    }
+
+    @@Override
+    public DbmsDataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> userName(String value) {
+        userName = value;
+        return this;
+    }
+
+    @@Override
+    public DbmsDataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> password(String value) {
+        password = value;
+        return this;
+    }
+
+    @@Override
+    public DbmsDataReader fields(List<FieldInfo> value) {
+        fields = value;
+        return this;
+    }    
+}

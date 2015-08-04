@@ -47,7 +47,7 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
             try{
                 try (Statement stmt = connection.createStatement()) {
                     //String sql = "SELECT attnum as fieldOrder, attname AS fieldName, format_type(atttypid, atttypmod) AS fieldType " +
-                    String sql = "SELECT attnum as fieldOrder, attname AS fieldName, format_type(atttypid, NULL) AS fieldType " +
+                    String sql = "SELECT attnum - 1 as fieldOrder, attname AS fieldName, format_type(atttypid, NULL) AS fieldType " +
                             "FROM   pg_attribute " +
                             "WHERE  attrelid = '" + container.getContainerName() + "'::regclass " +
                             "AND    NOT attisdropped " +
@@ -81,9 +81,9 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
  
     @Override
     public String getConnectionString(SingleContainer container){
-        String serverName = container.getBinding().getConnection().getParameters().get("Server").getValue();
-        String port = container.getBinding().getConnection().getParameters().get("Port").getValue();
-        String dbName = container.getBinding().getConnection().getParameters().get("DbName").getValue();
+        String serverName = container.getBinding().getConnection().getParameters().get("server").getValue();
+        String port = container.getBinding().getConnection().getParameters().get("port").getValue();
+        String dbName = container.getBinding().getConnection().getParameters().get("dbname").getValue();
         String connectionString = MessageFormat.format("jdbc:postgresql://{0}:{1}/{2}", serverName, port, dbName);
         return connectionString;
     }
@@ -112,24 +112,20 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     
     @Override
     public String getContainerUsername(SingleContainer container){
-        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
-        switch (p.getValue().toLowerCase()){
-            case "postgresql":
-                return container.getBinding().getConnection().getParameters().get("Username").getValue();
-            default:
-                return "";
-        }        
+        try{
+            return container.getBinding().getConnection().getParameters().get("username").getValue();
+        } catch (Exception ex){
+            return "";
+        }
     }
     
     @Override
     public String getContainerPassword(SingleContainer container){
-        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("Provider");
-        switch (p.getValue().toLowerCase()){
-            case "postgresql":
-                return container.getBinding().getConnection().getParameters().get("Password").getValue();
-            default:
-                return "";
-        }        
+        try{
+            return container.getBinding().getConnection().getParameters().get("password").getValue();
+        } catch (Exception ex){
+            return "";
+        }
     }
     
     @Override
@@ -141,6 +137,14 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     @Override
     public String assembleQuery(Map<String, Object> clauses){// its called from the builder!
         String query = "SELECT * FROM " + clauses.get("ContainerName");
+        // generate the projection clause -> ((temp_lo+temp_hi)/2) as Temperature, xyz as xyz, beware of functions SUBSTRING(x, 0, 10) as m,
+        // generate the source clause
+        // generate the filter clause
+        // generate the goup by clause
+        // generate the ordering clause
+        // generate the offestting clause
         return query;
     }
+    
+    
 }

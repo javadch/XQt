@@ -1,4 +1,4 @@
-// Generated from D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\xqt\lang\grammar\source\XQt.g4 by ANTLR 4.2.2
+// Generated from D:\Projects\PhD\Src\XQt\xqt.lang\src\main\java\xqt\lang\grammar\source\XQt.g4 by ANTLR 4.5
 package xqt.lang.grammar;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -17,972 +17,900 @@ public class XQtBaseListener implements XQtListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFunction_package(@NotNull XQtParser.Function_packageContext ctx) { }
+	@Override public void enterCreateProcessModel(XQtParser.CreateProcessModelContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFunction_package(@NotNull XQtParser.Function_packageContext ctx) { }
-
+	@Override public void exitCreateProcessModel(XQtParser.CreateProcessModelContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArgument(@NotNull XQtParser.ArgumentContext ctx) { }
+	@Override public void enterProcess(XQtParser.ProcessContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArgument(@NotNull XQtParser.ArgumentContext ctx) { }
-
+	@Override public void exitProcess(XQtParser.ProcessContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBindingRef(@NotNull XQtParser.BindingRefContext ctx) { }
+	@Override public void enterPerspective(XQtParser.PerspectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBindingRef(@NotNull XQtParser.BindingRefContext ctx) { }
-
+	@Override public void exitPerspective(XQtParser.PerspectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParameter_def(@NotNull XQtParser.Parameter_defContext ctx) { }
+	@Override public void enterAttribute(XQtParser.AttributeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitParameter_def(@NotNull XQtParser.Parameter_defContext ctx) { }
-
+	@Override public void exitAttribute(XQtParser.AttributeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_value(@NotNull XQtParser.Expression_valueContext ctx) { }
+	@Override public void enterConnection(XQtParser.ConnectionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_value(@NotNull XQtParser.Expression_valueContext ctx) { }
-
+	@Override public void exitConnection(XQtParser.ConnectionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBinding(@NotNull XQtParser.BindingContext ctx) { }
+	@Override public void enterParameter_def(XQtParser.Parameter_defContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBinding(@NotNull XQtParser.BindingContext ctx) { }
-
+	@Override public void exitParameter_def(XQtParser.Parameter_defContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) { }
+	@Override public void enterBinding(XQtParser.BindingContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) { }
-
+	@Override public void exitBinding(XQtParser.BindingContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterJoinSpecification(@NotNull XQtParser.JoinSpecificationContext ctx) { }
+	@Override public void enterBinding_scope_def(XQtParser.Binding_scope_defContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitJoinSpecification(@NotNull XQtParser.JoinSpecificationContext ctx) { }
-
+	@Override public void exitBinding_scope_def(XQtParser.Binding_scope_defContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPath(@NotNull XQtParser.PathContext ctx) { }
+	@Override public void enterStatement(XQtParser.StatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPath(@NotNull XQtParser.PathContext ctx) { }
-
+	@Override public void exitStatement(XQtParser.StatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_add(@NotNull XQtParser.Expression_addContext ctx) { }
+	@Override public void enterDataStatement(XQtParser.DataStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_add(@NotNull XQtParser.Expression_addContext ctx) { }
-
+	@Override public void exitDataStatement(XQtParser.DataStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterConnection(@NotNull XQtParser.ConnectionContext ctx) { }
+	@Override public void enterDataRetrievalStatement(XQtParser.DataRetrievalStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitConnection(@NotNull XQtParser.ConnectionContext ctx) { }
-
+	@Override public void exitDataRetrievalStatement(XQtParser.DataRetrievalStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSelectStatement(@NotNull XQtParser.SelectStatementContext ctx) { }
+	@Override public void enterSelectStatement(XQtParser.SelectStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSelectStatement(@NotNull XQtParser.SelectStatementContext ctx) { }
-
+	@Override public void exitSelectStatement(XQtParser.SelectStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_compare(@NotNull XQtParser.Expression_compareContext ctx) { }
+	@Override public void enterSetQualifierClause(XQtParser.SetQualifierClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_compare(@NotNull XQtParser.Expression_compareContext ctx) { }
-
+	@Override public void exitSetQualifierClause(XQtParser.SetQualifierClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterCreateProcessModel(@NotNull XQtParser.CreateProcessModelContext ctx) { }
+	@Override public void enterProjectionClause_Perspective(XQtParser.ProjectionClause_PerspectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitCreateProcessModel(@NotNull XQtParser.CreateProcessModelContext ctx) { }
-
+	@Override public void exitProjectionClause_Perspective(XQtParser.ProjectionClause_PerspectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDataRetrievalStatement(@NotNull XQtParser.DataRetrievalStatementContext ctx) { }
+	@Override public void enterProjectionClause_Inline(XQtParser.ProjectionClause_InlineContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDataRetrievalStatement(@NotNull XQtParser.DataRetrievalStatementContext ctx) { }
-
+	@Override public void exitProjectionClause_Inline(XQtParser.ProjectionClause_InlineContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_nest(@NotNull XQtParser.Expression_nestContext ctx) { }
+	@Override public void enterInlineAttribute(XQtParser.InlineAttributeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_nest(@NotNull XQtParser.Expression_nestContext ctx) { }
-
+	@Override public void exitInlineAttribute(XQtParser.InlineAttributeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSequenceVersionSelector(@NotNull XQtParser.SequenceVersionSelectorContext ctx) { }
+	@Override public void enterSourceSelectionClause(XQtParser.SourceSelectionClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSequenceVersionSelector(@NotNull XQtParser.SequenceVersionSelectorContext ctx) { }
-
+	@Override public void exitSourceSelectionClause(XQtParser.SourceSelectionClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPathAttribute(@NotNull XQtParser.PathAttributeContext ctx) { }
+	@Override public void enterSourceRef(XQtParser.SourceRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPathAttribute(@NotNull XQtParser.PathAttributeContext ctx) { }
-
+	@Override public void exitSourceRef(XQtParser.SourceRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_function(@NotNull XQtParser.Expression_functionContext ctx) { }
+	@Override public void enterJoinedSource(XQtParser.JoinedSourceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_function(@NotNull XQtParser.Expression_functionContext ctx) { }
-
+	@Override public void exitJoinedSource(XQtParser.JoinedSourceContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDataType(@NotNull XQtParser.DataTypeContext ctx) { }
+	@Override public void enterJoinDescription(XQtParser.JoinDescriptionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDataType(@NotNull XQtParser.DataTypeContext ctx) { }
-
+	@Override public void exitJoinDescription(XQtParser.JoinDescriptionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_power(@NotNull XQtParser.Expression_powerContext ctx) { }
+	@Override public void enterJoinSpecification(XQtParser.JoinSpecificationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_power(@NotNull XQtParser.Expression_powerContext ctx) { }
-
+	@Override public void exitJoinSpecification(XQtParser.JoinSpecificationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) { }
+	@Override public void enterSingleContainer(XQtParser.SingleContainerContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSingleContainer(@NotNull XQtParser.SingleContainerContext ctx) { }
-
+	@Override public void exitSingleContainer(XQtParser.SingleContainerContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterGroupClause(@NotNull XQtParser.GroupClauseContext ctx) { }
+	@Override public void enterBindingRef(XQtParser.BindingRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitGroupClause(@NotNull XQtParser.GroupClauseContext ctx) { }
-
+	@Override public void exitBindingRef(XQtParser.BindingRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSortKey(@NotNull XQtParser.SortKeyContext ctx) { }
+	@Override public void enterContainerRef(XQtParser.ContainerRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSortKey(@NotNull XQtParser.SortKeyContext ctx) { }
-
+	@Override public void exitContainerRef(XQtParser.ContainerRefContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSimpleIdentifier(@NotNull XQtParser.SimpleIdentifierContext ctx) { }
+	@Override public void enterTargetSelectionClause(XQtParser.TargetSelectionClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSimpleIdentifier(@NotNull XQtParser.SimpleIdentifierContext ctx) { }
-
+	@Override public void exitTargetSelectionClause(XQtParser.TargetSelectionClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOrderClause(@NotNull XQtParser.OrderClauseContext ctx) { }
+	@Override public void enterPlot(XQtParser.PlotContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOrderClause(@NotNull XQtParser.OrderClauseContext ctx) { }
-
+	@Override public void exitPlot(XQtParser.PlotContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSortOrder(@NotNull XQtParser.SortOrderContext ctx) { }
+	@Override public void enterAnchorClause(XQtParser.AnchorClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSortOrder(@NotNull XQtParser.SortOrderContext ctx) { }
-
+	@Override public void exitAnchorClause(XQtParser.AnchorClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSemanticKey(@NotNull XQtParser.SemanticKeyContext ctx) { }
+	@Override public void enterFilterClause(XQtParser.FilterClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSemanticKey(@NotNull XQtParser.SemanticKeyContext ctx) { }
-
+	@Override public void exitFilterClause(XQtParser.FilterClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { }
+	@Override public void enterOrderClause(XQtParser.OrderClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitProjectionClause_Inline(@NotNull XQtParser.ProjectionClause_InlineContext ctx) { }
-
+	@Override public void exitOrderClause(XQtParser.OrderClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSourceRef(@NotNull XQtParser.SourceRefContext ctx) { }
+	@Override public void enterSortSpecification(XQtParser.SortSpecificationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSourceRef(@NotNull XQtParser.SourceRefContext ctx) { }
-
+	@Override public void exitSortSpecification(XQtParser.SortSpecificationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSmartId(@NotNull XQtParser.SmartIdContext ctx) { }
+	@Override public void enterSortKey(XQtParser.SortKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSmartId(@NotNull XQtParser.SmartIdContext ctx) { }
-
+	@Override public void exitSortKey(XQtParser.SortKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterJoinedSource(@NotNull XQtParser.JoinedSourceContext ctx) { }
+	@Override public void enterSortOrder(XQtParser.SortOrderContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitJoinedSource(@NotNull XQtParser.JoinedSourceContext ctx) { }
-
+	@Override public void exitSortOrder(XQtParser.SortOrderContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_smart(@NotNull XQtParser.Expression_smartContext ctx) { }
+	@Override public void enterNullOrder(XQtParser.NullOrderContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_smart(@NotNull XQtParser.Expression_smartContext ctx) { }
-
+	@Override public void exitNullOrder(XQtParser.NullOrderContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_not(@NotNull XQtParser.Expression_notContext ctx) { }
+	@Override public void enterLimitClause(XQtParser.LimitClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_not(@NotNull XQtParser.Expression_notContext ctx) { }
-
+	@Override public void exitLimitClause(XQtParser.LimitClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSourceSelectionClause(@NotNull XQtParser.SourceSelectionClauseContext ctx) { }
+	@Override public void enterGroupClause(XQtParser.GroupClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSourceSelectionClause(@NotNull XQtParser.SourceSelectionClauseContext ctx) { }
-
+	@Override public void exitGroupClause(XQtParser.GroupClauseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterJoinDescription(@NotNull XQtParser.JoinDescriptionContext ctx) { }
+	@Override public void enterVariable(XQtParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitJoinDescription(@NotNull XQtParser.JoinDescriptionContext ctx) { }
-
+	@Override public void exitVariable(XQtParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLabelVersionSelector(@NotNull XQtParser.LabelVersionSelectorContext ctx) { }
+	@Override public void enterSearchPhrase(XQtParser.SearchPhraseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLabelVersionSelector(@NotNull XQtParser.LabelVersionSelectorContext ctx) { }
-
+	@Override public void exitSearchPhrase(XQtParser.SearchPhraseContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { }
+	@Override public void enterIntNumber(XQtParser.IntNumberContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitProjectionClause_Perspective(@NotNull XQtParser.ProjectionClause_PerspectiveContext ctx) { }
-
+	@Override public void exitIntNumber(XQtParser.IntNumberContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSortSpecification(@NotNull XQtParser.SortSpecificationContext ctx) { }
+	@Override public void enterFloatNumber(XQtParser.FloatNumberContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSortSpecification(@NotNull XQtParser.SortSpecificationContext ctx) { }
-
+	@Override public void exitFloatNumber(XQtParser.FloatNumberContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_mult(@NotNull XQtParser.Expression_multContext ctx) { }
+	@Override public void enterExpression_not(XQtParser.Expression_notContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_mult(@NotNull XQtParser.Expression_multContext ctx) { }
-
+	@Override public void exitExpression_not(XQtParser.Expression_notContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPathEntity(@NotNull XQtParser.PathEntityContext ctx) { }
+	@Override public void enterExpression_nest(XQtParser.Expression_nestContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPathEntity(@NotNull XQtParser.PathEntityContext ctx) { }
-
+	@Override public void exitExpression_nest(XQtParser.Expression_nestContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNullOrder(@NotNull XQtParser.NullOrderContext ctx) { }
+	@Override public void enterExpression_identifier(XQtParser.Expression_identifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNullOrder(@NotNull XQtParser.NullOrderContext ctx) { }
-
+	@Override public void exitExpression_identifier(XQtParser.Expression_identifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterQualifiedIdentifier(@NotNull XQtParser.QualifiedIdentifierContext ctx) { }
+	@Override public void enterExpression_function(XQtParser.Expression_functionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitQualifiedIdentifier(@NotNull XQtParser.QualifiedIdentifierContext ctx) { }
-
+	@Override public void exitExpression_function(XQtParser.Expression_functionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLiteral(@NotNull XQtParser.LiteralContext ctx) { }
+	@Override public void enterExpression_value(XQtParser.Expression_valueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLiteral(@NotNull XQtParser.LiteralContext ctx) { }
-
+	@Override public void exitExpression_value(XQtParser.Expression_valueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_andOr(@NotNull XQtParser.Expression_andOrContext ctx) { }
+	@Override public void enterExpression_mult(XQtParser.Expression_multContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_andOr(@NotNull XQtParser.Expression_andOrContext ctx) { }
-
+	@Override public void exitExpression_mult(XQtParser.Expression_multContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx) { }
+	@Override public void enterExpression_power(XQtParser.Expression_powerContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTargetSelectionClause(@NotNull XQtParser.TargetSelectionClauseContext ctx) { }
-
+	@Override public void exitExpression_power(XQtParser.Expression_powerContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPlot(@NotNull XQtParser.PlotContext ctx) { }
+	@Override public void enterExpression_aAndOr(XQtParser.Expression_aAndOrContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPlot(@NotNull XQtParser.PlotContext ctx) { }
-
+	@Override public void exitExpression_aAndOr(XQtParser.Expression_aAndOrContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStatement(@NotNull XQtParser.StatementContext ctx) { }
+	@Override public void enterExpression_andOr(XQtParser.Expression_andOrContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitStatement(@NotNull XQtParser.StatementContext ctx) { }
-
+	@Override public void exitExpression_andOr(XQtParser.Expression_andOrContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPerspective(@NotNull XQtParser.PerspectiveContext ctx) { }
+	@Override public void enterExpression_add(XQtParser.Expression_addContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPerspective(@NotNull XQtParser.PerspectiveContext ctx) { }
-
+	@Override public void exitExpression_add(XQtParser.Expression_addContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_negate(@NotNull XQtParser.Expression_negateContext ctx) { }
+	@Override public void enterExpression_is(XQtParser.Expression_isContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_negate(@NotNull XQtParser.Expression_negateContext ctx) { }
-
+	@Override public void exitExpression_is(XQtParser.Expression_isContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAttribute(@NotNull XQtParser.AttributeContext ctx) { }
+	@Override public void enterExpression_negate(XQtParser.Expression_negateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAttribute(@NotNull XQtParser.AttributeContext ctx) { }
-
+	@Override public void exitExpression_negate(XQtParser.Expression_negateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterValue(@NotNull XQtParser.ValueContext ctx) { }
+	@Override public void enterExpression_compare(XQtParser.Expression_compareContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitValue(@NotNull XQtParser.ValueContext ctx) { }
-
+	@Override public void exitExpression_compare(XQtParser.Expression_compareContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVersionSelector(@NotNull XQtParser.VersionSelectorContext ctx) { }
+	@Override public void enterExpression_smart(XQtParser.Expression_smartContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVersionSelector(@NotNull XQtParser.VersionSelectorContext ctx) { }
-
+	@Override public void exitExpression_smart(XQtParser.Expression_smartContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAnchorClause(@NotNull XQtParser.AnchorClauseContext ctx) { }
+	@Override public void enterFunction_simple(XQtParser.Function_simpleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAnchorClause(@NotNull XQtParser.AnchorClauseContext ctx) { }
-
+	@Override public void exitFunction_simple(XQtParser.Function_simpleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterProcess(@NotNull XQtParser.ProcessContext ctx) { }
+	@Override public void enterFunction_package(XQtParser.Function_packageContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitProcess(@NotNull XQtParser.ProcessContext ctx) { }
-
+	@Override public void exitFunction_package(XQtParser.Function_packageContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFilterClause(@NotNull XQtParser.FilterClauseContext ctx) { }
+	@Override public void enterArgument(XQtParser.ArgumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFilterClause(@NotNull XQtParser.FilterClauseContext ctx) { }
-
+	@Override public void exitArgument(XQtParser.ArgumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx) { }
+	@Override public void enterPackagedIdentifier(XQtParser.PackagedIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitInlineAttribute(@NotNull XQtParser.InlineAttributeContext ctx) { }
-
+	@Override public void exitPackagedIdentifier(XQtParser.PackagedIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx) { }
+	@Override public void enterSmartId(XQtParser.SmartIdContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdentifier_simple(@NotNull XQtParser.Identifier_simpleContext ctx) { }
-
+	@Override public void exitSmartId(XQtParser.SmartIdContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx) { }
+	@Override public void enterDataType(XQtParser.DataTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSearchPhrase(@NotNull XQtParser.SearchPhraseContext ctx) { }
-
+	@Override public void exitDataType(XQtParser.DataTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx) { }
+	@Override public void enterSemanticKey(XQtParser.SemanticKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIdentifier_qulaified(@NotNull XQtParser.Identifier_qulaifiedContext ctx) { }
-
+	@Override public void exitSemanticKey(XQtParser.SemanticKeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx) { }
+	@Override public void enterValue(XQtParser.ValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_identifier(@NotNull XQtParser.Expression_identifierContext ctx) { }
-
+	@Override public void exitValue(XQtParser.ValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFunction_simple(@NotNull XQtParser.Function_simpleContext ctx) { }
+	@Override public void enterIdentifier_qulaified(XQtParser.Identifier_qulaifiedContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFunction_simple(@NotNull XQtParser.Function_simpleContext ctx) { }
-
+	@Override public void exitIdentifier_qulaified(XQtParser.Identifier_qulaifiedContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLimitClause(@NotNull XQtParser.LimitClauseContext ctx) { }
+	@Override public void enterIdentifier_simple(XQtParser.Identifier_simpleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLimitClause(@NotNull XQtParser.LimitClauseContext ctx) { }
-
+	@Override public void exitIdentifier_simple(XQtParser.Identifier_simpleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDateVersionSelector(@NotNull XQtParser.DateVersionSelectorContext ctx) { }
+	@Override public void enterVersionSelector(XQtParser.VersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDateVersionSelector(@NotNull XQtParser.DateVersionSelectorContext ctx) { }
-
+	@Override public void exitVersionSelector(XQtParser.VersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFloatNumber(@NotNull XQtParser.FloatNumberContext ctx) { }
+	@Override public void enterLabelVersionSelector(XQtParser.LabelVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFloatNumber(@NotNull XQtParser.FloatNumberContext ctx) { }
-
+	@Override public void exitLabelVersionSelector(XQtParser.LabelVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_aAndOr(@NotNull XQtParser.Expression_aAndOrContext ctx) { }
+	@Override public void enterSequenceVersionSelector(XQtParser.SequenceVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_aAndOr(@NotNull XQtParser.Expression_aAndOrContext ctx) { }
-
+	@Override public void exitSequenceVersionSelector(XQtParser.SequenceVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx) { }
+	@Override public void enterDateVersionSelector(XQtParser.DateVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPackagedIdentifier(@NotNull XQtParser.PackagedIdentifierContext ctx) { }
-
+	@Override public void exitDateVersionSelector(XQtParser.DateVersionSelectorContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterContainerRef(@NotNull XQtParser.ContainerRefContext ctx) { }
+	@Override public void enterSimpleIdentifier(XQtParser.SimpleIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitContainerRef(@NotNull XQtParser.ContainerRefContext ctx) { }
-
+	@Override public void exitSimpleIdentifier(XQtParser.SimpleIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariable(@NotNull XQtParser.VariableContext ctx) { }
+	@Override public void enterQualifiedIdentifier(XQtParser.QualifiedIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariable(@NotNull XQtParser.VariableContext ctx) { }
-
+	@Override public void exitQualifiedIdentifier(XQtParser.QualifiedIdentifierContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterExpression_is(@NotNull XQtParser.Expression_isContext ctx) { }
+	@Override public void enterLiteral(XQtParser.LiteralContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitExpression_is(@NotNull XQtParser.Expression_isContext ctx) { }
-
+	@Override public void exitLiteral(XQtParser.LiteralContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDataStatement(@NotNull XQtParser.DataStatementContext ctx) { }
+	@Override public void enterPath(XQtParser.PathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDataStatement(@NotNull XQtParser.DataStatementContext ctx) { }
-
+	@Override public void exitPath(XQtParser.PathContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterIntNumber(@NotNull XQtParser.IntNumberContext ctx) { }
+	@Override public void enterPathEntity(XQtParser.PathEntityContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitIntNumber(@NotNull XQtParser.IntNumberContext ctx) { }
-
+	@Override public void exitPathEntity(XQtParser.PathEntityContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterBinding_scope_def(@NotNull XQtParser.Binding_scope_defContext ctx) { }
+	@Override public void enterPathAttribute(XQtParser.PathAttributeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitBinding_scope_def(@NotNull XQtParser.Binding_scope_defContext ctx) { }
+	@Override public void exitPathAttribute(XQtParser.PathAttributeContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEveryRule(@NotNull ParserRuleContext ctx) { }
+	@Override public void enterEveryRule(ParserRuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEveryRule(@NotNull ParserRuleContext ctx) { }
+	@Override public void exitEveryRule(ParserRuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitTerminal(@NotNull TerminalNode node) { }
+	@Override public void visitTerminal(TerminalNode node) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitErrorNode(@NotNull ErrorNode node) { }
+	@Override public void visitErrorNode(ErrorNode node) { }
 }

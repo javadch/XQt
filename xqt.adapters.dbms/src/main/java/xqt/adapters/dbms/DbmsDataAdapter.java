@@ -6,13 +6,17 @@
 package xqt.adapters.dbms;
 
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.logging.LoggerHelper;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
@@ -20,6 +24,7 @@ import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
+import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
@@ -50,7 +55,7 @@ public class DbmsDataAdapter implements DataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GT, ">");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
-        runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<="); 
     }
 
     @Override
@@ -71,8 +76,8 @@ public class DbmsDataAdapter implements DataAdapter{
     @Override
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", true);
-        registerCapability("function", true);
-        registerCapability("function.default.max", true);
+        registerCapability("function", false);
+        registerCapability("function.default.max", false);
         registerCapability("expression", true);
         registerCapability("select.projection.perspective", true);
         registerCapability("select.projection.perspective.implicit", true);
@@ -86,33 +91,39 @@ public class DbmsDataAdapter implements DataAdapter{
         registerCapability("select.target.plot", false);
         registerCapability("select.anchor", false);
         registerCapability("select.filter", true);
-        registerCapability("select.orderby", true);
-        registerCapability("select.groupby", true);
-        registerCapability("select.limit", true);
-        registerCapability("select.limit.take", true);
-        registerCapability("select.limit.skip", true);
+        registerCapability("select.orderby", false);
+        registerCapability("select.groupby", false);
+        registerCapability("select.limit", false);
+        registerCapability("select.limit.take", false);
+        registerCapability("select.limit.skip", false);
     }
 
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//        switch (select.getSourceClause().getContainer().getDataContainerType()) {
-//            case Single:
-//                return runForSingleContainer(select, context);
-//            case Joined:
-//                return runForJoinedContainer(select, context);
-//            case Variable:
-//                if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
+        LoggerHelper.logDebug(MessageFormat.format("The DBMS adapter started running statement {0}.",select.getId()));        
+        Resultset resultset = null;
+        switch (select.getSourceClause().getContainer().getDataContainerType()) {
+            case Single:
+                resultset = runForSingleContainer(select, context);
+                break;
+            case Joined:
+//                resultset = runForJoinedContainer(select, context);
+                break;
+            case Variable:
+                if(select.getTargetClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
 //                    try {
-//                        return runForVariable_SingleContainer(select, context);
+//                        resultset = runForVariable_SingleContainer(select, context);
 //                    } catch (IOException ex) {
-//                        return null;
+//                        resultset = null;
 //                    }
-//                }
-//                return null;
-//            default:
-//                return null;
-//        }
+                }
+                break;
+            default:
+                resultset = null;
+        }
+        LoggerHelper.logDebug(MessageFormat.format("The DBMS adapter finished running statement {0}.",select.getId()));
+        LoggerHelper.logDebug(MessageFormat.format("statement {0} execution had {1} result.", select.getId(), resultset == null? "no": "a"));        
+        return resultset;
     }
 
     @Override
@@ -128,7 +139,9 @@ public class DbmsDataAdapter implements DataAdapter{
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
                 .namespace("xqt.adapters.dbms")
-                .entityResourceName("Entity")
+                .statementId(select.getId())
+                .dialect(dialect)
+                .namesCaseSensitive(false) // meybe need to be true for PgS
             ;
             switch (select.getSourceClause().getContainer().getDataContainerType()) {
                 case Single:
@@ -136,6 +149,8 @@ public class DbmsDataAdapter implements DataAdapter{
                     break;
                 case Joined:
                     //prepareJoined(select);
+                // do not forget to set this inside the function - > .entityResourceName(helper.getEntityResourceName())
+
                     break;
                 case Variable:
                     // Its one of these cases: 
@@ -210,9 +225,13 @@ public class DbmsDataAdapter implements DataAdapter{
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try{
             helper = DbmsDataAdapterHelper.getConcreteHelper(container);
-            builder.containerName(container.getContainerName())
-                   .addFields(helper.getContinerSchema(container));
-            builder.registerQueryHelper(helper);
+            builder.registerQueryHelper(helper)                   
+                   .containerName(container.getContainerName())
+                   .addFields(helper.getContinerSchema(container))
+                   .entityResourceName(helper.getEntityResourceName())
+                   .sourceOfData("container") 
+                    ;
+        
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit) {
                 select.getProjectionClause().setPerspective(
@@ -224,15 +243,16 @@ public class DbmsDataAdapter implements DataAdapter{
             } else { // see whether there exists any attribute of unkown type!
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
+                // extract referenced fields from the perspective and other clauses, then remove the not-used ones from the field list
             }
             builder.connectionString(helper.getConnectionString(container))
                    .username(helper.getContainerUsername(container))
-                   .password(helper.getContainerUsername(container))
+                   .password(helper.getContainerPassword(container))
                    .dbProvider(DBMSDialect.getEnum(helper.getContainerDialectId(container)));
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
-                builder.readerResourceName("AggregateReader");
+                builder.readerResourceName(helper.getAggregateReaderResourceName());
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
@@ -286,7 +306,7 @@ public class DbmsDataAdapter implements DataAdapter{
                 }
                 
             } else { // no aggregate is present
-                builder.readerResourceName("Reader");
+                builder.readerResourceName(helper.getReaderResourceName());
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
@@ -421,4 +441,41 @@ public class DbmsDataAdapter implements DataAdapter{
                    .take(-1);
         }
     }    
+
+    private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
+        try{
+            //SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
+            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
+            DbmsDataReader<Object, Object, Object> reader = builder.build(entryPoint);
+            if(reader != null){
+                List<Object> result = reader
+                        .fields(builder.getFields().values().stream().collect(Collectors.toList()))
+                        .connectionString(builder.connectionString) //(helper.getConnectionString(container))
+                        .userName(builder.username)//(helper.getContainerUsername(container))
+                        .password(builder.password)//(helper.getContainerPassword(container))
+                        .read(null, null);
+                
+                //System.out.println("The result set contains " + result.stream().count() + " records.");
+                if(result != null){
+                    Resultset resultSet = new Resultset(ResultsetType.Tabular); 
+                    resultSet.setData(result);
+                    resultSet.setSchema(select.getProjectionClause().getPerspective().createSchema());
+                    return resultSet;
+                }else {
+                    return null;
+                }
+            }
+        } catch (Exception ex) {
+            select.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
+                    .setContextInfo1(select.getId())
+                    .setLineNumber(select.getParserContext().getStart().getLine())
+                    .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
+                    .build()
+            );            
+        }
+        return null;    
+    }
+
 }

@@ -47,4 +47,28 @@ public abstract class BaseAdapterHelper {
         return perspective.improve(fields);
     }    
     
+    public String getEntityResourceName() {
+        return "Entity";
+    }
+
+    public String getJoinedEntityResourceName() {
+        return "Entity";
+    }
+
+    public String getRecordResourceName() {
+        return "Entity";
+    }
+
+    public String getAggregateReaderResourceName() {
+        return "AggregateReader";
+    }
+
+    public String getReaderResourceName() {
+        return "Reader";
+    }
+
+    public String getJoinReaderResourceName() {
+        return "JoinReader";
+    }    
+    
 }

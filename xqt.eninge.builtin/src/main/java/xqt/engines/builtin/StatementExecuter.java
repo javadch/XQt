@@ -175,8 +175,8 @@ public class StatementExecuter implements StatementVisitor{
             }
             case Single:
             {
-                String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                 try {
+                    String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
                     String adapterDialect = getConnectionDialect((SingleContainer)select.getSourceClause().getContainer());
                     adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
@@ -187,7 +187,7 @@ public class StatementExecuter implements StatementVisitor{
                 catch (Exception ex) {
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()
-                            .setMessageTemplate("Could not load the adapter for '" + adapterType + "'. " + ex.getMessage())
+                            .setMessageTemplate("Could not load the adapter for statement '" + select.getId() + "'. " + ex.getMessage())
                             //.setContextInfo1(select.getId())
                             .setLineNumber(select.getSourceClause().getParserContext().getStart().getLine())
                             .setColumnNumber(-1)

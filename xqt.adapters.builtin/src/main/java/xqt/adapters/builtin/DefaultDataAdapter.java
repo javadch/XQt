@@ -51,6 +51,7 @@ import xqt.model.statements.query.SelectDescriptor;
  */
 public class DefaultDataAdapter extends BaseDataAdapter{
     private DataReaderBuilder builder = null;
+    private DefaultDataAdapterHelper helper = null;
     
     public DefaultDataAdapter(){
         needsMemory = true;
@@ -62,6 +63,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
+        helper = new DefaultDataAdapterHelper();
     }
     
     @Override
@@ -411,8 +413,8 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         builder.leftClassName(select.getDependsUpon().getEntityType().getFullName());
         builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
         
-        builder.readerResourceName("MemReader");
-        builder.entityResourceName("MemJoinedEntity");        
+        builder.readerResourceName(helper.getReaderResourceName());
+        builder.entityResourceName(helper.getJoinedEntityResourceName());        
         Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
         builder.addResultAttributes(attributes);
 //        builder.getAttributes().values().stream().forEach(at -> {
@@ -498,8 +500,8 @@ public class DefaultDataAdapter extends BaseDataAdapter{
             
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
-                builder.readerResourceName("MemAggregateReader")
-                       .entityResourceName("MemEntity");
+                builder.readerResourceName(helper.getAggregateReaderResourceName())
+                       .entityResourceName(helper.getEntityResourceName());
                 builder.sourceRowType(sourceRowType);
                 builder.addAggregates(aggregattionCallInfo);
                 Map<String, AttributeInfo> rowEntityAttributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false); // should not be needed
@@ -556,11 +558,11 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 builder.addResultAttributes(attributes);
                 // transform the ordering clauses to their bound equivalent, in each attribute names are linked to the attibutes objects
                 builder.sourceRowType(sourceRowType)
-                    .readerResourceName("MemReader")
+                    .readerResourceName(helper.getReaderResourceName())
                     .entityResourceName("");
                 if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Explicit
                     || select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
-                    builder.entityResourceName("MemEntity");
+                    builder.entityResourceName(helper.getEntityResourceName());
                 }    
                     
             }

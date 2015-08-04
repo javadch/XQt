@@ -23,7 +23,7 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
         basePath = basePath.concat(".").concat(container0);
         Boolean externalHeader = false;
         try{
-            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalHeader").getValue());
+            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalheader").getValue());
         } catch (Exception ex){}
         if(externalHeader){
             return basePath.concat(".hdr");
@@ -38,7 +38,7 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
         String fileExtention = "xlsx";
         String fileName = "";
         try{
-            fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
+            fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
         fileName = basePath.concat(".").concat(fileExtention);
         return fileName;
@@ -46,17 +46,17 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
     
     
     @Override
-    public String getAggregateReader() {
+    public String getAggregateReaderResourceName() {
         return "MSExcelAggregateReader";
     }
     
     @Override
-    public String getReader() {
+    public String getReaderResourceName() {
         return "MSExcelReader";
     }    
     
     @Override
-    public String getJoinReader() {
+    public String getJoinReaderResourceName() {
         return "MSExcelJoinReader";
     }    
 }

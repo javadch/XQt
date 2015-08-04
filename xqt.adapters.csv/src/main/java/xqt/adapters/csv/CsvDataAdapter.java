@@ -11,9 +11,7 @@ import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.DataReader;
 import com.vaiona.csv.reader.DataReaderBuilder;
-import com.vaiona.test.ExcelTest;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.LinkedHashMap;
@@ -63,7 +61,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
 
     @Override
     public Resultset run(SelectDescriptor select, Object context) {
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started running the statement {0}.",select.getId()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started running statement {0}.",select.getId()));        
         Resultset resultset = null;
         switch (select.getSourceClause().getContainer().getDataContainerType()) {
             case Single:
@@ -108,10 +106,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     return null;
                 resultSet.setData(result);
                 resultSet.setSchema(sourceVariable.getResult().getSchema());                               
-            } catch (ClassNotFoundException | IOException | IllegalAccessException | IllegalArgumentException 
-                    | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
-                // do something here!!  
-                return null;
             } catch (Exception ex){
                 return null;
             }
@@ -132,7 +126,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
                 //.addProjection("MAX", "SN")// MIN, SUM, COUNT, AVG, 
                 .namespace("com.vaiona.csv.reader")
-                .entityResourceName("Entity")
                 .dialect(dialect)
                 .namesCaseSensitive(false)
             ;
@@ -211,13 +204,15 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         helper = CsvDataAdapterHelper.getConcreteHelper(container);
+        builder.entityResourceName(helper.getEntityResourceName());
+
         try {
             String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
             builder.columnDelimiter(determineDeleimiter(columnDelimiter));
         } catch(Exception ex){
             builder.columnDelimiter(",");
         }
-        builder.sourceOfData("container");
+                builder.sourceOfData("container");
         builder.containerName(container.getContainerName());        
         try{
             builder.addFields(helper.getContinerSchema(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
@@ -237,7 +232,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
             if(hasAggregates){
-                builder.readerResourceName(helper.getAggregateReader());
+                builder.readerResourceName(helper.getAggregateReaderResourceName());
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
@@ -288,7 +283,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 prepareOrderBy(builder, select);
                 
             } else {
-                builder.readerResourceName(helper.getReader());
+                builder.readerResourceName(helper.getReaderResourceName());
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
@@ -368,7 +363,8 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         // it is assumed that the left and right containers are both using a same dialect!
         // In heterogeneous joins this should be properly handled
         helper = CsvDataAdapterHelper.getConcreteHelper(leftContainer);
-        builder.readerResourceName(helper.getJoinReader());
+        builder.entityResourceName(helper.getEntityResourceName())
+               .readerResourceName(helper.getJoinReaderResourceName());
 
         try {
             String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
@@ -511,6 +507,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     private void prepareVariable(SelectDescriptor select) throws Exception {
         // the source is a variable and the target is single container
         SingleContainer container =((SingleContainer)select.getTargetClause().getContainer());
+        helper = CsvDataAdapterHelper.getConcreteHelper(container);
         try {
             String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
             builder.columnDelimiter(determineDeleimiter(columnDelimiter));
@@ -518,7 +515,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.columnDelimiter(",");
         }
         builder.entityResourceName("");
-        builder.readerResourceName("Reader");
+        builder.readerResourceName(helper.getReaderResourceName());
         builder.sourceOfData("variable");
         
         if(select.getDependsUpon()!= null && select.getDependsUpon() instanceof SelectDescriptor ){
@@ -614,7 +611,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     return null;
                 }
             }
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+        } catch (Exception  ex) {
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
@@ -623,16 +620,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
                     .build()
             );            
-        }
-        catch (IOException ex){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                    .setMessageTemplate(ex.getMessage())
-                    .setContextInfo1(select.getId())
-                    .setLineNumber(select.getParserContext().getStart().getLine())
-                    .setColumnNumber(-1)
-                    .build()
-            );                        
         }
         return null;    
     }
@@ -657,8 +644,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             }else {
                 return null;
             }
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | 
-                InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+        } catch (Exception ex) {
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
@@ -667,16 +653,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
                     .build()
             );            
-        }
-        catch (IOException ex){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                    .setMessageTemplate(ex.getMessage())
-                    .setContextInfo1(select.getId())
-                    .setLineNumber(select.getParserContext().getStart().getLine())
-                    .setColumnNumber(-1)
-                    .build()
-            );                        
         }
         return null;    
     }
@@ -706,7 +682,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     return null;
                 }
             }
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+        } catch (Exception ex) {
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
@@ -715,16 +691,6 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
                     .build()
             );            
-        }
-        catch (IOException ex){
-            select.getLanguageExceptions().add(
-                LanguageExceptionBuilder.builder()
-                    .setMessageTemplate(ex.getMessage())
-                    .setContextInfo1(select.getId())
-                    .setLineNumber(select.getParserContext().getStart().getLine())
-                    .setColumnNumber(-1)
-                    .build()
-            );                        
         }
         return null;    
     }

@@ -68,7 +68,7 @@ public class ConnectionAnnotator {
         ConnectionParameterDescriptor paramDesc = new ConnectionParameterDescriptor();        
         paramDesc.setParserContext(ctx);
         if(ctx.ID()!= null){
-            paramDesc.setId(ctx.ID().getText());
+            paramDesc.setId(ctx.ID().getText().toLowerCase());
             //paramDesc.setName(paramDesc.getId());
 
             if(ctx.expression() != null){ //these items will be moved to expression visitor/ descriptor methds

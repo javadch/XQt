@@ -46,10 +46,11 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
     
     public static CsvDataAdapterHelper getConcreteHelper(SingleContainer container){
         switch (getContainerDialectName(container)){
-             case CSV:
-                 return new CsvDataAdapterHelper();
-             default:
+             case MSExcel:
                  return new MSExcelDataAdapterHelper();
+             case CSV:
+             default:
+                 return new CsvDataAdapterHelper();
          }          
     }
 
@@ -116,10 +117,10 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         Boolean externalHeader = false;
         String fileName = "";
         try{
-            fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
+            fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
         try{
-            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalHeader").getValue());
+            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalheader").getValue());
         } catch (Exception ex){}
         if(externalHeader){
             fileName = basePath.concat(container0).concat(".").concat(fileExtention).concat(".hdr");
@@ -135,7 +136,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         String fileExtention = "csv";
         String fileName = "";
         try{
-            fileExtention = container.getBinding().getConnection().getParameters().get("fileExtension").getValue();
+            fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
         fileName = basePath.concat(container0).concat(".").concat(fileExtention);
         return fileName;
@@ -149,7 +150,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             String fileExtention = "csv";
             try{
                 fileExtention = ((SingleContainer)target.getContainer())
-                        .getBinding().getConnection().getParameters().get("fileExtension").getValue();
+                        .getBinding().getConnection().getParameters().get("fileextension").getValue();
             } catch (Exception ex){}
             String fileName = basePath.concat(container0).concat(".").concat(fileExtention);
             return fileName;
@@ -159,20 +160,8 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
     }
     
     public boolean isFirstRowHeader(SingleContainer container){
-        boolean firstRowIsHeader = Boolean.valueOf(container.getBinding().getConnection().getParameters().get("firstRowIsHeader").getValue());
+        boolean firstRowIsHeader = Boolean.valueOf(container.getBinding().getConnection().getParameters().get("firstrowisheader").getValue());
         return firstRowIsHeader;
-    }
-
-    public String getAggregateReader() {
-        return "AggregateReader";
-    }
-
-    public String getReader() {
-        return "Reader";
-    }
-
-    public String getJoinReader() {
-        return "JoinReader";
     }
 
 }    

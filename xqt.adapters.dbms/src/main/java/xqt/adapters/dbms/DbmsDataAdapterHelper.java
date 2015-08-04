@@ -6,13 +6,12 @@
 package xqt.adapters.dbms;
 
 import com.vaiona.commons.data.FieldInfo;
-import com.vaiona.commons.types.TypeSystem;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import xqt.model.adapters.BaseAdapterHelper;
 import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.SingleContainer;
-import xqt.model.declarations.PerspectiveDescriptor;
+import java.sql.ResultSet;
 
 /**
  *
@@ -31,6 +30,38 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
         return ret.getValue();
     }
     
+    // override in concrete DBMS dialects if needed
+    @Override
+    public String getEntityResourceName() {
+        return "DbmsEntity";
+    }
+
+    @Override
+    public String getJoinedEntityResourceName() {
+        return "DbmsEntity";
+    }
+
+    @Override
+    public String getRecordResourceName() {
+        return "DbmsEntity";
+    }
+
+    @Override
+    public String getAggregateReaderResourceName() {
+        return "DbmsAggregateReader";
+    }
+
+    @Override
+    public String getReaderResourceName() {
+        return "DbmsReader";
+    }
+
+    @Override
+    public String getJoinReaderResourceName() {
+        return "DbmsJoinReader";
+    }    
+    
+    
     public static DbmsDataAdapterHelper getConcreteHelper(SingleContainer container){
         switch (getContainerDialectName(container)){
              case PostgreSQL:
@@ -40,6 +71,41 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
          }          
     }
 
+    // add a collection of column indexes or names to make the function process a projection of needed columns only
+    public static String[] createRowArray(ResultSet row, List<FieldInfo> fileds){
+        String[] cellValues = new String[fileds.size()];
+        for(int cellIndex =0;  cellIndex < fileds.size(); cellIndex++){
+            FieldInfo field = fileds.get(cellIndex);
+            try {
+                cellValues[cellIndex] = row.getString(field.name);
+            } catch (Exception ex){
+                cellValues[cellIndex] = "";
+            }
+            
+//            switch (field.conceptualDataType.toUpperCase())
+//            {
+//                // what about the DATE type
+//                case "BOOLEAN":
+//                    cellValues[cellIndex] = row.getBoolean(field.name);
+//                    break;
+//                case Cell.CELL_TYPE_STRING:
+//                    //System.out.print(cellValue.getStringValue()  + "\t");
+//                    cellValues[cellIndex] = cellValue.getStringValue();
+//                    break;
+//                case Cell.CELL_TYPE_BOOLEAN:
+//                    //System.out.println(cellValue.getBooleanValue()  + "\t");
+//                    cellValues[cellIndex] = String.valueOf(cellValue.getBooleanValue());
+//                    break;
+//                case Cell.CELL_TYPE_FORMULA: // should not happen. It is evaluated by the evaluator
+//                case Cell.CELL_TYPE_BLANK:
+//                case Cell.CELL_TYPE_ERROR:
+//                    cellValues[cellIndex] = "";
+//                    break;
+//            } 
+        }                    
+     return cellValues;   
+    }        
+    
     private static DBMSDialect getContainerDialectName(SingleContainer container) {
         ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("dialect");
         if(p == null || p.getValue() == null || p.getValue().equals("")){

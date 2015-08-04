@@ -22,6 +22,11 @@
             <artifactId>xqt.adapters.default</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>xqt.adapters</groupId>
+            <artifactId>xqt.adapters.dbms</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
