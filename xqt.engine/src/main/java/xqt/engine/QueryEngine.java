@@ -47,7 +47,11 @@ public interface QueryEngine {
 
     ExecutionInfo execute(Integer statementDescriptorId);
 
-    public void setClassLoader(ClassLoader classLoader);
+    void setClassLoader(ClassLoader classLoader);
 
-    public ClassLoader getClassLoader();
+    ClassLoader getClassLoader();
+    
+    String getConfigPaths();
+    void setConfigPaths(String value);
+
 }

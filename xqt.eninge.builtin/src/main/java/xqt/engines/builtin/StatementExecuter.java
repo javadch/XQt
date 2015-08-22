@@ -56,7 +56,7 @@ public class StatementExecuter implements StatementVisitor{
     StatementExecuter(DefaultQueryEngine engine, Map<String, Variable> memory) throws Exception {
         this.engine = engine;
         this.memory = memory;
-        adapterInfoContainer = AdapterInfoContainer.getInstance();
+        adapterInfoContainer = AdapterInfoContainer.getInstance(engine.getConfigPaths());
     }
 
     @Override
@@ -120,7 +120,7 @@ public class StatementExecuter implements StatementVisitor{
         DataAdapter adapter = chooseAdapter(select); // create the adapter based on its registration info and the statement's bindinf info
         eix.setAdapter(adapter);
         if(!adapter.hasRequiredCapabilities(select)){
-            SelectDescriptor comp = buildComplementingStatement(select);
+            buildComplementingStatement(select);
             // check if the orginal query's target clause is a persistent data source, and the origianl adapter supports wirting to data containers
             // create another complementing query over the first complementing query to delegate the write to the original adapter
             
@@ -151,7 +151,7 @@ public class StatementExecuter implements StatementVisitor{
                         String adapterDialect = getConnectionDialect((SingleContainer)select.getTargetClause().getContainer());
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
-                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
+                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader(), engine.getConfigPaths());
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
@@ -179,7 +179,7 @@ public class StatementExecuter implements StatementVisitor{
                     String adapterType = ((SingleContainer)select.getSourceClause().getContainer()).getBinding().getConnection().getAdapterName();
                     AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(adapterType); // hande not found exception
                     String adapterDialect = getConnectionDialect((SingleContainer)select.getSourceClause().getContainer());
-                    adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
+                    adapter = adapterInfo.load(adapterDialect, engine.getClassLoader(), engine.getConfigPaths());
                     adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                     adapter.setAdapterInfo(adapterInfo);
                     return adapter;
@@ -227,7 +227,7 @@ public class StatementExecuter implements StatementVisitor{
                         try {
                             AdapterInfo adapterInfo = adapterInfoContainer.getAdapterInfo(leftAdapterCode);
                             String adapterDialect = getConnectionDialect((SingleContainer)joinedSource.getLeftContainer());//.getBinding().getConnection().getParameters().getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();                    
-                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader());
+                            adapter = adapterInfo.load(adapterDialect, engine.getClassLoader(), engine.getConfigPaths());
                             adapter.setup(null); // pass the configuration information. they are in the connection object associated to the select
                             adapter.setAdapterInfo(adapterInfo);
                             return adapter;
@@ -250,8 +250,7 @@ public class StatementExecuter implements StatementVisitor{
     }    
 
     private String getConnectionDialect(SingleContainer container){
-        return container.getBinding().getConnection().getParameters()
-                .getOrDefault("dialect", ConnectionParameterDescriptor.createEmpty()).getValue();
+        return container.getBinding().getConnection().getParameterValue("dialect", "default").getValue();
     }
     
     private SelectDescriptor buildComplementingStatement(SelectDescriptor select) {
@@ -266,6 +265,7 @@ public class StatementExecuter implements StatementVisitor{
         }        
         
         SelectDescriptor comp = new SelectDescriptor();
+        comp.setId(select.getId() + "_CMPL1");
         comp.setDependsUpon(select);
         select.setComplementingStatement(comp);
         

@@ -13,6 +13,7 @@ import xqt.model.functions.AggregateFunction;
  */
 public class Minimum implements AggregateFunction {
     Double min = Double.POSITIVE_INFINITY;
+    
     @Override
     public Double move(Object data) {
         if(data != null){

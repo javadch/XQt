@@ -4,6 +4,7 @@
  */
 package xqt.api;
 
+import com.vaiona.commons.io.FileHelper;
 import com.vaiona.commons.io.MarkableFileInputStream;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.awt.Graphics2D;
@@ -15,10 +16,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.swing.JPanel;
 import xqt.engine.QueryEngine;
@@ -40,11 +46,14 @@ public class LanguageServicePoint {
     private StringBuilder processScript = new StringBuilder();
     protected List<Exception> exceptions = new ArrayList<>();
     protected ClassLoader classLoader = null;
-    
-    public LanguageServicePoint(){
-        // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!
-        // 
+    private String JDK_Home = "";
+    private String configFolders = ".";
+    public LanguageServicePoint(String configFolders){
+        // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!        
         com.jidesoft.utils.Lm.verifyLicense("Friedrich Schiller University of Jena", "SciQuest", "iBVmHbKikKMgQhcRthIhOwcUROnqer3");
+        this.configFolders = configFolders;
+        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folders: {0}.", configFolders));
+        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}.", Paths.get(".").toFile().getAbsolutePath()));
     }
 
     // it is to keep the ctors clean
@@ -56,18 +65,24 @@ public class LanguageServicePoint {
         //dstNode.getDependsUponElements(ElementType.Statement ...)
         
         // Load the function specifications from the packs
+        LoggerHelper.logDebug(MessageFormat.format("Loading function specifications...", 1));
         loadFunctionSpecifications();
+        LoggerHelper.logDebug(MessageFormat.format("Function specifications loaded", 1));
         // Load the jars of the adapters. maybe it can be deffered to the time they actually requested!
         classLoader = this.getClass().getClassLoader();
         
         //this.inputStream = processScript;
         runtime = new RuntimeSystem();
         try{
-            engine = runtime.createQueryEngine(processScript, exceptions); // also static method should work   
+            engine = runtime.createQueryEngine(processScript, configFolders, exceptions); // also static method should work   
             engine.setClassLoader(classLoader);
+            LoggerHelper.logDebug(MessageFormat.format("Query engine is built and ready to be used.", 1));
+
         }
         catch (Exception ex) {
-            this.exceptions.add(new Exception("Could not prepare the query engine! Likely there are some errors in the process syntax.", ex));
+            Exception exx = new Exception("Could not prepare the query engine! Likely there are some errors in the process syntax.", ex);
+            this.exceptions.add(exx);
+            LoggerHelper.logDebug(exx.getMessage());
         }       
     }
     
@@ -88,7 +103,7 @@ public class LanguageServicePoint {
     public String addScript(String statement){
         inputStream = null;
         if(statement != null && !statement.isEmpty())
-            processScript.append(statement).append("\r\n");
+            processScript.append(statement).append(System.getProperty("line.separator"));
         return statement;
     }
 
@@ -101,7 +116,7 @@ public class LanguageServicePoint {
             try {
                 read = br.readLine();
                 while(read != null) {
-                    sb.append(read); sb.append("\n");
+                    sb.append(read); sb.append(System.getProperty("line.separator"));
                     read =br.readLine();
                 }
                 if(inputStream.markSupported()) // if not, susequent get or process calls may fail
@@ -123,16 +138,19 @@ public class LanguageServicePoint {
 
     public String registerScript(String fileName){        
         processScript = new StringBuilder();
+        String filePath = fileName;
         try {
-            inputStream = new MarkableFileInputStream(new FileInputStream(fileName));
-        } catch (FileNotFoundException ex) {
+            filePath = FileHelper.makeAbsolute(fileName);
+            inputStream = new MarkableFileInputStream(new FileInputStream(filePath));
+        } catch (IOException ex) { // FileNotFoundException
             this.exceptions.add(ex);
             return ex.getMessage();
         }
-        return "OK";
+        return MessageFormat.format("OK. Process file {0} was registered. All previous statements were cleared. {1}", filePath, System.getProperty("line.separator"));
     }
 
     public String process(){
+        LoggerHelper.logDebug(MessageFormat.format("Initilizing the execution engine...", 1));
         try{
             if(inputStream!= null){
                 init(inputStream);
@@ -142,19 +160,25 @@ public class LanguageServicePoint {
             }
         } catch(Exception ex){
             this.exceptions.add(ex);
+            LoggerHelper.logError(MessageFormat.format("Could not read the input stream: {0}", ex.getMessage()));
             return "Could not read the input stream: " + ex.getMessage();
         }
         
         // process all the statements and store the results, but do not return anything
-        if(exceptions == null || exceptions.size() <=0)
+        if(exceptions == null || exceptions.size() <=0){
+            LoggerHelper.logDebug(MessageFormat.format("execution of the process is started.", 1));
             engine.execute();
-        if(engine == null || engine.getProcessModel() == null || engine.getProcessModel().hasError()){
-            exceptions.stream().forEach((exx) -> {
-                LoggerHelper.logError(MessageFormat.format("Error: {0}\r\n", exx.getMessage()));
-            });
-            return "Execution terminated by errors in the process. Call getErrors for more information.";
+            LoggerHelper.logDebug(MessageFormat.format("execution of the process is finished.", 1));
         }
-        return "OK";
+  
+        String errors = getErrors();
+        if(errors != null && !errors.isEmpty()){
+            LoggerHelper.logError(errors);
+            return errors;
+        } else {
+            LoggerHelper.logDebug("Execution finished successfully.");
+            return "OK";
+        }
     }
     
     public Object process(Integer statementId, Boolean forceExecution, Boolean executeIfNeeded){
@@ -178,6 +202,14 @@ public class LanguageServicePoint {
             return result;
         }
         return null;
+    }
+    
+    public Object getVariablesInfo(){
+        List<String> varNames = engine.getProcessModel().getStatements().values().stream()
+                                    .filter(p-> p.hasExecutionInfo() && p.getExecutionInfo().hasVariable())
+                                    .map(p->p.getExecutionInfo().getVariable().getName()).collect(Collectors.toList());
+        Object[] o = varNames.toArray();
+        return o;
     }
     
     public Object getVariable(String variableName){
@@ -262,12 +294,12 @@ public class LanguageServicePoint {
     FunctionInfoContainer functionContainer = null;
     private void loadFunctionSpecifications() throws Exception {
         // use the function specification bean, read the function pack folder, list the packages, read them all, add them to the function list.
-        functionContainer = FunctionInfoContainer.getDefaultInstance();
+        functionContainer = FunctionInfoContainer.getDefaultInstance(configFolders);
     }
     
     public Object getAdapterNames(){
         try{
-            AdapterInfoContainer instance = AdapterInfoContainer.getInstance();
+            AdapterInfoContainer instance = AdapterInfoContainer.getInstance(configFolders);
             return instance.getAdapterNames();
         } catch(Exception ex){
             String[] problem = new String[1];
@@ -303,6 +335,9 @@ public class LanguageServicePoint {
                 if(s.hasExecutionInfo()){
                     if(!s.getExecutionInfo().isExecuted()){
                         errors.append("Statement " + s.getId() + " was NOT executed.\n");
+                        s.getLanguageExceptions().stream().forEach((exx) -> {
+                            errors.append(exx.getMessage() + "\n");
+                        });
                     } else if(s.hasResult()){
                         Variable v = s.getExecutionInfo().getVariable();
                         switch (v.getResult().getResultsetType()){

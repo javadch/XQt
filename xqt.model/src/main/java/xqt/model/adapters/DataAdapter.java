@@ -32,5 +32,8 @@ public interface DataAdapter {
     void setAdapterInfo(AdapterInfo value);
 
     String getDialect();
-    void setDialect(String dialect);
+    void setDialect(String value);
+
+    String getConfigPaths();
+    void setConfigPaths(String value);
 }

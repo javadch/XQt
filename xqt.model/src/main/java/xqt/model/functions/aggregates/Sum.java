@@ -13,6 +13,7 @@ import xqt.model.functions.AggregateFunction;
  */
 public class Sum implements AggregateFunction{
     Double sum = 0.0;
+   
     @Override
     public Double move(Object data) {
         if(data != null){

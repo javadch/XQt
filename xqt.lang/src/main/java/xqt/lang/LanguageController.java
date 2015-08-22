@@ -31,6 +31,11 @@ import xqt.model.statements.StatementDescriptor;
  * @author jfd
  */
 public class LanguageController {
+    String configPaths;
+
+    public LanguageController(String value){
+        configPaths = value;
+    }
     
     public ProcessModel createProcessModel(InputStream inputStream, List<Exception> exceptions) {
         XQtLexer lexer;
@@ -49,7 +54,7 @@ public class LanguageController {
             tree = parser.createProcessModel();        // the result is the parse tree            
             exceptions.addAll(errorListener.getExceptions());
         } catch (Exception ex){
-            LoggerHelper.logError(MessageFormat.format("Error: {0}.", ex.getMessage()));                
+            LoggerHelper.logError(MessageFormat.format("Lexical or Parsing Error: {0}.", ex.getMessage()));                
             LanguageException lx = 
                 LanguageExceptionBuilder.builder()
                     .setMessageTemplate(ex.getMessage())
@@ -71,17 +76,23 @@ public class LanguageController {
         // keep antlr away from the query engine as much as possible. just pass the constructed e-ast
         // put a getMethod on the visitor to return ast/ e-ast
         // also visit returns a T type that seems to be possible to use it to return ast/ e-ast
-        GrammarVisitor gVisitor = new GrammarVisitor();
-        gVisitor.visit(tree);
-        ProcessModel processModel = gVisitor.getProcessModel();
-        // detect and set inter statement dependencies
-        List<StatementDescriptor> stmts = processModel.getStatements().values().stream().collect(Collectors.toList());
-        for (Map.Entry<Integer, StatementDescriptor> en : processModel.getStatements().entrySet()) {
-            StatementDescriptor stmt = en.getValue();
-            stmt.checkDependencies(stmts);
+        GrammarVisitor gVisitor = new GrammarVisitor(configPaths);
+        try{
+            gVisitor.visit(tree);
+            ProcessModel processModel = gVisitor.getProcessModel();
+            // detect and set inter statement dependencies
+            List<StatementDescriptor> stmts = processModel.getStatements().values().stream().collect(Collectors.toList());
+            for (Map.Entry<Integer, StatementDescriptor> en : processModel.getStatements().entrySet()) {
+                StatementDescriptor stmt = en.getValue();
+                stmt.checkDependencies(stmts);
+            }        
+            return (processModel);
+        } catch (Exception ex){
+            LoggerHelper.logError(MessageFormat.format("Semantic Validation Error: {0}.", ex.getMessage()));                
+            // log errors
+            // add exception to ...
+            return null;
         }
-        
-        return (processModel);
     }
 
 }

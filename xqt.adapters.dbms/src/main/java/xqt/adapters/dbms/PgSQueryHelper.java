@@ -81,9 +81,9 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
  
     @Override
     public String getConnectionString(SingleContainer container){
-        String serverName = container.getBinding().getConnection().getParameters().get("server").getValue();
-        String port = container.getBinding().getConnection().getParameters().get("port").getValue();
-        String dbName = container.getBinding().getConnection().getParameters().get("dbname").getValue();
+        String serverName = container.getBinding().getConnection().getParameterValue("server", "localhost").getValue();
+        String port = container.getBinding().getConnection().getParameterValue("port", "5432").getValue();
+        String dbName = container.getBinding().getConnection().getParameterValue("dbname", "").getValue();
         String connectionString = MessageFormat.format("jdbc:postgresql://{0}:{1}/{2}", serverName, port, dbName);
         return connectionString;
     }
@@ -113,7 +113,7 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     @Override
     public String getContainerUsername(SingleContainer container){
         try{
-            return container.getBinding().getConnection().getParameters().get("username").getValue();
+            return container.getBinding().getConnection().getParameterValue("username", "").getValue();
         } catch (Exception ex){
             return "";
         }
@@ -122,7 +122,7 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     @Override
     public String getContainerPassword(SingleContainer container){
         try{
-            return container.getBinding().getConnection().getParameters().get("password").getValue();
+            return container.getBinding().getConnection().getParameterValue("password", "").getValue();
         } catch (Exception ex){
             return "";
         }

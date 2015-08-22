@@ -6,8 +6,12 @@
 package xqt.adapters.csv;
 
 import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.io.FileHelper;
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.HeaderBuilder;
+import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -18,6 +22,7 @@ import xqt.model.adapters.BaseAdapterHelper;
 import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.SingleContainer;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.TargetClause;
 
 /**
@@ -55,7 +60,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
     }
 
     private static DataContainerDialect getContainerDialectName(SingleContainer container) {
-        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("dialect");
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameterValue("dialect", "default");
         if(p == null || p.getValue() == null || p.getValue().equals("")  || p.getValue().equalsIgnoreCase("default")){
             return DataContainerDialect.CSV;
         }
@@ -106,40 +111,58 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             });
             return fields;
         } catch (Exception ex){
-            return null;
+            return new LinkedHashMap<>();
         }
     }
     
     public String getContainerSchemaHolder(SingleContainer container){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
-        String container0 = container.getContainerName();
-        String fileExtention = "csv";
-        Boolean externalHeader = false;
+        String container0 = container.getContainerName();        
         String fileName = "";
-        try{
-            fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
-        } catch (Exception ex){}
-        try{
-            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalheader").getValue());
-        } catch (Exception ex){}
-        if(externalHeader){
+        String fileExtention = container.getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
+        if(isHeaderExternal(container)){
             fileName = basePath.concat(container0).concat(".").concat(fileExtention).concat(".hdr");
         } else {
             fileName = basePath.concat(container0).concat(".").concat(fileExtention);
         }
-        return fileName;
+        try{
+            fileName = FileHelper.makeAbsolute(fileName); 
+            return fileName;
+        } catch (IOException ex){
+            container.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("File containing header file was not found. " + ex.getMessage())
+                    .setContextInfo1("")
+                    .setLineNumber(container.getParserContext().getStart().getLine())
+                    .setColumnNumber(container.getParserContext().getStart().getCharPositionInLine())
+                    .build()
+            );
+            LoggerHelper.logError(MessageFormat.format("Requested file '{0}' was not found. {1}", fileName, ex.getMessage()));                        
+            return null;
+        }
     }
 
     public String getCompleteSourceName(SingleContainer container){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         String container0 = container.getContainerName();
-        String fileExtention = "csv";
         String fileName = "";
-        try{
-            fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
-        } catch (Exception ex){}
+        String fileExtention = container.getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
         fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-        return fileName;
+        try{
+            fileName = FileHelper.makeAbsolute(fileName); 
+            return fileName;
+        } catch (IOException ex){
+            container.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Source file was not found. " + ex.getMessage())
+                    .setContextInfo1("")
+                    .setLineNumber(container.getParserContext().getStart().getLine())
+                    .setColumnNumber(container.getParserContext().getStart().getCharPositionInLine())
+                    .build()
+            );
+            LoggerHelper.logError(MessageFormat.format("Requested file '{0}' was not found. {1}", fileName, ex.getMessage()));            
+            return null;
+        }
     }
 
     public String getCompleteTargetName(TargetClause target){ //may need a container index too!
@@ -147,23 +170,43 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             SingleContainer container = (SingleContainer)target.getContainer();
             String basePath = container.getBinding().getConnection().getSourceUri();
             String container0 = container.getContainerName();
-            String fileExtention = "csv";
-            try{
-                fileExtention = ((SingleContainer)target.getContainer())
-                        .getBinding().getConnection().getParameters().get("fileextension").getValue();
-            } catch (Exception ex){}
+            String fileExtention = ((SingleContainer)target.getContainer())
+                        .getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
+                                    
             String fileName = basePath.concat(container0).concat(".").concat(fileExtention);
-            return fileName;
+            try{
+                fileName = FileHelper.makeAbsolute(fileName); 
+                return fileName;
+            } catch (IOException ex){
+                container.getLanguageExceptions().add(
+                    LanguageExceptionBuilder.builder()
+                        .setMessageTemplate("Target file was not found. " + ex.getMessage())
+                        .setContextInfo1("")
+                        .setLineNumber(container.getParserContext().getStart().getLine())
+                        .setColumnNumber(container.getParserContext().getStart().getCharPositionInLine())
+                        .build()
+                );
+                LoggerHelper.logError(MessageFormat.format("Requested file '{0}' was not found. {1}", fileName, ex.getMessage()));                            
+                return null;
+            }
         } else {
             return null;
         }
     }
     
     public boolean isFirstRowHeader(SingleContainer container){
-        boolean firstRowIsHeader = Boolean.valueOf(container.getBinding().getConnection().getParameters().get("firstrowisheader").getValue());
+        boolean firstRowIsHeader = Boolean.valueOf(container.getBinding().getConnection().getParameterValue("firstrowisheader", "false").getValue());
         return firstRowIsHeader;
     }
 
+    protected Boolean isHeaderExternal(SingleContainer container){
+        try{
+            return Boolean.parseBoolean(container.getBinding().getConnection().getParameterValue("externalheader", "false").getValue());
+        } catch (Exception ex){
+            return false;
+        }
+    }
+    
 }    
 
     

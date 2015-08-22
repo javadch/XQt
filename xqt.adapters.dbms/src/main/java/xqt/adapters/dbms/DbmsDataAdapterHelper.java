@@ -107,7 +107,7 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
     }        
     
     private static DBMSDialect getContainerDialectName(SingleContainer container) {
-        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameters().get("dialect");
+        ConnectionParameterDescriptor p = container.getBinding().getConnection().getParameterValue("dialect", "");
         if(p == null || p.getValue() == null || p.getValue().equals("")){
             return DBMSDialect.PostgreSQL;
         }

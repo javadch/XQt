@@ -37,7 +37,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
     protected String dialect = "";
     protected boolean needsMemory = false;
     protected ConvertSelectElement convertSelect = new ConvertSelectElement();
-
+    protected String configPaths = ".";
 
     
     @Override
@@ -95,6 +95,16 @@ public abstract class BaseDataAdapter implements DataAdapter {
         this.dialect = dialect;
     }
  
+    @Override
+    public String getConfigPaths() {
+        return configPaths;
+    }
+    
+    @Override
+    public void setConfigPaths(String value){
+        configPaths = value;
+    }
+
     // holds the information about aggregate functions as they were found in the perspective attributes.
     // the agg. functions are substituted with a pointer in the aggregattionCallInfo, so that the adapater, calls them later
     // the whole argument passed to an aggregate function is moved to here and replaced with an automatically generaated name.
@@ -113,7 +123,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
     protected Boolean prepareAggregates(DataReaderBuilderBase builder, SelectDescriptor select) {
         // adopt for other types of queries, variable, join, etc
         for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
-            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId());
+            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), this.configPaths);
             attribute.getForwardExpression().accept(visitor);
             if(visitor.getAggregattionCallInfo().size() > 0){
                 aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                

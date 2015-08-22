@@ -6,6 +6,7 @@
 
 package xqt.model.adapters;
 
+import com.vaiona.commons.io.FileHelper;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,10 +52,10 @@ public class AdapterInfoContainer {
         
     }
     
-    public static AdapterInfoContainer getInstance() throws Exception{
+    public static AdapterInfoContainer getInstance(String basePaths) throws Exception{
         if(instance == null){
             //instance = new AdapterInfoContainer();
-            instance = AdapterInfoContainer.loadRegisteredAdapterInfos();
+            instance = AdapterInfoContainer.loadRegisteredAdapterInfos(basePaths);
         }
         return instance;
     }
@@ -95,7 +97,7 @@ public class AdapterInfoContainer {
         return null;
     }
     
-    private static AdapterInfoContainer loadRegisteredAdapterInfos() throws Exception {
+    private static AdapterInfoContainer loadRegisteredAdapterInfos(String basePaths) throws Exception {
         // read the adapters info from the config/adapters.xml
         // the default location for adpater jars is the adapters folder but they can be anywhere
         // populate registeredAdapterInfos
@@ -109,7 +111,7 @@ public class AdapterInfoContainer {
         xr.setContentHandler(unmarshallerHandler);
 
         
-        File f = new File("config/adapters.xml");
+        File f = Paths.get(FileHelper.makeAbsolute(FileHelper.getConfigPath(basePaths), "adapters.xml")).toFile();
         
         LoggerHelper.logDebug("LoadingAdapterInfo" , MessageFormat.format("Loading file {0}", f.getAbsolutePath()));
         try (InputStream inputStream = new FileInputStream(f)/*("./config/adapters.xml")*/) {

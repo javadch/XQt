@@ -13,6 +13,7 @@ import xqt.model.functions.AggregateFunction;
  */
 public class Count implements AggregateFunction{
     long counter = 0;
+
     @Override
     public Long move(Object data) { // Long is a subcalss of Object, hence, compatible...
         if(data != null)

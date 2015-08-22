@@ -12,25 +12,48 @@ import xqt.model.functions.AggregateFunction;
  * @author Javad Chamanara <chamanara@gmail.com>
  */
 public class Average implements AggregateFunction {
-    long counter = 0;
+    long count = 0;
     Double sum = 0.0;
+
     @Override
     public Double move(Object data) {
         if(data != null){
             if(data instanceof Byte){
-                sum = ((counter*sum)+((Byte)data))/(counter+1);
+                sum = sum+(Byte)data;
             }
             else if(data instanceof Integer){
-                sum = ((counter*sum)+((Integer)data))/(counter+1);
+                sum = sum+(Integer)data;
             }
             else if(data instanceof Long){
-                sum = ((counter*sum)+((Long)data))/(counter+1);
+                sum = sum+(Long)data;
             }
             else if(data instanceof Double){
-                sum = ((counter*sum)+((Double)data))/(counter+1);
+                sum = sum+(Double)data;
             }
-            counter++;
+            count++;
         }
-        return sum;
+        return sum/count;
     }      
+
+//    Double avg = 0.0;
+//    @Override
+//    public Double move2(Object data) {
+//        if(data != null){
+//            if(data instanceof Byte){
+//                avg = ((count*avg)+((Byte)data))/(count+1);
+//            }
+//            else if(data instanceof Integer){
+//                avg = ((count*avg)+((Integer)data))/(count+1);
+//            }
+//            else if(data instanceof Long){
+//                avg = ((count*avg)+((Long)data))/(count+1);
+//            }
+//            else if(data instanceof Double){
+//                avg = ((count*avg)+((Double)data))/(count+1);
+//            }
+//            count++;
+//        }
+//        return avg;
+//    }      
+
 }

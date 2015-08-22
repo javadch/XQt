@@ -7,6 +7,7 @@
 package xqt.model.adapters;
 
 import com.vaiona.commons.compilation.ObjectCreator;
+import com.vaiona.commons.io.FileHelper;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -97,15 +98,15 @@ public class AdapterInfo {
         this.mainNamespace = mainNamespace;
     }
       
-    public FunctionInfoContainer getFunctionInfoContainer(){
-        return FunctionInfoContainer.getInstance(id);
+    public FunctionInfoContainer getFunctionInfoContainer(String basePaths){
+        return FunctionInfoContainer.getInstance(id, basePaths);
     }
 
-    public DataAdapter load(String dialect, ClassLoader parentLoader) throws Exception  {
+    public DataAdapter load(String dialect, ClassLoader parentLoader, String basePaths) throws Exception  {
         String absulotePath = location;
         try{            
-            if(location.startsWith("/")){ // the path is relative
-                Path relative = Paths.get("config", "adapters", this.id.toLowerCase(), location.substring(1));
+            if(!Paths.get(location).isAbsolute()){ // the path is relative
+                Path relative = Paths.get(FileHelper.getConfigPath(basePaths), "adapters", this.id.toLowerCase(), location);
                 Path absulote =relative.toAbsolutePath();
                 absulotePath = absulote.toString();
             }
@@ -118,8 +119,10 @@ public class AdapterInfo {
             DataAdapter adapter = null;
             adapter = (DataAdapter)ObjectCreator.createInstance(claz);
             LoggerHelper.logDebug(MessageFormat.format("Adapter class is instantiated for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
-            if(adapter != null)
+            if(adapter != null){
                 adapter.setDialect(dialect);
+                adapter.setConfigPaths(basePaths);
+            }
             LoggerHelper.logDebug(MessageFormat.format("The {0} adapter located at {1}:{2} was successfully loaded.", id, locationType, absulotePath));
             return adapter;
         } catch(Exception ex){

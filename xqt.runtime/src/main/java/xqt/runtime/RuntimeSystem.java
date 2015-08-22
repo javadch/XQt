@@ -23,10 +23,10 @@ public class RuntimeSystem {
     
     // hides the engine selection and creation mechanism from the client
     // also hides the transformation of the process script into the process model
-    public QueryEngine createQueryEngine(InputStream processScript, List<Exception> exceptions) {
-        LanguageController controller = new LanguageController();
+    public QueryEngine createQueryEngine(InputStream processScript, String configPaths, List<Exception> exceptions) {
+        LanguageController controller = new LanguageController(configPaths);
         ProcessModel processModel = controller.createProcessModel(processScript, exceptions);
-        QueryEngine engine = new DefaultQueryEngine(processModel); 
+        QueryEngine engine = new DefaultQueryEngine(processModel, configPaths); 
         return engine;
     }
 }

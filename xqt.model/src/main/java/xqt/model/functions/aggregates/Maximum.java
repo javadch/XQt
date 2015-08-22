@@ -13,6 +13,7 @@ import xqt.model.functions.AggregateFunction;
  */
 public class Maximum implements AggregateFunction {
     Double max = Double.NEGATIVE_INFINITY;
+
     @Override
     public Double move(Object data) {
         if(data != null){

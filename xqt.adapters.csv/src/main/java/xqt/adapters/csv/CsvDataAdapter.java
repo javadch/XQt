@@ -206,13 +206,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         helper = CsvDataAdapterHelper.getConcreteHelper(container);
         builder.entityResourceName(helper.getEntityResourceName());
 
-        try {
-            String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
-            builder.columnDelimiter(determineDeleimiter(columnDelimiter));
-        } catch(Exception ex){
-            builder.columnDelimiter(",");
-        }
-                builder.sourceOfData("container");
+        String columnDelimiter = container.getBinding().getConnection().getParameterValue("delimiter", "comma").getValue();
+        builder.columnDelimiter(determineDeleimiter(columnDelimiter));
+
+        builder.sourceOfData("container");
         builder.containerName(container.getContainerName());        
         try{
             builder.addFields(helper.getContinerSchema(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
@@ -366,15 +363,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         builder.entityResourceName(helper.getEntityResourceName())
                .readerResourceName(helper.getJoinReaderResourceName());
 
-        try {
-            String columnDelimiter = leftContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
-            builder.leftColumnDelimiter(determineDeleimiter(columnDelimiter));                
-            columnDelimiter = rightContainer.getBinding().getConnection().getParameters().get("delimiter").getValue();
-            builder.rightColumnDelimiter(determineDeleimiter(columnDelimiter));                
-        } catch(Exception ex){
-            builder.leftColumnDelimiter(",");
-            builder.rightColumnDelimiter(",");
-        }
+        String columnDelimiter = leftContainer.getBinding().getConnection().getParameterValue("delimiter", "comma").getValue();
+        builder.leftColumnDelimiter(determineDeleimiter(columnDelimiter));                
+        columnDelimiter = rightContainer.getBinding().getConnection().getParameterValue("delimiter", "comma").getValue();
+        builder.rightColumnDelimiter(determineDeleimiter(columnDelimiter));                
 
         try{
             builder.addLeftFields(helper.getContinerSchema(leftContainer, builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
@@ -508,12 +500,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         // the source is a variable and the target is single container
         SingleContainer container =((SingleContainer)select.getTargetClause().getContainer());
         helper = CsvDataAdapterHelper.getConcreteHelper(container);
-        try {
-            String columnDelimiter = container.getBinding().getConnection().getParameters().get("delimiter").getValue();
-            builder.columnDelimiter(determineDeleimiter(columnDelimiter));
-        } catch(Exception ex){
-            builder.columnDelimiter(",");
-        }
+        
+        String columnDelimiter = container.getBinding().getConnection().getParameterValue("delimiter", "comma").getValue();
+        builder.columnDelimiter(determineDeleimiter(columnDelimiter));
+
         builder.entityResourceName("");
         builder.readerResourceName(helper.getReaderResourceName());
         builder.sourceOfData("variable");

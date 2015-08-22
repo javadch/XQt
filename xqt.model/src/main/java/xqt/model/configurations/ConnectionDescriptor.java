@@ -62,4 +62,11 @@ public class ConnectionDescriptor extends ConfigurationDescriptor{
             this.parameters.put(parameter.getId(), parameter);
         }
     }
+    
+    public ConnectionParameterDescriptor getParameterValue(String paramName, String defaultValue){
+        if(parameters.containsKey(paramName))
+            return parameters.get(paramName);
+        else
+            return ConnectionParameterDescriptor.createEmpty(defaultValue);
+    }
 }

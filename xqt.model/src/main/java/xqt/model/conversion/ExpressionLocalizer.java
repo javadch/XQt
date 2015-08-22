@@ -168,7 +168,7 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
             // the funcPattern still has placeholders for the function name and the parameter list.
             return MessageFormat.format(funcPattern, functionPart, localizedParameters);
         }
-        Optional <FunctionInfo> funcSpec =adapter.getAdapterInfo().getFunctionInfoContainer().getRegisteredFunctions().stream()
+        Optional <FunctionInfo> funcSpec =adapter.getAdapterInfo().getFunctionInfoContainer(adapter.getConfigPaths()).getRegisteredFunctions().stream()
                 .filter(p->p.getName().equals(exp.getFunctionSpecification().getName())).findFirst();
         // if there is no such a funtion, use the default one
         // if there is one, try find the dialect specific implementation, if not use the default fallback one!

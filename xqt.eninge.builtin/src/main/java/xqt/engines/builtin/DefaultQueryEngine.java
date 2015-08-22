@@ -37,10 +37,12 @@ public class DefaultQueryEngine  implements QueryEngine{
     private final Map<String, Variable> memory;    
     private ProcessModel model = null;
     ClassLoader classLoader = null;
+    String configPaths = ".";
     
-    public DefaultQueryEngine(ProcessModel processModel){
+    public DefaultQueryEngine(ProcessModel processModel, String configPaths){
         this.memory = new HashMap<>();
         model = processModel;
+        this.configPaths = configPaths;
         // register connections, bindings and perspectives
         // create adapter objects, better to do it in the visit function of the executer class
         // set versioning schemes
@@ -100,6 +102,17 @@ public class DefaultQueryEngine  implements QueryEngine{
     public ProcessModel getProcessModel(){
         return model;
     }
+    
+    @Override
+    public String getConfigPaths() {
+        return configPaths;
+    }
+    
+    @Override
+    public void setConfigPaths(String value){
+        configPaths = value;
+    }
+    
     
    /*
     * Executes each statement in the model. Every statement should hold its result and

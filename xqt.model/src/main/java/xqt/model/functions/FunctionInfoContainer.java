@@ -6,6 +6,7 @@
 
 package xqt.model.functions;
 
+import com.vaiona.commons.io.FileHelper;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,19 +48,19 @@ public class FunctionInfoContainer {
     private FunctionInfoContainer(){
         
     }
-    public static FunctionInfoContainer getDefaultInstance() throws Exception{
-        AdapterInfo defaultAdapter = AdapterInfoContainer.getInstance().getDefultAdapter();
+    public static FunctionInfoContainer getDefaultInstance(String basePaths) throws Exception{
+        AdapterInfo defaultAdapter = AdapterInfoContainer.getInstance(basePaths).getDefultAdapter();
         if(defaultAdapter == null)
-            return getInstance("Default");
-        return getInstance(defaultAdapter.getId());
+            return getInstance("Default", basePaths);
+        return getInstance(defaultAdapter.getId(), basePaths);
 
     }
     
-    public static FunctionInfoContainer getInstance(String adapterId){
+    public static FunctionInfoContainer getInstance(String adapterId, String basePaths){
         if(!instances.containsKey(adapterId)){
             try {
                 //writeConfig();
-                instances.put(adapterId, FunctionInfoContainer.loadRegisteredFunctions(adapterId));
+                instances.put(adapterId, FunctionInfoContainer.loadRegisteredFunctions(adapterId, basePaths));
             } catch (Exception ex) {
                 Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -76,7 +77,7 @@ public class FunctionInfoContainer {
         this.registeredFunctions = registeredFunctions;
     }
 
-    private static FunctionInfoContainer loadRegisteredFunctions(String adapterId) throws Exception {
+    private static FunctionInfoContainer loadRegisteredFunctions(String adapterId, String basePaths) throws Exception {
         JAXBContext jc = JAXBContext.newInstance(FunctionInfoContainer.class);
         UnmarshallerHandler unmarshallerHandler = jc.createUnmarshaller().getUnmarshallerHandler();
 
@@ -87,7 +88,7 @@ public class FunctionInfoContainer {
 
         // open and read all the function pack files in the config\\functionpacks folder
         //String functionPackRoot = "config\\adapters\\" + adapterId.toLowerCase() + "\\functionpacks";
-        Path functionPackRoot = Paths.get("config/adapters", adapterId.toLowerCase(), "functionpacks");
+        Path functionPackRoot = Paths.get(FileHelper.makeAbsolute(FileHelper.getConfigPath(basePaths)), "adapters", adapterId.toLowerCase(), "functionpacks");
         File funcDir = functionPackRoot.toFile();
         
         List<FunctionInfo> functions = new ArrayList<>();

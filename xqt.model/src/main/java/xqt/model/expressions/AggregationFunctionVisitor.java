@@ -20,8 +20,13 @@ import xqt.model.functions.FunctionInfoContainer;
 public class AggregationFunctionVisitor implements ExpressionVisitor{
     private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
     private final String namingPrefix;
+    private final String basePaths = ".";
+
+    public AggregationFunctionVisitor() {
+        this.namingPrefix = null;
+    }
     
-    public AggregationFunctionVisitor(String namingPrefix){
+    public AggregationFunctionVisitor(String namingPrefix, String basePaths){
         this.namingPrefix = namingPrefix;
     }
 
@@ -43,7 +48,7 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
         // do not change the function itself, it will be done by the adapters
 ///////////////////////////
        try{
-            FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance();
+            FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance(basePaths);
             Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
                     .filter(p-> p.getPackageName().equalsIgnoreCase(expr.getPackageId()) 
                             && p.getName().equalsIgnoreCase(expr.getId())

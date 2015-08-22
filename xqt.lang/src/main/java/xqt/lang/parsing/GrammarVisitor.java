@@ -56,6 +56,7 @@ import xqt.model.statements.query.AnchorClause;
 import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.GroupClause;
 import xqt.model.statements.query.GroupEntry;
+import xqt.model.statements.query.JoinedSelectDescriptor;
 import xqt.model.statements.query.LimitClause;
 import xqt.model.statements.query.NullOrdering;
 import xqt.model.statements.query.OrderClause;
@@ -73,8 +74,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     protected ProcessModel processModel;
     protected Stack<ElementDescriptor> stack = new Stack<>();
     protected HashMap<String, PerspectiveDescriptor> variablesUsedAsTarget = new HashMap<>();
-
-    public GrammarVisitor(){
+    protected String configPaths = ".";
+    
+    public GrammarVisitor(String configPaths){
         processModel = new ProcessModel();
     }
    
@@ -485,7 +487,10 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         processModel.addStatementDescriptor(select); //its better to return to visit processmodel and add the perspective there
         select.validate(); // should be back soon. its commented to test where clause attributes not defined in perspectives. 26.05.15
         stack.pop();
-        
+        // speciall case that deals with heterogneous joins!
+        SelectDescriptor joinSelect = analizeJoin(select);
+        if(joinSelect != null)
+            return joinSelect;
         return select;
     }
 
@@ -1135,7 +1140,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         InvalidExpression invalidExpr = Expression.Invalid();
         try{
             FunctionInfoContainer functionContainer;
-            functionContainer = FunctionInfoContainer.getDefaultInstance();
+            functionContainer = FunctionInfoContainer.getDefaultInstance(configPaths);
             fInfo = functionContainer.getRegisteredFunctions().stream()
                     .filter(p-> p.getPackageName().equalsIgnoreCase(packageId) && p.getName().equalsIgnoreCase(id)).findFirst();
             if(!fInfo.isPresent()){            
@@ -1495,4 +1500,52 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 //            return expression;
 //        }
 //    }
+
+    private SelectDescriptor analizeJoin(SelectDescriptor select) {
+
+        if (select.getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
+            JoinedContainer joinedSource = (JoinedContainer)select.getSourceClause().getContainer();
+            if(joinedSource.getLeftContainer().getDataContainerType() != joinedSource.getRightContainer().getDataContainerType()){
+                // hetero. build and return
+            }
+            if(joinedSource.getLeftContainer() instanceof VariableContainer){
+                if(joinedSource.getRightContainer() instanceof VariableContainer){
+                    // homo case
+                    return select;
+                } else if(joinedSource.getRightContainer() instanceof SingleContainer){
+                    return craeteHeteroJoin(select);
+                }
+            } 
+            if(joinedSource.getLeftContainer() instanceof SingleContainer){
+                if(joinedSource.getRightContainer() instanceof VariableContainer){
+                    return craeteHeteroJoin(select);
+                } 
+                if(joinedSource.getRightContainer() instanceof SingleContainer){
+                    // both sides are single containers.
+                    SingleContainer left =  ((SingleContainer)joinedSource.getLeftContainer());
+                    SingleContainer right = ((SingleContainer)joinedSource.getRightContainer());
+                    if(!left.getBinding().getConnection().getAdapterName().equalsIgnoreCase(right.getBinding().getConnection().getAdapterName())){
+                        // different adapters
+                        return craeteHeteroJoin(select);
+                    }
+                    ConnectionParameterDescriptor leftDialect = left.getBinding().getConnection().getParameterValue("dialect", "default");
+                    ConnectionParameterDescriptor rightDialect = right.getBinding().getConnection().getParameterValue("dialect", "default");
+                    if(!leftDialect.getValue().equalsIgnoreCase(rightDialect.getValue())){
+                        // homo-morph case but currently behaved like a hetro
+                        return craeteHeteroJoin(select);
+                    }
+                }
+            }
+
+            // break down the select statement to its parts and craete Joined out of it
+            return select; 
+        }
+        return null;
+        
+    }
+
+    private SelectDescriptor craeteHeteroJoin(SelectDescriptor select) {
+        
+        return new JoinedSelectDescriptor(null, null, null);
+    }
 }

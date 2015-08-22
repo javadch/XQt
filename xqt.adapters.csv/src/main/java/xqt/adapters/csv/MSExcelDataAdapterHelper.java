@@ -5,7 +5,30 @@
  */
 package xqt.adapters.csv;
 
+import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.io.FileHelper;
+import com.vaiona.commons.logging.LoggerHelper;
+import com.vaiona.csv.reader.HeaderBuilder;
+import com.vaiona.csv.reader.RowBuilder;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.MessageFormat;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import javafx.scene.control.Cell;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import xqt.model.containers.SingleContainer;
+import xqt.model.exceptions.LanguageExceptionBuilder;
 
 /**
  *
@@ -21,11 +44,7 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
         String basePath = getCompleteSourceName(container);
         String container0 = container.getContainerName();
         basePath = basePath.concat(".").concat(container0);
-        Boolean externalHeader = false;
-        try{
-            externalHeader = Boolean.parseBoolean(container.getBinding().getConnection().getParameters().get("externalheader").getValue());
-        } catch (Exception ex){}
-        if(externalHeader){
+        if(isHeaderExternal(container)){
             return basePath.concat(".hdr");
         } else {
             return basePath;
@@ -41,10 +60,66 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
             fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
         fileName = basePath.concat(".").concat(fileExtention);
-        return fileName;
+        try{
+            fileName = FileHelper.makeAbsolute(fileName); 
+            return fileName;
+        } catch (IOException ex){
+            container.getLanguageExceptions().add(
+                LanguageExceptionBuilder.builder()
+                    .setMessageTemplate("Requested file was not found. " + ex.getMessage())
+                    .setContextInfo1("")
+                    .setLineNumber(container.getParserContext().getStart().getLine())
+                    .setColumnNumber(container.getParserContext().getStart().getCharPositionInLine())
+                    .build()
+            );
+            LoggerHelper.logError(MessageFormat.format("Requested file '{0}' was not found. {1}", fileName, ex.getMessage()));            
+            return null;
+        }
     }    
     
-    
+    @Override
+    public LinkedHashMap<String, FieldInfo> getContinerSchema(SingleContainer container, Object... params) {
+        if(isHeaderExternal(container)){
+            return super.getContinerSchema(container, params);
+        } else {
+            try {
+                LinkedHashMap<String, FieldInfo> headers = new LinkedHashMap<>();
+                //String columnDelimiter =    String.valueOf(params[0]);
+                String typeDelimiter =      String.valueOf(params[1]);
+                String unitDelimiter =      String.valueOf(params[2]);
+                String fileName = getCompleteSourceName(container);
+                HeaderBuilder hb = new HeaderBuilder();
+                //XSSFWorkbook workbook2 = new XSSFWorkbook(fileName);
+                InputStream inp = new FileInputStream(fileName);
+                Workbook workbook = WorkbookFactory.create(inp);                
+                Sheet sheet = workbook.getSheet(container.getContainerName());
+                FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+                if (sheet.rowIterator().hasNext()) {
+                    Row row=sheet.getRow(0);
+                    String[] cellvalues = RowBuilder.createRowArray(row, evaluator);
+                    int indexCount = 0;
+                    for(String cell: cellvalues) {
+                        if(cell != null && !cell.isEmpty()){
+                            FieldInfo field = hb.convert(cell, typeDelimiter, unitDelimiter);
+                            field.index = indexCount;
+                            if(field.name!= null && !field.name.isEmpty() && !headers.containsKey(field.name)){
+                                headers.put(field.name, field);
+                                indexCount++;
+                            }
+                        }
+                    }
+                }
+                for(FieldInfo field: headers.values()){
+                    field.conceptualDataType = getConceptualType(field.internalDataType);
+                }
+                return headers;
+            } catch (IOException | InvalidFormatException ex){
+                LoggerHelper.logError(MessageFormat.format("Schema generation error for adapter: \'CSV\'. {0}", ex.getMessage()));            
+                return new LinkedHashMap<>();
+            }
+        }
+    }
+
     @Override
     public String getAggregateReaderResourceName() {
         return "MSExcelAggregateReader";
@@ -59,4 +134,5 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
     public String getJoinReaderResourceName() {
         return "MSExcelJoinReader";
     }    
+    
 }

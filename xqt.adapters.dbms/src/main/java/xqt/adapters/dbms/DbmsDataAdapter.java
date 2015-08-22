@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
+import xqt.model.adapters.BaseDataAdapter;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -39,7 +40,7 @@ import xqt.model.statements.query.SelectDescriptor;
  *
  * @author Javad Chamanara <chamanara@gmail.com>
  */
-public class DbmsDataAdapter implements DataAdapter{
+public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
     private DbmsDataReaderBuilder builder = null;
     private DbmsDataAdapterHelper helper = null;
     private ConvertSelectElement convertSelect = null;
@@ -90,7 +91,7 @@ public class DbmsDataAdapter implements DataAdapter{
         registerCapability("select.target.persist", false);
         registerCapability("select.target.plot", false);
         registerCapability("select.anchor", false);
-        registerCapability("select.filter", true);
+        registerCapability("select.filter", false);
         registerCapability("select.orderby", false);
         registerCapability("select.groupby", false);
         registerCapability("select.limit", false);
@@ -369,78 +370,78 @@ public class DbmsDataAdapter implements DataAdapter{
     }
 
     // these methods appear in multiple adapters, subject to be factored out.
-    private Boolean prepareAggregates(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-        // adopt for other types of queries, variable, join, etc
-        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
-            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId());
-            attribute.getForwardExpression().accept(visitor);
-            if(visitor.getAggregattionCallInfo().size() > 0){
-                aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
-            } else {// the attribute does not contain any aggregate, it should be considered as a group by item. preserve and merge it with group by list, later
-                groupByImplicitAttributes.add(attribute.getId());
-            }
-        }
-        // if there is no aggregate function discovered, there is no need to do anything else, 
-        // also the group by items found above, are not needed anymore
-        if(aggregattionCallInfo.size() <= 0){
-            // remove the group by list items, too
-            groupByAttributes.clear();
-            groupByImplicitAttributes.clear();
-            return false;
-        }
-//        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
-        aggregatePerspective.setId("aggregate_Perspective_for" + select.getProjectionClause().getPerspective().getId());
+//    private Boolean prepareAggregates(DbmsDataReaderBuilder builder, SelectDescriptor select) {
+//        // adopt for other types of queries, variable, join, etc
+//        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
+//            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), configPaths);
+//            attribute.getForwardExpression().accept(visitor);
+//            if(visitor.getAggregattionCallInfo().size() > 0){
+//                aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
+//            } else {// the attribute does not contain any aggregate, it should be considered as a group by item. preserve and merge it with group by list, later
+//                groupByImplicitAttributes.add(attribute.getId());
+//            }
+//        }
+//        // if there is no aggregate function discovered, there is no need to do anything else, 
+//        // also the group by items found above, are not needed anymore
+//        if(aggregattionCallInfo.size() <= 0){
+//            // remove the group by list items, too
+//            groupByAttributes.clear();
+//            groupByImplicitAttributes.clear();
+//            return false;
+//        }
+////        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
+//        aggregatePerspective.setId("aggregate_Perspective_for" + select.getProjectionClause().getPerspective().getId());
+//
+//        // replace the original aggregate calls
+//        for(AggregationCallInfo callInfo: aggregattionCallInfo){
+//                // I should find a way to replace this function with a specific wrapper call!!
+//                callInfo.getFunction().setId(callInfo.getAliasName()); //.setId(callInfo.getAliasName());
+//                callInfo.getFunction().setPackageId("DONOTCHANGE");
+//                callInfo.getFunction().getParameters().clear();
+//                callInfo.getFunction().getParameters()
+//                        .add(Expression.Parameter(
+//                                Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
+//                
+//                // also add the callinfo parameters to the row entity perpspective ...
+//                PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
+//                attribute.setId(callInfo.getParameterName());
+//                attribute.setDataType(callInfo.getParameter().getReturnType());
+//
+//                attribute.setForwardExpression(callInfo.getParameter());
+//                attribute.setReverseExpression(null);
+//                aggregatePerspective.addAttribute(attribute);
+//        }
+//        // if there is any aggregate function present in the perspective (aggregattionCallInfo)
+//        // construct a row entity perpective to be used for reading the data. The current perspective is
+//        // used for the result entities.
+//        return true;
+//    }
 
-        // replace the original aggregate calls
-        for(AggregationCallInfo callInfo: aggregattionCallInfo){
-                // I should find a way to replace this function with a specific wrapper call!!
-                callInfo.getFunction().setId(callInfo.getAliasName()); //.setId(callInfo.getAliasName());
-                callInfo.getFunction().setPackageId("DONOTCHANGE");
-                callInfo.getFunction().getParameters().clear();
-                callInfo.getFunction().getParameters()
-                        .add(Expression.Parameter(
-                                Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
-                
-                // also add the callinfo parameters to the row entity perpspective ...
-                PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
-                attribute.setId(callInfo.getParameterName());
-                attribute.setDataType(callInfo.getParameter().getReturnType());
+//    private void prepareGroupBy(DbmsDataReaderBuilder builder, SelectDescriptor select) {
+//        if(isSupported("select.groupby")) {
+//            for(String implicitGroupByItem: groupByImplicitAttributes){
+//                if(attributeInfos.containsKey(implicitGroupByItem)){
+//                    groupByAttributes.add(attributeInfos.get(implicitGroupByItem));
+//                }                 
+//            }
+//            for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
+//                if(attributeInfos.containsKey(entry.getKey())){
+//                    groupByAttributes.add(attributeInfos.get(entry.getKey()));
+//                }            
+//            }
+//        }
+//    }
 
-                attribute.setForwardExpression(callInfo.getParameter());
-                attribute.setReverseExpression(null);
-                aggregatePerspective.addAttribute(attribute);
-        }
-        // if there is any aggregate function present in the perspective (aggregattionCallInfo)
-        // construct a row entity perpective to be used for reading the data. The current perspective is
-        // used for the result entities.
-        return true;
-    }
-
-    private void prepareGroupBy(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-        if(isSupported("select.groupby")) {
-            for(String implicitGroupByItem: groupByImplicitAttributes){
-                if(attributeInfos.containsKey(implicitGroupByItem)){
-                    groupByAttributes.add(attributeInfos.get(implicitGroupByItem));
-                }                 
-            }
-            for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
-                if(attributeInfos.containsKey(entry.getKey())){
-                    groupByAttributes.add(attributeInfos.get(entry.getKey()));
-                }            
-            }
-        }
-    }
-
-    private void prepareLimit(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-        if(isSupported("select.limit")){
-            builder.skip(select.getLimitClause().getSkip())
-                   .take(select.getLimitClause().getTake());
-        }
-        else{
-            builder.skip(-1)
-                   .take(-1);
-        }
-    }    
+//    private void prepareLimit(DbmsDataReaderBuilder builder, SelectDescriptor select) {
+//        if(isSupported("select.limit")){
+//            builder.skip(select.getLimitClause().getSkip())
+//                   .take(select.getLimitClause().getTake());
+//        }
+//        else{
+//            builder.skip(-1)
+//                   .take(-1);
+//        }
+//    }    
 
     private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
         try{
