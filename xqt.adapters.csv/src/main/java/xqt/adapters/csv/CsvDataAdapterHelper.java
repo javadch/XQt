@@ -11,6 +11,7 @@ import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import com.vaiona.csv.reader.HeaderBuilder;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             String unitDelimiter =      String.valueOf(params[2]);
             String fileName = getContainerSchemaHolder(container);
             HeaderBuilder hb = new HeaderBuilder();
-            LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter);
+            LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter, isHeaderExternal(container));
             fields.values().stream().forEach(field -> {
                 field.conceptualDataType = getConceptualType(field.internalDataType);
             });
@@ -121,11 +122,12 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         String fileName = "";
         String fileExtention = container.getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
         if(isHeaderExternal(container)){
-            fileName = basePath.concat(container0).concat(".").concat(fileExtention).concat(".hdr");
+            fileName = container0.concat(".").concat(fileExtention).concat(".hdr");
         } else {
-            fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+            fileName = container0.concat(".").concat(fileExtention);
         }
         try{
+            fileName = Paths.get(basePath, fileName).toString();
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;
         } catch (IOException ex){
@@ -147,7 +149,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         String container0 = container.getContainerName();
         String fileName = "";
         String fileExtention = container.getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
-        fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+        fileName = Paths.get(basePath, container0.concat(".").concat(fileExtention)).toString();
         try{
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;
@@ -173,7 +175,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             String fileExtention = ((SingleContainer)target.getContainer())
                         .getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
                                     
-            String fileName = basePath.concat(container0).concat(".").concat(fileExtention);
+            String fileName = Paths.get(basePath, container0.concat(".").concat(fileExtention)).toString();            
             try{
                 fileName = FileHelper.makeAbsolute(fileName); 
                 return fileName;

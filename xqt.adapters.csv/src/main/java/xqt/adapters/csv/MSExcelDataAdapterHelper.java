@@ -13,6 +13,7 @@ import com.vaiona.csv.reader.RowBuilder;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -54,11 +55,18 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
     @Override
     public String getCompleteSourceName(SingleContainer container){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
+        if(basePath.endsWith("\\")){
+            basePath = basePath.substring(0, basePath.length() - "\\".length());
+        }
+        if(basePath.endsWith("/")){
+            basePath = basePath.substring(0, basePath.length() - "/".length());
+        }
         String fileExtention = "xlsx";
         String fileName = "";
         try{
             fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
+        
         fileName = basePath.concat(".").concat(fileExtention);
         try{
             fileName = FileHelper.makeAbsolute(fileName); 
