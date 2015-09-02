@@ -6,6 +6,7 @@ package xqt.api;
 
 import com.vaiona.commons.io.FileHelper;
 import com.vaiona.commons.io.MarkableFileInputStream;
+import com.vaiona.commons.lang.Environment;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -48,9 +49,14 @@ public class LanguageServicePoint {
     protected ClassLoader classLoader = null;
     private String JDK_Home = "";
     private String configFolders = ".";
-    public LanguageServicePoint(String configFolders){
+    public LanguageServicePoint(String configFolders) throws Exception{
         // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!        
-        com.jidesoft.utils.Lm.verifyLicense("Friedrich Schiller University of Jena", "SciQuest", "iBVmHbKikKMgQhcRthIhOwcUROnqer3");
+        try{
+            com.jidesoft.utils.Lm.verifyLicense("Friedrich Schiller University of Jena", "SciQuest", "iBVmHbKikKMgQhcRthIhOwcUROnqer3");
+        } catch (Exception ex){
+            throw new Exception("Invalid lisence!");
+        }
+        check(configFolders);
         this.configFolders = configFolders;
         LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folders: {0}.", configFolders));
         LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}.", Paths.get(".").toFile().getAbsolutePath()));
@@ -359,5 +365,23 @@ public class LanguageServicePoint {
             });
         }  
         return errors.toString();
+    }
+    
+    public void check(String configPaths) throws Exception {
+        LoggerHelper.logDebug(MessageFormat.format("Checking whether all prerequisites are set", 0));
+        LoggerHelper.logDebug(MessageFormat.format("Checking config folder...", 0));
+        String configFolder = FileHelper.getConfigPath(configPaths);
+        if(configFolder == null || configFolder.isEmpty()){
+            String msg = MessageFormat.format("Config folder was not found neither in the root nor in any of these locations: {0}.", configPaths);
+            LoggerHelper.logError(msg);
+            throw new Exception(msg);
+        } else {
+            String msg = MessageFormat.format("Config folder was found either in the root or in one of these locations: {0}.", configPaths);
+            LoggerHelper.logDebug(msg);
+        }
+        
+        LoggerHelper.logDebug(MessageFormat.format("Checking whetehr the JDK 8 is available", 0));
+        Environment.getJDK8Folder(); // if not found throws a proper exception
+        
     }
 }
