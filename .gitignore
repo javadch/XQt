@@ -11,3 +11,4 @@
 *.class
 /xqt.adapters.builtin/target/
 /xqt.adapters.dbms/target/
+/.project
