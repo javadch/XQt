@@ -7,14 +7,16 @@ package xqt.model.exceptions;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.antlr.v4.runtime.RecognitionException;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class LanguageException extends Exception{
-    private String messageTemplate;
+	private static final long serialVersionUID = 1L;
+	private String messageTemplate;
     private Integer lineNumber = 0;
     private Integer columnNumber = 0;
     private String contextInfo1 = "";
@@ -54,7 +56,8 @@ public class LanguageException extends Exception{
 //        super(message);
 //    }
 
-    private LanguageException(){
+    @SuppressWarnings("unused") // used to prevent instantiating an empty onject
+	private LanguageException(){
         //super();
     }
     

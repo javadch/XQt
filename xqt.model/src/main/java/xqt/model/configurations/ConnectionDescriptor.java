@@ -6,13 +6,12 @@ package xqt.model.configurations;
 
 import java.util.HashMap;
 import java.util.Map;
-import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class ConnectionDescriptor extends ConfigurationDescriptor{
    

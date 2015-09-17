@@ -26,11 +26,10 @@
 package xqt.model.configurations;
 
 import xqt.model.PhraseDescriptor;
-import xqt.model.expressions.Expression;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class ConnectionParameterDescriptor extends PhraseDescriptor {
     

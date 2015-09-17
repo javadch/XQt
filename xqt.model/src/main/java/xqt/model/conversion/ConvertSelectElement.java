@@ -8,22 +8,17 @@ package xqt.model.conversion;
 
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.types.TypeSystem;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
-import xqt.model.containers.SingleContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.statements.query.FilterClause;
 import xqt.model.statements.query.OrderClause;
-import xqt.model.statements.query.SelectDescriptor;
-import xqt.model.statements.query.SourceClause;
 import xqt.model.statements.query.TargetClause;
 
 /**
@@ -34,7 +29,7 @@ public class ConvertSelectElement {
     
     // take care when calling from adapters other than the default and CSV, because of the aggregate call redirection!!! in the convertor.visit method
     public Map<String, AttributeInfo> prepareAttributes(PerspectiveDescriptor perspective, DataAdapter adapter, boolean useOriginalNames) {
-        //ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
+        //ExpressionLocalizer converter = new ExpressionLocalizer(adapter);
         Map<String, AttributeInfo> attributes = new LinkedHashMap<>();
         for(PerspectiveAttributeDescriptor attribute: perspective.getAttributes().values()){
             if(!attributes.containsKey(attribute.getId())){

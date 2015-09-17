@@ -6,9 +6,7 @@
 
 package xqt.model.statements;
 
-import java.util.Map;
 import xqt.model.data.Resultset;
-import xqt.model.data.Variable;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**

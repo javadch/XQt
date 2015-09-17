@@ -15,8 +15,8 @@ import xqt.model.statements.StatementVisitor;
  * @author Javad Chamanara <chamanara@gmail.com>
  */
 public class JoinedSelectDescriptor extends SelectDescriptor {
-    private SelectDescriptor leftStatement;
-    private SelectDescriptor rightStatement;
+    //private SelectDescriptor leftStatement;
+    //private SelectDescriptor rightStatement;
 
     public JoinedSelectDescriptor (SelectDescriptor select, SelectDescriptor left, SelectDescriptor right){
         

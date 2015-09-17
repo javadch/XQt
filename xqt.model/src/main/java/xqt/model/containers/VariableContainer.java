@@ -5,7 +5,6 @@
  */
 package xqt.model.containers;
 
-import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 
 /**

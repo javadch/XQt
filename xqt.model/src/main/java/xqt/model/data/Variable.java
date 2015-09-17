@@ -7,11 +7,13 @@ package xqt.model.data;
 
 import com.vaiona.commons.data.DataTypeInfo;
 import com.vaiona.commons.types.TypeSystem;
+
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import xqt.model.execution.ExecutionInfo;
 
 /**
@@ -48,8 +50,9 @@ public class Variable {
         this.executionInfo = executionInfo;
     }
 
-    public <T> T[] createColumn(Class clazz, int size) {
-        T[] array = (T[]) java.lang.reflect.Array.newInstance(clazz, size);
+    public <T> T[] createColumn(Class<?> clazz, int size) {
+        @SuppressWarnings("unchecked")
+		T[] array = (T[]) java.lang.reflect.Array.newInstance(clazz, size);
         return (array);
     }
     
@@ -82,7 +85,7 @@ public class Variable {
                     Optional<DataTypeInfo> typeInfo = TypeSystem.getTypes().values().stream()
                             .filter(p->p.getRuntimeType().equals(fld.getType().getSimpleName())).findFirst();
                     if(typeInfo.isPresent()){
-                        Class fieldType = typeInfo.get().getPrimitiveType();
+                        Class<?> fieldType = typeInfo.get().getPrimitiveType();
                         table[col] = java.lang.reflect.Array.newInstance(fieldType, rowSize);
                     } else {
                         throw new NoClassDefFoundError(fld.getType().getName());

@@ -6,14 +6,12 @@ package xqt.model.declarations;
 
 import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.types.TypeSystem;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 import xqt.model.data.SchemaItem;
-import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.ExpressionType;
@@ -21,7 +19,7 @@ import xqt.model.expressions.MemberExpression;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class PerspectiveDescriptor extends DeclarationDescriptor{
     private PerspectiveDescriptor superPerspective;
@@ -56,8 +54,8 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         }
     }
     
-    // Canonic perpective is a perpective which its conceptual and pyhisical side are equal and taken from the 
-    // input perpective. It is used in complementing scenarios
+    // Canonic perspective is a perspective which its conceptual and physical side are equal and taken from the 
+    // input perspective. It is used in complementing scenarios
     public PerspectiveDescriptor createCanonicPerspective() {
         PerspectiveDescriptor canonic = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
         canonic.setId("canonic_Perspective_"+ id);
@@ -186,9 +184,6 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     // looks for simple members in the expressions and checks whether they refer to a physical field,
     // if yes, the data type of the the field is set for the members
     public PerspectiveDescriptor improve(Map<String, FieldInfo> fields) {
-        if(this == null){
-            return null;
-        }
         for(PerspectiveAttributeDescriptor unknownTypedAttribute: 
             this.getAttributes().values().stream()
                 .filter(p->p.getDataType().equalsIgnoreCase(TypeSystem.TypeName.Unknown))

@@ -15,7 +15,6 @@ import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.SingleContainer;
 
 /**

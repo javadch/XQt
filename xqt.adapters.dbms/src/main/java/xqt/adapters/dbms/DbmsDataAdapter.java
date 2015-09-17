@@ -8,7 +8,6 @@ package xqt.adapters.dbms;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.BaseDataAdapter;
-import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
 import xqt.model.containers.SingleContainer;
@@ -27,13 +25,9 @@ import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
-import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-import xqt.model.expressions.AggregationFunctionVisitor;
-import xqt.model.expressions.Expression;
 import xqt.model.functions.AggregationCallInfo;
-import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -220,7 +214,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
     private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
     private final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
     private final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
-    private final List<String> groupByImplicitAttributes = new ArrayList<>();
+    //private final List<String> groupByImplicitAttributes = new ArrayList<>();
 
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
@@ -446,7 +440,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
     private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
         try{
             //SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
-            Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
+            Class<?> entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
             DbmsDataReader<Object, Object, Object> reader = builder.build(entryPoint);
             if(reader != null){
                 List<Object> result = reader

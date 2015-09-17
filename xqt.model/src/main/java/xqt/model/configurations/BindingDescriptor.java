@@ -1,17 +1,13 @@
 package xqt.model.configurations;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.antlr.v4.runtime.ParserRuleContext;
-import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class BindingDescriptor extends ConfigurationDescriptor{
    

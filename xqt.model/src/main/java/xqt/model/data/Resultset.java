@@ -9,7 +9,6 @@ package xqt.model.data;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -46,7 +45,9 @@ public class Resultset {
     public void setData(Object data) {
         switch(resultsetType){
             case Tabular:
-                this.tabularData = (List<Object>)data;
+            	@SuppressWarnings("unchecked")
+            	List<Object> data2 = (List<Object>)data;
+            	this.tabularData = data2;
                 break;
             default:
                 this.data = data;

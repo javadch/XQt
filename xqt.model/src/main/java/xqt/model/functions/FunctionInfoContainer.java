@@ -7,13 +7,10 @@
 package xqt.model.functions;
 
 import com.vaiona.commons.io.FileHelper;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -23,7 +20,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -119,35 +115,35 @@ public class FunctionInfoContainer {
         return container; //(FunctionInfoContainer)unmarshallerHandler.getResult();
     }
  
-    private static void writeConfigForTest() {
-        FunctionParameterInfo p1 = new FunctionParameterInfo("columnName", "Boolean|Byte|String|Integer|Long|Real|Date");
-        FunctionParameterInfo p2 = new FunctionParameterInfo("columnName2", "Boolean|Byte|String|Integer|Long|Real|Date");
-        List<FunctionParameterInfo> parameters = new ArrayList<>();
-        parameters.add(p1);
-        parameters.add(p2);
-        FunctionInfo f1 = new FunctionInfo("count", "column", "Long", "default", parameters, null);
-        
-        FunctionInfoContainer instance = new FunctionInfoContainer();
-        instance.registeredFunctions.add(f1);
-
-        try (OutputStream buffer = new BufferedOutputStream(new FileOutputStream("config\\functionpacks\\default.xml"))) {
-            JAXBContext ctx = JAXBContext.newInstance(FunctionInfoContainer.class);
-            Marshaller m = ctx.createMarshaller();
-            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-            File configDir = new File("config\\functionpacks");
-            if (!configDir.exists()){
-                try{
-                    configDir.mkdir();
-                } catch(Exception ex){
-                    Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
-                }    
-            }
-            m.marshal(instance, buffer);
-            buffer.flush();
-        } catch (Exception ex){
-            Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-    }    
+//    private static void writeConfigForTest() {
+//        FunctionParameterInfo p1 = new FunctionParameterInfo("columnName", "Boolean|Byte|String|Integer|Long|Real|Date");
+//        FunctionParameterInfo p2 = new FunctionParameterInfo("columnName2", "Boolean|Byte|String|Integer|Long|Real|Date");
+//        List<FunctionParameterInfo> parameters = new ArrayList<>();
+//        parameters.add(p1);
+//        parameters.add(p2);
+//        FunctionInfo f1 = new FunctionInfo("count", "column", "Long", "default", parameters, null);
+//        
+//        FunctionInfoContainer instance = new FunctionInfoContainer();
+//        instance.registeredFunctions.add(f1);
+//
+//        try (OutputStream buffer = new BufferedOutputStream(new FileOutputStream("config\\functionpacks\\default.xml"))) {
+//            JAXBContext ctx = JAXBContext.newInstance(FunctionInfoContainer.class);
+//            Marshaller m = ctx.createMarshaller();
+//            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+//
+//            File configDir = new File("config\\functionpacks");
+//            if (!configDir.exists()){
+//                try{
+//                    configDir.mkdir();
+//                } catch(Exception ex){
+//                    Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
+//                }    
+//            }
+//            m.marshal(instance, buffer);
+//            buffer.flush();
+//        } catch (Exception ex){
+//            Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        
+//    }    
 }

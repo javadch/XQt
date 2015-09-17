@@ -6,13 +6,12 @@ package xqt.model.statements;
 
 import com.vaiona.commons.compilation.InMemorySourceFile;
 import java.util.List;
-import java.util.Optional;
 import xqt.model.ElementDescriptor;
 import xqt.model.execution.ExecutionInfo;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public abstract class StatementDescriptor extends ElementDescriptor {    
     protected ExecutionInfo executionInfo = null;

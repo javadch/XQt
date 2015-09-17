@@ -2,7 +2,6 @@ package xqt.model;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.antlr.v4.runtime.ParserRuleContext;
 
 /*
  * To change this template, choose Tools | Templates
@@ -11,7 +10,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class ElementDescriptor extends BaseDescriptor {
     protected Map<String, Object> properties = new HashMap<>();

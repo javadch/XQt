@@ -5,22 +5,22 @@
 package xqt.model.configurations;
 
 import xqt.model.ClauseDescriptor;
-import xqt.model.ElementDescriptor;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
+ * Not in use, should be deleted eventually
  */
-//public class BindingScopeDescriptor extends ClauseDescriptor {
-//
-//    private BindingDescriptor binding;
-//
-//    public BindingDescriptor getBinding() {
-//        return binding;
-//    }
-//
-//    public void setBinding(BindingDescriptor binding) {
-//        this.binding = binding;
-//    }
-//
-//}
+public class BindingScopeDescriptor extends ClauseDescriptor {
+
+    private BindingDescriptor binding;
+
+    public BindingDescriptor getBinding() {
+        return binding;
+    }
+
+    public void setBinding(BindingDescriptor binding) {
+        this.binding = binding;
+    }
+
+}

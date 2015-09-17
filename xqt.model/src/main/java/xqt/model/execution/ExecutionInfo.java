@@ -14,11 +14,10 @@ import java.util.Optional;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.data.Variable;
 import xqt.model.statements.StatementDescriptor;
-import xqt.model.statements.query.SelectDescriptor;
 
 /**
  *
- * @author standard
+ * @author Javad Chamanara
  */
 public class ExecutionInfo {
     private StatementDescriptor statement;

@@ -18,7 +18,7 @@ import xqt.model.functions.FunctionInfoContainer;
 
 /**
  *
- * @author standard
+ * @author Javad Chamanara
  */
 @XmlRootElement(name="Adapter")
 public class AdapterInfo {
@@ -110,11 +110,11 @@ public class AdapterInfo {
                 Path absulote =relative.toAbsolutePath();
                 absulotePath = absulote.toString();
             }
-            //LoggerHelper.logDebug("Looking up adapater: " + id + " to load.");
+            //LoggerHelper.logDebug("Looking up adapter: " + id + " to load.");
             LoggerHelper.logDebug(MessageFormat.format("The exeution engine is loading adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
             ClassLoader classLoader = ObjectCreator.getURLClassLoader(locationType + ":" + absulotePath, parentLoader);
             LoggerHelper.logDebug(MessageFormat.format("Class loader is instantiated for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
-            Class claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
+            Class<?> claz = ObjectCreator.getClass(mainNamespace + "." + mainClassName, classLoader);
             LoggerHelper.logDebug(MessageFormat.format("Adapter class definition is loaded for adapter: {0} from {1}:{2}.", id, locationType, absulotePath));
             DataAdapter adapter = null;
             adapter = (DataAdapter)ObjectCreator.createInstance(claz);

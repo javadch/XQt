@@ -97,7 +97,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
 //                        resultSet.setSchema(sourceVariable.getResult().getSchema());
         } else {
             try{
-                Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();            
+                Class<?> entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();            
                 DataReader reader = builder.build(entryPoint);
                 List<Object> result = reader
                     .target(helper.getCompleteTargetName(select.getTargetClause()))
