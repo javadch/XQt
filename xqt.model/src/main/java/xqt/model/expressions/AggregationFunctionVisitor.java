@@ -58,7 +58,7 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
                 aggInfo.setAliasName((namingPrefix + "_Aggregate_" + aggregattionCallInfo.size()).toLowerCase());
                 aggInfo.setFunction(expr);
                 aggInfo.setFunctionName(expr.getPackageId() + "." + expr.getId());
-                aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "p0"); // all in lowercase. only one parameter is considered for the aggregate functions
+                aggInfo.setParameterName(aggInfo.getAliasName() + "_" + "p0"); // all in lower case. only one parameter is considered for the aggregate functions
                 if(expr.getParameters().size() > 0){
                     aggInfo.setParameter(expr.getParameters().get(0));
                 }

@@ -15,7 +15,7 @@ public class Count implements AggregateFunction{
     long counter = 0;
 
     @Override
-    public Long move(Object data) { // Long is a subcalss of Object, hence, compatible...
+    public Long move(Object data) { // Long is a subclass of Object, hence, compatible...
         if(data != null)
             counter++;
         return counter;

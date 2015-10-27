@@ -127,7 +127,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
             attribute.getForwardExpression().accept(visitor);
             if(visitor.getAggregattionCallInfo().size() > 0){
                 aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
-            } else {// the attribute is not containg aggregate, it should be considered as a group by item. preserve and check it withe group by list, later
+            } else {// the attribute is not containing aggregate, it should be considered as a group by item. preserve and check it withe group by list, later
                 if(!attribute.isAuxiliary())
                     groupByImplicitAttributes.add(attribute.getId());
             }

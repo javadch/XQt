@@ -37,7 +37,7 @@ import xqt.runtime.RuntimeSystem;
 
 /**
  *
- * @author jfd
+ * @author Javad Chamanara
  */
 public class LanguageServicePoint {
     //private final String processScript;
@@ -47,7 +47,6 @@ public class LanguageServicePoint {
     private StringBuilder processScript = new StringBuilder();
     protected List<Exception> exceptions = new ArrayList<>();
     protected ClassLoader classLoader = null;
-    private String JDK_Home = "";
     private String configFolders = ".";
     public LanguageServicePoint(String configFolders) throws Exception{
         // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!        
@@ -57,24 +56,30 @@ public class LanguageServicePoint {
             throw new Exception("Invalid lisence!");
         }
         check(configFolders);
+        config();
         this.configFolders = configFolders;
         LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folders: {0}.", configFolders));
         LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}.", Paths.get(".").toFile().getAbsolutePath()));
     }
 
-    // it is to keep the ctors clean
+    private void config() {
+    	// config the Java runtime properties such as max heap size, etc.
+    	
+	}
+
+	// it is to keep the ctors clean
     private void init(InputStream processScript) throws Exception{
         //prepare the parser/ annotator and create the DST use the runtime system for all the functions, 
         // The API is just a facade over the runtime
         // every statement should have an ID
-        // create dependencies of each element to the others especiallay statements.
+        // create dependencies of each element to the others especially statements.
         //dstNode.getDependsUponElements(ElementType.Statement ...)
         
         // Load the function specifications from the packs
         LoggerHelper.logDebug(MessageFormat.format("Loading function specifications...", 1));
         loadFunctionSpecifications();
         LoggerHelper.logDebug(MessageFormat.format("Function specifications loaded", 1));
-        // Load the jars of the adapters. maybe it can be deffered to the time they actually requested!
+        // Load the jars of the adapters. maybe it can be deferred to the time they actually requested!
         classLoader = this.getClass().getClassLoader();
         
         //this.inputStream = processScript;
@@ -125,7 +130,7 @@ public class LanguageServicePoint {
                     sb.append(read); sb.append(System.getProperty("line.separator"));
                     read =br.readLine();
                 }
-                if(inputStream.markSupported()) // if not, susequent get or process calls may fail
+                if(inputStream.markSupported()) // if not, subsequent get or process calls may fail
                     inputStream.reset();
                 return sb.toString();
             } catch (IOException ex) {
@@ -173,7 +178,10 @@ public class LanguageServicePoint {
         // process all the statements and store the results, but do not return anything
         if(exceptions == null || exceptions.size() <=0){
             LoggerHelper.logDebug(MessageFormat.format("execution of the process is started.", 1));
+            // Suppress garbage collection
+            //System.gc();
             engine.execute();
+            // Reset garbage collection
             LoggerHelper.logDebug(MessageFormat.format("execution of the process is finished.", 1));
         }
   
@@ -211,21 +219,24 @@ public class LanguageServicePoint {
     }
     
     public Object getVariablesInfo(){
-        List<String> varNames = engine.getProcessModel().getStatements().values().stream()
-                                    .filter(p-> p.hasExecutionInfo() && p.getExecutionInfo().hasVariable())
-                                    .map(p->p.getExecutionInfo().getVariable().getName()).collect(Collectors.toList());
-        Object[] o = varNames.toArray();
-        return o;
+    	try{
+	        List<String> varNames = engine.getProcessModel().getStatements().values().stream()
+	                                    .filter(p-> p.hasExecutionInfo() && p.getExecutionInfo().hasVariable())
+	                                    .map(p->p.getExecutionInfo().getVariable().getName()).collect(Collectors.toList());
+	        if(varNames == null || varNames.size() <= 0)
+	        	return null;
+	        String[] names = new String[varNames.size()];
+	        int index =0;
+	        for(String name : varNames){
+	            names[index++] = name;
+	        }
+	        return names;
+    	} catch (Exception ex){
+    		return null;
+    	}
     }
     
     public Object getVariable(String variableName){
-        if(variableName.equals("Diana")){
-            Object[] o = {  new String[] { "a", "b", "c","d", "e" },
-                            new int[] { 1, 2, 3, 4, 5},
-                            new double[] { .5, 1.5, 2.0, 3.0, 3.5 } };
-            return o;
-        }
-        
         Optional<StatementDescriptor> stmt = engine.getProcessModel().getStatements().values().stream()
                 .filter(p-> p.hasExecutionInfo() 
                         && p.getExecutionInfo().hasVariable() 
@@ -235,7 +246,10 @@ public class LanguageServicePoint {
             Variable variable = stmt.get().getExecutionInfo().getVariable();
             switch(variable.getResult().getResultsetType()){
                 case Tabular:
-                    return variable.getResultAsArray();
+                	long start = System.nanoTime();
+                    Object obj = variable.getResultAsArray();                    
+                    LoggerHelper.logInfo(MessageFormat.format("Converting variable {0} to a column based array took {1} milliseconds.", variableName, (System.nanoTime() - start)/1000000 ));
+                    return obj;
                 case Image:
                     return createImage((JPanel)variable.getResult().getData());
                 default:
@@ -273,6 +287,26 @@ public class LanguageServicePoint {
         }
         return null;
     }
+    
+    public Object getPerspectiveFor(String variableName){
+        Optional<StatementDescriptor> stmt = engine.getProcessModel().getStatements().values().stream()
+                .filter(p-> p.hasExecutionInfo() 
+                        && p.getExecutionInfo().hasVariable() 
+                        && p.getExecutionInfo().getVariable().getName().equalsIgnoreCase(variableName)
+                ).findFirst();
+        if(stmt.isPresent()){
+            Variable variable = stmt.get().getExecutionInfo().getVariable();
+            switch(variable.getResult().getResultsetType()){
+                case Tabular:
+                    return variable.getPerspectiveAsArray();
+                case Image:
+                    return null;
+                default:
+                    break;
+            }
+        }
+        return null;
+    }    
   
     // https://tips4java.wordpress.com/2008/10/13/screen-image/
     // http://stackoverflow.com/questions/1349220/convert-jpanel-to-image

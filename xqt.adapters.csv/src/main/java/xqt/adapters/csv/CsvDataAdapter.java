@@ -222,7 +222,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 select.validate();
                 if(select.hasError())
                     return;
-            } else { // see whether there exists any attribute of unkown type!
+            } else { // see whether there exists any attribute of unknown type!
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
             }
@@ -234,9 +234,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 Map<String, AttributeInfo> rowEntityAttributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
-                // set the resultset perspective. 
+                // set the result set perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                // maybe pareparation is not needed!!!!!!
+                // maybe preparation is not needed!!!!!!
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);                
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
@@ -244,26 +244,26 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 }
                 prepareGroupBy(builder, select);
 
-                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
-                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
-                    //replace the forward map of the resultentity to point to the same attribute in the row entity
+                // check if there are group by attributes, add them to the row entity and replace the access method of the result entity
+                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the group by attributes should be added to the row entity to be used in the group constrcution keys
+                    //replace the forward map of the result entity to point to the same attribute in the row entity
                     for(AttributeInfo attInfo: attributeInfos.values()){
                         if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name)) 
                             //&& !(auxiliaryAttributes.stream().anyMatch(pp -> pp.getId().equals(attInfo.name)))
                           ){
                             AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
                             rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
-                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a variable of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                         }
                     }
                 } 
                 List<PerspectiveAttributeDescriptor> auxiliaryAttributes = select.getProjectionClause().getPerspective().getAttributes().values().stream().filter(p-> p.isAuxiliary()).collect(Collectors.toList());
-                // in the aggregate mode, all auxiliary attributes should be taken out, so that they do not apear 
+                // in the aggregate mode, all auxiliary attributes should be taken out, so that they do not appear 
                 for(PerspectiveAttributeDescriptor p: auxiliaryAttributes) {
                     if(attributeInfos.containsKey(p.getId())){
                         AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attributeInfos.get(p.getId()));                        
                         rowEntityAttributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
-                        //tobeAddedToTheRowEntity.forwardMap = "rowEntity." + tobeAddedToTheRowEntity.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                        //tobeAddedToTheRowEntity.forwardMap = "rowEntity." + tobeAddedToTheRowEntity.name; // pointing to a variable of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                         attributeInfos.remove(p.getId());
                     }
                 }
@@ -310,7 +310,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             
 
             prepareLimit(builder, select);
-            //all attributes refered to from the group by plus, 
+            //all attributes referred to from the group by plus, 
             //if the perspective contains aggregate functions, all non aggregate attributes should be added to the goup by list
             // 
 
@@ -512,9 +512,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             PerspectiveDescriptor master =((SelectDescriptor)select.getDependsUpon()).getProjectionClause().getPerspective();
             if(select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
                 // The current variable based statement is reading data from another statement's output sx, so that sx was having a physical schema
-                // This is why the select has no attribute! in perspective less statemets, the schema is lazily extracted from the data container, which causes the
-                // depending satetement remain attribute less!
-                // the master statement's perspective is now avaialable in builder
+                // This is why the select has no attribute! in perspective less statements, the schema is lazily extracted from the data container, which causes the
+                // depending statement remain attribute less!
+                // the master statement's perspective is now available in builder
                 select.getProjectionClause().setPerspective(master.createCanonicPerspective());
             }
         }
@@ -574,7 +574,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             Class entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();
             DataReader<Object, Object, Object> reader = builder.build(entryPoint);
             if(reader != null){
-                // when the reader is built, it can be used nutiple time having different CSV settings
+                // when the reader is built, it can be used multiple time having different CSV settings
                 // as long as the query has not changed. means the reader can read/ query different files the share the same column info
                 // but maybe different delimiter, etc.
                 List<Object> result = reader
@@ -586,7 +586,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                         // <====================================================
                         .source(helper.getCompleteSourceName(((SingleContainer)select.getSourceClause().getContainer())))
                         .target(helper.getCompleteTargetName(select.getTargetClause()))
-                        // pass th target file
+                        // pass the target file
                         .bypassFirstRow(helper.isFirstRowHeader(((SingleContainer)select.getSourceClause().getContainer())))
                         .trimTokens(true) // default is true
                         .read(null, null);
@@ -604,7 +604,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         } catch (Exception  ex) {
             select.getLanguageExceptions().add(
                 LanguageExceptionBuilder.builder()
-                    .setMessageTemplate("Statement could not be translated. Technical details: " + ex.getMessage())
+                    .setMessageTemplate("Statement could not be executed. Technical details: " + ex.getMessage())
                     .setContextInfo1(select.getId())
                     .setLineNumber(select.getParserContext().getStart().getLine())
                     .setColumnNumber(select.getParserContext().getStop().getCharPositionInLine())
@@ -623,7 +623,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 Variable sourceVariable = (Variable)memory.get(((VariableContainer)select.getSourceClause().getContainer()).getVariableName());
                 List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
                 Resultset resultSet = new Resultset(ResultsetType.Tabular); 
-                List<Object> result = reader // do not check for source == null, and do not bypass this case. the adapter needs to do somethinf even when the source is null
+                List<Object> result = reader // do not check for source == null, and do not bypass this case. the adapter needs to do something even when the source is null
                     .target(helper.getCompleteTargetName(select.getTargetClause()))
                     .read(source, null);
                 if(result == null)

@@ -249,7 +249,7 @@ public class DefaultQueryEngine  implements QueryEngine{
                                         }
                                     }
                                 } catch (ClassNotFoundException ex) {
-                                    // a compaliation error has happened, but a proper error message should be communicated to the user.
+                                    // a compilation error has happened, but a proper error message should be communicated to the user.
                                     LoggerHelper.logError(MessageFormat.format("No class was comipled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
                                 }
                             }

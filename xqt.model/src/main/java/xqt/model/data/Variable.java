@@ -56,6 +56,30 @@ public class Variable {
         return (array);
     }
     
+    public Object[] getPerspectiveAsArray(){
+    	Object[/*columns*/] perspective = new Object[4];
+    	int attributeCount = result.getSchema().size();
+    	String[] names =  new String[attributeCount]; // attribute names
+    	perspective[0] = names;
+    	String[] types = new String[attributeCount]; // attribute types
+    	perspective[1] = types;
+    	String[] constraints = new String[attributeCount]; // attribute constraints
+    	perspective[2] = constraints;
+    	String[] annotations = new String[attributeCount]; // attribute annotations
+    	perspective[3] = annotations;
+    	
+    	int attCounter = 0;
+    	for(SchemaItem att: result.getSchema()){
+    		names[attCounter] = att.getName();
+    		types[attCounter] = att.getDataType();
+    		constraints[attCounter] = "NA";
+    		annotations[attCounter] = "NA";
+    		attCounter++;
+    	}
+    	
+    	return perspective;
+    	
+    }
     public Object[] getResultAsArray(){
         List<String> columnNames = result.getSchema().stream().map(p->p.getName()).collect(Collectors.toList());
         if (result.getTabularData()!= null && result.getTabularData().size() > 0) {

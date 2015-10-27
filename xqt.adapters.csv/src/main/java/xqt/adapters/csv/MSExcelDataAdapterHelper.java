@@ -100,7 +100,14 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
                 //XSSFWorkbook workbook2 = new XSSFWorkbook(fileName);
                 InputStream inp = new FileInputStream(fileName);
                 Workbook workbook = WorkbookFactory.create(inp);                
-                Sheet sheet = workbook.getSheet(container.getContainerName());
+                Sheet sheet = null;
+                String sheetName = container.getContainerName();
+                if(sheetName != null && !sheetName.isEmpty()){
+                	sheet = workbook.getSheet(sheetName);
+                }
+                if(sheet == null){ // sheetName is not valid or is an index
+                	sheet = workbook.getSheetAt(container.getContainerIndex());
+                }
                 FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
                 if (sheet.rowIterator().hasNext()) {
                     Row row=sheet.getRow(0);

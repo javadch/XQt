@@ -109,7 +109,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             perspective.getLanguageExceptions().addAll(att.getLanguageExceptions());
         }
         perspective.setOrderInParent(processModel.totalElementCount());
-        processModel.addDeclaration(perspective); //its better to return to visit processmodel and add the perspective there
+        processModel.addDeclaration(perspective); //its better to return to visit process model and add the perspective there
         stack.pop();
         return perspective;
     }
@@ -118,7 +118,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitAttribute(@NotNull XQtParser.AttributeContext ctx) { 
         PerspectiveDescriptor perspective = (PerspectiveDescriptor)stack.peek();
         PerspectiveAttributeDescriptor attribute = PerspectiveAnnotator.describePerspectiveAttribute(ctx, perspective.getId());
-        if(ctx.fwd != null){ //these items will be moved to expression visitor/ descriptor methds
+        if(ctx.fwd != null){ //these items will be moved to expression visitor/ descriptor methods
             Expression fwd = (Expression)visit(ctx.fwd);
             fwd.setReturnType(attribute.getDataType());
             attribute.setForwardExpression(fwd);
@@ -147,7 +147,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             connection.getLanguageExceptions().addAll(param.getLanguageExceptions());
         }
         connection.setOrderInParent(processModel.totalElementCount());
-        processModel.addConfiguration(connection); //its better to return to visit processmodel and add the perspective there
+        processModel.addConfiguration(connection); //its better to return to visit process model and add the perspective there
         stack.pop();
         return connection;
     }
@@ -704,39 +704,47 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         String container = ctx.containerRef().getText();                        
         try{ // the container is assumed to be a numerical index
             Integer index = Integer.parseInt(container);
-            if(b != null && index >= 0 && index < b.getScopes().size()){
-                item.setContainerIndex(index);
-            }
-            else{
-                item.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("The container index %s is out of range!")
-                        .setContextInfo1(container)
-                        .setLineNumber(ctx.getStart().getLine())
-                        .setColumnNumber(ctx.getStart().getCharPositionInLine())
-                        .build()
-                );
+            if( b.getScopes().size() > 0){ // it is possible that there is no scope defined, therefore the index is used as is.
+                if(b != null && index >= 0 && index < b.getScopes().size()){
+                    item.setContainerIndex(index);
+                }
+                else{
+                    item.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("The container index %s is out of range!")
+                            .setContextInfo1(container)
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStart().getCharPositionInLine())
+                            .build()
+                    );
+                }            	
+            } else {
+            	item.setContainerIndex(index);
             }
         }
         catch (NumberFormatException  ex) {  // the container is not a numerical index, instead is a name, so the index should be identified
-            if(b!= null && b.getScopes().contains(container)){
-                item.setContainerIndex(b.getScopes().indexOf(container)); // the position of the container in the scoped list
-            }
-            else{
-                item.getLanguageExceptions().add(
-                    LanguageExceptionBuilder.builder()
-                        .setMessageTemplate("The container %s is not in the scope of binding %s!")
-                        .setContextInfo1(container)
-                        .setContextInfo2(b!=null? b.getId(): "NA")
-                        .setLineNumber(ctx.getStart().getLine())
-                        .setColumnNumber(ctx.getStart().getCharPositionInLine())
-                        .build()
-                );
-            }
+        	if( b.getScopes().size() > 0){
+                if(b!= null && b.getScopes().contains(container)){
+                    item.setContainerIndex(b.getScopes().indexOf(container)); // the position of the container in the scoped list
+                }
+                else{
+                    item.getLanguageExceptions().add(
+                        LanguageExceptionBuilder.builder()
+                            .setMessageTemplate("The container %s is not in the scope of binding %s!")
+                            .setContextInfo1(container)
+                            .setContextInfo2(b!=null? b.getId(): "NA")
+                            .setLineNumber(ctx.getStart().getLine())
+                            .setColumnNumber(ctx.getStart().getCharPositionInLine())
+                            .build()
+                    );
+                }        		
+        	} else {
+        		item.setContinaerName(container);
+        	}
         }
         return item;
     }
-     // add visit joined source here when it is supprted in the grammar
+     // add visit joined source here when it is supported in the grammar
     
     @Override
     public Object visitVariable(@NotNull XQtParser.VariableContext ctx) { 
@@ -1175,11 +1183,11 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             
             // the paramter type should be compatible with its specification as defined by the function spec.
             // there is an exception: when the parameter is a member, its a field of the physical data which its type is not defined yet. 
-            // so I do trust it for the time being and wait to enouncter a possible type conversion exection later during the statement execution by the adapter.
+            // so I do trust it for the time being and wait to enouncter a possible type conversion execution later during the statement execution by the adapter.
             // enhancement: I will consider type determination at this stage when everything works as designed.
             
-            // If the parameter type is unknown, it is probably pointing to a field in the undelying data source
-            // which is typycally not known at this moment. for this situation, the best guess is that the parameter should be of the type of the first permitted type
+            // If the parameter type is unknown, it is probably pointing to a field in the underlying data source
+            // which is typically not known at this moment. for this situation, the best guess is that the parameter should be of the type of the first permitted type
             if(pa instanceof MemberExpression && pa.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)) {                
                 pa.setReturnType(paramInfo.getPermittedDataTypes().split(Pattern.quote("|"))[0].trim());
             }
