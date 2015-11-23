@@ -402,7 +402,7 @@ public class LanguageServicePoint {
     }
     
     public void check(String configPaths) throws Exception {
-        LoggerHelper.logDebug(MessageFormat.format("Checking whether all prerequisites are set", 0));
+        LoggerHelper.logDebug(MessageFormat.format("Checking whether all prerequisites are met", 0));
         LoggerHelper.logDebug(MessageFormat.format("Checking config folder...", 0));
         String configFolder = FileHelper.getConfigPath(configPaths);
         if(configFolder == null || configFolder.isEmpty()){
