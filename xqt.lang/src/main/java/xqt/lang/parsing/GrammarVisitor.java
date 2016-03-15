@@ -435,7 +435,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             );                                                
         }
 
-        // if the target is going to be a plot, check whther h, v are pointing to the attributes of the associated perspective. also set the linked perspective
+        // if the target is going to be a plot, check whether h, v are pointing to the attributes of the associated perspective. also set the linked perspective
         // -> check whether Ids defined in the filter clause are defined as an attribute in the associated perspective
         // -> check whether Ids defined in the anchor clause are defined as an attribute in the associated perspective
         // -> check whether Ids defined in the grouping clause are defined as an attribute in the associated perspective
@@ -445,7 +445,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 if( (projection.isPresent() && projection.getPerspective().getPerspectiveType() != PerspectiveDescriptor.PerspectiveType.Implicit)
                         && projection.getPerspective().getAttributes().values().stream()
                         .filter(p->p.getId().equals(record.getContext1()) && p.getDataType().equals(record.getContext2())).count() <=0){
-                    // the requested attrinute/type pair are not defined in the perspective;
+                    // the requested attribute/type pair are not defined in the perspective;
                     String msg = MessageFormat.format("Attribute ''{0}'' of type ''{1}''", record.getContext1(), record.getContext2());
                     select.getLanguageExceptions().add(
                         LanguageExceptionBuilder.builder()

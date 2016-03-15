@@ -4,8 +4,14 @@
  */
 package xqt.lang.annotation;
 
+import java.text.MessageFormat;
+
 import org.antlr.v4.runtime.ParserRuleContext;
+
+import com.vaiona.commons.logging.LoggerHelper;
+
 import xqt.lang.grammar.XQtParser;
+import xqt.model.Keywords;
 import xqt.model.ProcessModel;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
@@ -50,7 +56,8 @@ public class PerspectiveAnnotator {
         PerspectiveAttributeDescriptor attDesc = new PerspectiveAttributeDescriptor();  
         attDesc.setParserContext(ctx);
         if(ctx.smartId() != null){
-            attDesc.setId(ctx.smartId().ID().getText().toLowerCase());
+        	String id = ctx.smartId().ID().getText().toLowerCase();
+    		attDesc.setId(id);
             //attDesc.setName(attDesc.getId());
 
             if(ctx.smartId().dataType() != null){
@@ -72,5 +79,5 @@ public class PerspectiveAnnotator {
             );
         }
         return attDesc;
-    }    
+    }
 }

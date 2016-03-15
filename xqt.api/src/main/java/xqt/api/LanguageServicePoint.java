@@ -48,6 +48,7 @@ public class LanguageServicePoint {
     protected List<Exception> exceptions = new ArrayList<>();
     protected ClassLoader classLoader = null;
     private String configFolders = ".";
+    
     public LanguageServicePoint(String configFolders) throws Exception{
         // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!        
         try{

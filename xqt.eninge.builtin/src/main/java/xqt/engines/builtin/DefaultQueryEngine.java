@@ -18,6 +18,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+
+import xqt.adapters.builtin.TestingReader;
 import xqt.engine.QueryEngine;
 import xqt.model.ProcessModel;
 import xqt.model.data.Variable;
@@ -147,6 +149,9 @@ public class DefaultQueryEngine  implements QueryEngine{
 
     @Override
     public void execute() {
+    	//engineStartHook();
+    	//if(10 > 1+5)
+    	//	return;
         try {
             // the statements should be executed in the process order,
             // but the map does not guarantee the order!
@@ -226,7 +231,7 @@ public class DefaultQueryEngine  implements QueryEngine{
                             if(fileManager != null){
                                 try{
                                     // some of the adapters may use no sources, or they may prepare in a non dynamic way for specific scenario
-                                    // default adapater for example may use a predefined class(s), or ...
+                                    // default adapter for example may use a predefined class(s), or ...
                                     source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
                                     if(source.getCompiledClass() != null)
                                         LoggerHelper.logDebug(MessageFormat.format("Compiled class is set for source {0}.", source.getFullName()));                
@@ -250,7 +255,7 @@ public class DefaultQueryEngine  implements QueryEngine{
                                     }
                                 } catch (ClassNotFoundException ex) {
                                     // a compilation error has happened, but a proper error message should be communicated to the user.
-                                    LoggerHelper.logError(MessageFormat.format("No class was comipled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
+                                    LoggerHelper.logError(MessageFormat.format("No class was compiled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
                                 }
                             }
                         }
@@ -271,5 +276,19 @@ public class DefaultQueryEngine  implements QueryEngine{
                             .build()
                         );
         }
-    }    
+    }
+
+    // This is a method to notify others that the engine has started. 
+    // \currently is used for testing purposes
+	private void engineStartHook() {
+		// TODO Auto-generated method stub
+		LoggerHelper.logInfo("Engine start hook is started...");
+		TestingReader tr = new TestingReader();
+		try{
+			tr.readSenario1("C:\\Javad\\ViDa\\gen.csv");
+		} catch (Exception ex) {
+			System.out.println(ex.getMessage());
+		}
+		LoggerHelper.logInfo("Engine start hook is ended.");
+	}    
 }

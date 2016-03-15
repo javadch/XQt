@@ -5,12 +5,16 @@
 package xqt.model.declarations;
 
 import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
+
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import xqt.model.data.SchemaItem;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.Expression;
@@ -40,13 +44,13 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         for (Map.Entry<String, FieldInfo> entrySet : fields.entrySet()) {
             FieldInfo field = entrySet.getValue();
             PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
-            attribute.setId(field.name);
+    		attribute.setId(field.name);
             attribute.setDataType(field.conceptualDataType);
             if(field.unit != null && !field.name.isEmpty()){
                 attribute.setSemanticKey(field.unit);
             }
-            MemberExpression fwd = Expression.Member(attribute.getId(), attribute.getDataType());
-            MemberExpression rvs = Expression.Member(attribute.getId(), attribute.getDataType());
+            MemberExpression fwd = Expression.Member(field.name, attribute.getDataType()); // attribute Id may change e.g., because of conflicting with the keywords
+            MemberExpression rvs = Expression.Member(field.name, attribute.getDataType());
             
             attribute.setForwardExpression(fwd);
             attribute.setReverseExpression(rvs);

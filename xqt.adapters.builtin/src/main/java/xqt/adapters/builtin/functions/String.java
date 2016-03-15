@@ -73,7 +73,7 @@ public class String {
     }
 
     public static boolean isNumeric(java.lang.String s) {
-       if (s == null) {
+       if (s == null || String.isEmpty(s)) {
            return false;
        }
        return s.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.

@@ -67,9 +67,10 @@ public class StatementExecuter implements StatementVisitor{
         // in this case, first execute the master statement and then pass its result to the compensation query. The correct result
         // is the return value from the compensation query.
         //this.engine.setVariableValue("test", new Object());
-        // the adapater has been chosen in the prepare phase and is assigned to the statement's execution info.
+        // the adapter has been chosen in the prepare phase and is assigned to the statement's execution info.
         //String adapterId = selectStatement.getSourceClause().getBinding().getConnection().getAdapterName();
         
+    	long startExecutionTime = System.nanoTime();
         DataAdapter adapter = select.getExecutionInfo().getAdapter();
         Resultset result;
         LoggerHelper.logDebug(MessageFormat.format("Executing statement {0} on the {1} adapter.", select.getId(), adapter.getAdapterInfo().getId()));
@@ -106,6 +107,7 @@ public class StatementExecuter implements StatementVisitor{
             }
             var.setExecutionInfo(null); // remove the variable, its temporary and not needed anymore
         }
+        select.getExecutionInfo().setExecutionTime(System.nanoTime() - startExecutionTime);
         LoggerHelper.logDebug(MessageFormat.format("Statement {0} was run successfully on the {1} adapter .", select.getId(), adapter.getAdapterInfo().getId()));        
         return result;
     }

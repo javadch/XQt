@@ -1,6 +1,11 @@
 package xqt.model.declarations;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
+
+import com.vaiona.commons.logging.LoggerHelper;
+
+import xqt.model.Keywords;
 import xqt.model.PhraseDescriptor;
 import xqt.model.expressions.Expression;
 import xqt.model.expressions.MemberExpression;
@@ -88,6 +93,18 @@ public class PerspectiveAttributeDescriptor extends PhraseDescriptor {
 
     public void setAuxiliary(boolean auxiliary) {
         this.auxiliary = auxiliary;
+    }
+    
+    @Override
+    public void setId(String value){
+    	if(Keywords.attributeNames.containsKey(value)){
+    		id  = Keywords.attributeNames.get(value);
+    		String msg = MessageFormat.format("Attribute name changed from {0} to {1}.", value, id);
+    		LoggerHelper.logError(msg);
+    		//System.out.println(msg);
+    	}
+    	else
+    		id = value;
     }
     
     public static PerspectiveAttributeDescriptor createCanonic(String name, String dataType, boolean auxiliary){

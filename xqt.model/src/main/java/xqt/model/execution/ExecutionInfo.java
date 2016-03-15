@@ -26,6 +26,8 @@ public class ExecutionInfo {
     // add diagnostics here, start time, stop time, etc
     private List<String> issues = new ArrayList<>();
     private DataAdapter adapter = null;
+    private long executionTime = 0;
+    
     LinkedHashMap<String, InMemorySourceFile> sources = new LinkedHashMap<>();
 
     public InMemorySourceFile getExecutionSource(){
@@ -96,6 +98,14 @@ public class ExecutionInfo {
 
     public void setIssues(List<String> issues) {
         this.issues = issues;
-    }        
+    }
+    
+	public void setExecutionTime(long value) {
+		executionTime = value;
+	}        
+	
+	public long getExecutionTime(){
+		return executionTime;
+	}
 
 }
