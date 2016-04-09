@@ -17,8 +17,8 @@ import xqt.model.containers.DataContainer;
 import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
-import xqt.model.statements.query.FilterClause;
-import xqt.model.statements.query.OrderClause;
+import xqt.model.statements.query.SelectionFeature;
+import xqt.model.statements.query.OrderFeature;
 import xqt.model.statements.query.TargetClause;
 
 /**
@@ -44,7 +44,7 @@ public class ConvertSelectElement {
         return attributes;
     }
 
-    public String prepareWhere(FilterClause filter, DataAdapter adapter) {
+    public String prepareWhere(SelectionFeature filter, DataAdapter adapter) {
         ExpressionLocalizer convertor = new ExpressionLocalizer(adapter);
         if(filter == null || filter.getPredicate() == null)
             return "";
@@ -54,7 +54,7 @@ public class ConvertSelectElement {
         return filterString;
     }
 
-    public Map<String, String> prepareOrdering(OrderClause order) {
+    public Map<String, String> prepareOrdering(OrderFeature order) {
         Map<String, String> ordering = new LinkedHashMap<>();
         try {
             order.getOrderItems().entrySet().stream()

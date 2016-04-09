@@ -134,8 +134,8 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     }
     
     @Override
-    public String assembleQuery(Map<String, Object> clauses){// its called from the builder!
-        String query = "SELECT * FROM " + clauses.get("ContainerName");
+    public String assembleQuery(Map<String, Object> queryFeatures){// its called from the builder!
+        String query = "SELECT * FROM " + queryFeatures.get("ContainerName");
         // generate the projection clause -> ((temp_lo+temp_hi)/2) as Temperature, xyz as xyz, beware of functions SUBSTRING(x, 0, 10) as m,
         // generate the source clause
         // generate the filter clause

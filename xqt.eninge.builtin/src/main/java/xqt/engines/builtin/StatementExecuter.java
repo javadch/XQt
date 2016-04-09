@@ -30,14 +30,14 @@ import xqt.model.data.Variable;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementVisitor;
-import xqt.model.statements.query.AnchorClause;
-import xqt.model.statements.query.FilterClause;
-import xqt.model.statements.query.GroupClause;
-import xqt.model.statements.query.LimitClause;
-import xqt.model.statements.query.OrderClause;
-import xqt.model.statements.query.ProjectionClause;
+import xqt.model.statements.query.AnchorFeature;
+import xqt.model.statements.query.SelectionFeature;
+import xqt.model.statements.query.GroupFeature;
+import xqt.model.statements.query.LimitFeature;
+import xqt.model.statements.query.OrderFeature;
+import xqt.model.statements.query.ProjectionFeature;
 import xqt.model.statements.query.SelectDescriptor;
-import xqt.model.statements.query.SetQualifierClause;
+import xqt.model.statements.query.SetQualifierFeature;
 import xqt.model.statements.query.SourceClause;
 import xqt.model.statements.query.TargetClause;
 
@@ -271,10 +271,10 @@ public class StatementExecuter implements StatementVisitor{
         comp.setDependsUpon(select);
         select.setComplementingStatement(comp);
         
-        comp.addClause(new SetQualifierClause());
+        comp.addClause(new SetQualifierFeature());
         // commented on 15.06.15 because I think a canonic perspective made form the select's perspective would do the job better
         //comp.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
-        ProjectionClause   projection       = new ProjectionClause();
+        ProjectionFeature   projection       = new ProjectionFeature();
         projection.setPerspective(select.getProjectionClause().getPerspective().createCanonicPerspective());
         projection.setPresent(true);
         comp.addClause(projection);
@@ -324,50 +324,50 @@ public class StatementExecuter implements StatementVisitor{
             if(comp.getExecutionInfo().getAdapter().isSupported("select.anchor")){                
                 comp.addClause(select.getAnchorClause());
                 select.getClauses().remove(select.getAnchorClause().getType());
-                select.addClause(new AnchorClause());  // added an empty/neutral clause              
+                select.addClause(new AnchorFeature());  // added an empty/neutral clause              
             }
         } else { // add default clauses to the compensation query
-            comp.addClause(new AnchorClause());
+            comp.addClause(new AnchorFeature());
         }
 
         if(select.getFilterClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.filter")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.filter")){
                 comp.addClause(select.getFilterClause());
                 select.getClauses().remove(select.getFilterClause().getType());
-                select.addClause(new FilterClause());  // added an empty/neutral clause              
+                select.addClause(new SelectionFeature());  // added an empty/neutral clause              
             }
         } else {
-            comp.addClause(new FilterClause());
+            comp.addClause(new SelectionFeature());
         }
         
         if(select.getOrderClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.orderby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.orderby")){
                 comp.addClause(select.getOrderClause());
                 select.getClauses().remove(select.getOrderClause().getType());
-                select.addClause(new OrderClause());  // added an empty/neutral clause              
+                select.addClause(new OrderFeature());  // added an empty/neutral clause              
             }
         } else {
-            comp.addClause(new OrderClause());
+            comp.addClause(new OrderFeature());
         }
 
         if(select.getGroupClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.groupby")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.groupby")){
                 comp.addClause(select.getGroupClause());
                 select.getClauses().remove(select.getGroupClause().getType());
-                select.addClause(new GroupClause());  // added an empty/neutral clause              
+                select.addClause(new GroupFeature());  // added an empty/neutral clause              
             }
         } else {
-            comp.addClause(new GroupClause());
+            comp.addClause(new GroupFeature());
         }
                 
         if(select.getLimitClause().isPresent() && !select.getExecutionInfo().getAdapter().isSupported("select.limit")){
             if(comp.getExecutionInfo().getAdapter().isSupported("select.limit")){
                 comp.addClause(select.getLimitClause());
                 select.getClauses().remove(select.getLimitClause().getType());
-                select.addClause(new LimitClause());  // added an empty/neutral clause              
+                select.addClause(new LimitFeature());  // added an empty/neutral clause              
             }
         } else {
-            comp.addClause(new LimitClause());
+            comp.addClause(new LimitFeature());
         }
         
         return comp;

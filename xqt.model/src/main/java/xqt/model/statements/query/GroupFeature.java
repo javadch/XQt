@@ -15,12 +15,12 @@ import xqt.model.ClauseDescriptor;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class GroupClause extends ClauseDescriptor{
+public class GroupFeature extends ClauseDescriptor{
     private Map<String, GroupEntry> groupIds = new LinkedHashMap<>();
 
-    public GroupClause(){
+    public GroupFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Group.toString();
+        type = SelectQueryClauseType.Group.toString();
     }
 
     public Map<String, GroupEntry> getGroupIds() {

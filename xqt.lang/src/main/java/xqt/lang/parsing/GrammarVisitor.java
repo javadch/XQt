@@ -52,18 +52,18 @@ import xqt.model.expressions.ValueExpression;
 import xqt.model.functions.FunctionInfo;
 import xqt.model.functions.FunctionInfoContainer;
 import xqt.model.functions.FunctionParameterInfo;
-import xqt.model.statements.query.AnchorClause;
-import xqt.model.statements.query.FilterClause;
-import xqt.model.statements.query.GroupClause;
+import xqt.model.statements.query.AnchorFeature;
+import xqt.model.statements.query.SelectionFeature;
+import xqt.model.statements.query.GroupFeature;
 import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.JoinedSelectDescriptor;
-import xqt.model.statements.query.LimitClause;
+import xqt.model.statements.query.LimitFeature;
 import xqt.model.statements.query.NullOrdering;
-import xqt.model.statements.query.OrderClause;
+import xqt.model.statements.query.OrderFeature;
 import xqt.model.statements.query.OrderEntry;
-import xqt.model.statements.query.ProjectionClause;
+import xqt.model.statements.query.ProjectionFeature;
 import xqt.model.statements.query.SelectDescriptor;
-import xqt.model.statements.query.SetQualifierClause;
+import xqt.model.statements.query.SetQualifierFeature;
 import xqt.model.statements.query.SetQualifierType;
 import xqt.model.statements.query.SortOrder;
 import xqt.model.statements.query.SourceClause;
@@ -199,15 +199,15 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         SelectDescriptor select = SelectDescriptor.describeSelect(ctx, String.valueOf(processModel.getStatements().size()+1));
         stack.push(select); // it would be better if there were no need for data communication :-(
         // process clauses, add new objects instead of null if the corresponding visitor returns null
-        SetQualifierClause setQuantifier    = new SetQualifierClause();
+        SetQualifierFeature setQuantifier    = new SetQualifierFeature();
         if(ctx.setQualifierClause() != null){
-            setQuantifier = (SetQualifierClause)visitSetQualifierClause(ctx.setQualifierClause());
+            setQuantifier = (SetQualifierFeature)visitSetQualifierClause(ctx.setQualifierClause());
             setQuantifier.setPresent(true);
             select.getRequiredCapabilities().add("select.qualifier");
         }
-        ProjectionClause   projection       = new ProjectionClause();
+        ProjectionFeature   projection       = new ProjectionFeature();
         if(ctx.projectionClause()!= null) {
-            projection = (ProjectionClause)visitProjectionClause(ctx.projectionClause());
+            projection = (ProjectionFeature)visitProjectionClause(ctx.projectionClause());
             if(projection.getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Inline){
                 projection.getPerspective().setId("Inline_Perspective_" + select.getId());                
             }
@@ -225,31 +225,31 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             select.getRequiredCapabilities().add("select.target." + target.getContainer().getDataContainerType().toString().toLowerCase());
         }
         
-        AnchorClause anchor = new AnchorClause();
+        AnchorFeature anchor = new AnchorFeature();
         if(ctx.anchorClause() != null){
-            anchor = (AnchorClause)visitAnchorClause(ctx.anchorClause());
+            anchor = (AnchorFeature)visitAnchorClause(ctx.anchorClause());
             anchor.setPresent(true);
             select.getRequiredCapabilities().add("select.anchor");
         }
 //        if(source.getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined)
 //            parsingContext = "Joined_source";
-        FilterClause       filter           = new FilterClause();
+        SelectionFeature       filter           = new SelectionFeature();
         if(ctx.filterClause() != null){
-            filter = (FilterClause)visitFilterClause(ctx.filterClause());
+            filter = (SelectionFeature)visitFilterClause(ctx.filterClause());
             filter.setPresent(true);
             select.getRequiredCapabilities().add("select.filter");
         }
 //        parsingContext = "";
-        OrderClause        order            = new OrderClause();
+        OrderFeature        order            = new OrderFeature();
         if(ctx.orderClause() != null){
-            order = (OrderClause)visitOrderClause(ctx.orderClause());
+            order = (OrderFeature)visitOrderClause(ctx.orderClause());
             order.setPresent(true);
             select.getRequiredCapabilities().add("select.orderby");
         }
         
-        LimitClause        limit            = new LimitClause();
+        LimitFeature        limit            = new LimitFeature();
         if(ctx.limitClause() != null) {
-            limit = (LimitClause)visitLimitClause(ctx.limitClause());
+            limit = (LimitFeature)visitLimitClause(ctx.limitClause());
             limit.setPresent(true);
             if (limit.getSkip() > -1){
                 select.getRequiredCapabilities().add("select.limit");
@@ -261,9 +261,9 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             }
         }
         
-        GroupClause        group            = new GroupClause();
+        GroupFeature        group            = new GroupFeature();
         if(ctx.groupClause() != null){
-            group = (GroupClause)visitGroupClause(ctx.groupClause());
+            group = (GroupFeature)visitGroupClause(ctx.groupClause());
             group.setPresent(true);
             select.getRequiredCapabilities().add("select.groupby");
         }
@@ -501,7 +501,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     
     @Override
     public Object visitSetQualifierClause(@NotNull XQtParser.SetQualifierClauseContext ctx) {
-        SetQualifierClause qualifier = new SetQualifierClause();
+        SetQualifierFeature qualifier = new SetQualifierFeature();
         try {
             qualifier.setQualifier(SetQualifierType.valueOf(ctx.getText().toUpperCase()));
         } catch (Exception ex) {
@@ -532,7 +532,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         //perpsective defined in the source clause
         // after visiting all the clauses, try to determine the perspective again.
         // the source node visitor should define the perspective and add it to the process model declarations
-        ProjectionClause projection = new ProjectionClause();
+        ProjectionFeature projection = new ProjectionFeature();
         String perspectiveName = ctx.perspectiveName.getText();
 
         if(perspectiveName == null || perspectiveName.isEmpty())
@@ -585,7 +585,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         // see the issue #1 (https://github.com/javadch/XQt/issues/1) description and comments for the solution outline
         // currently just perspective attributes are supported, not physical fields. The fields need the modeler to access the source/ container
         // to obtain the data types.
-        ProjectionClause projection = new ProjectionClause();
+        ProjectionFeature projection = new ProjectionFeature();
         PerspectiveDescriptor perspective = new PerspectiveDescriptor();
         perspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Inline);
         projection.setPerspective(perspective);
@@ -917,7 +917,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitAnchorClause(@NotNull XQtParser.AnchorClauseContext ctx) {
         try {
             //Object ret = visitChildren(ctx);
-            AnchorClause anchor = new AnchorClause();
+            AnchorFeature anchor = new AnchorFeature();
 
             //experimental code
             if(ctx.startAnchor != null && ctx.startAnchor.expression() != null){
@@ -948,7 +948,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     @Override
     public Object visitFilterClause(@NotNull XQtParser.FilterClauseContext ctx) {
         //Object ret = visitChildren(ctx);
-        FilterClause filter = new FilterClause();
+        SelectionFeature filter = new SelectionFeature();
 
         //experimental code
         // Interval inter = new Interval(ctx.searchPhrase().expression().getStart().getCharPositionInLine(), ctx.searchPhrase().expression().getStop().getCharPositionInLine());
@@ -1320,7 +1320,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     @Override
     public Object visitOrderClause(@NotNull XQtParser.OrderClauseContext ctx) {
         //Object ret = visitChildren(ctx);
-        OrderClause order = new OrderClause();
+        OrderFeature order = new OrderFeature();
 
         for(XQtParser.SortSpecificationContext sortItemCtx: ctx.sortSpecification()){
             MemberExpression sortKeyExpr = (MemberExpression)visit(sortItemCtx.sortKey().identifier());
@@ -1361,7 +1361,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     @Override
     public Object visitLimitClause(@NotNull XQtParser.LimitClauseContext ctx) {
-        LimitClause limit = new LimitClause();
+        LimitFeature limit = new LimitFeature();
 
         //experimental code
         if(ctx.skip != null){
@@ -1380,7 +1380,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
 
     @Override
     public Object visitGroupClause(@NotNull XQtParser.GroupClauseContext ctx) {
-        GroupClause group = new GroupClause();
+        GroupFeature group = new GroupFeature();
 
         for(XQtParser.IdentifierContext groupItemCtx: ctx.identifier()){
             MemberExpression groupKeyExpr = (MemberExpression)visit(groupItemCtx);

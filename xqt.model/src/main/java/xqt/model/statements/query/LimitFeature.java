@@ -13,13 +13,13 @@ import xqt.model.ClauseDescriptor;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class LimitClause extends ClauseDescriptor{
+public class LimitFeature extends ClauseDescriptor{
     private Integer skip = -1; //Integer is nullable. null means the phrase was not presented in the statement
     private Integer take = -1;
 
-    public LimitClause(){
+    public LimitFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Limit.toString();
+        type = SelectQueryClauseType.Limit.toString();
     }
 
     public Integer getSkip() {

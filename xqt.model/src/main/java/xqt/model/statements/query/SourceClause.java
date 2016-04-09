@@ -15,7 +15,7 @@ public class SourceClause extends ClauseDescriptor { //DataContainerDescriptor{
    
     public SourceClause(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Source.toString();     
+        type = SelectQueryClauseType.Source.toString();     
     }
 
     public DataContainer getContainer() {

@@ -17,7 +17,7 @@ public class TargetClause extends ClauseDescriptor{
    
     public TargetClause(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Target.toString();     
+        type = SelectQueryClauseType.Target.toString();     
     }
 
     public DataContainer getContainer() {

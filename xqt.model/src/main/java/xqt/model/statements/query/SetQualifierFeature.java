@@ -13,12 +13,12 @@ import xqt.model.ClauseDescriptor;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class SetQualifierClause extends ClauseDescriptor{
+public class SetQualifierFeature extends ClauseDescriptor{
     private SetQualifierType qualifier = SetQualifierType.DISTINCT;
 
-    public SetQualifierClause(){
+    public SetQualifierFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Qualifier.toString();
+        type = SelectQueryClauseType.Qualifier.toString();
     }
 
     public SetQualifierType getQualifier() {

@@ -17,12 +17,12 @@ import xqt.model.expressions.Expression;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class FilterClause extends ClauseDescriptor{
+public class SelectionFeature extends ClauseDescriptor{
     private Expression predicate;
 
-    public FilterClause(){
+    public SelectionFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Filter.toString();
+        type = SelectQueryClauseType.Filter.toString();
     }
 
     public Expression getPredicate() {

@@ -17,13 +17,13 @@ import xqt.model.expressions.Expression;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class AnchorClause extends ClauseDescriptor{
+public class AnchorFeature extends ClauseDescriptor{
         private Expression startAnchor;
         private Expression stopAnchor;
 
-    public AnchorClause(){
+    public AnchorFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Anchor.toString();
+        type = SelectQueryClauseType.Anchor.toString();
         isPresent = false;
     }
 

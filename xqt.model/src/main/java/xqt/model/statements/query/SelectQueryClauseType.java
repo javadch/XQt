@@ -8,7 +8,7 @@ package xqt.model.statements.query;
  *
  * @author standard
  */
-public enum SelectClauseType {
+public enum SelectQueryClauseType {
     Qualifier,
     Projection,
     Source,

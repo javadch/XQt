@@ -14,12 +14,12 @@ import xqt.model.declarations.PerspectiveDescriptor;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class ProjectionClause extends ClauseDescriptor{
+public class ProjectionFeature extends ClauseDescriptor{
     private PerspectiveDescriptor perspective = null;
 
-    public ProjectionClause(){
+    public ProjectionFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Projection.toString();
+        type = SelectQueryClauseType.Projection.toString();
     }
     
     public PerspectiveDescriptor getPerspective() {

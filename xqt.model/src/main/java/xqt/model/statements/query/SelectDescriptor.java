@@ -61,40 +61,40 @@ public class SelectDescriptor extends StatementDescriptor{
         return clauses;
     }
 
-    public SetQualifierClause getSetQualifierClause() { 
-        return (SetQualifierClause)clauses.get(SelectClauseType.Qualifier.toString());
+    public SetQualifierFeature getSetQualifierClause() { 
+        return (SetQualifierFeature)clauses.get(SelectQueryClauseType.Qualifier.toString());
     }
 
-    public ProjectionClause getProjectionClause() { 
-        return (ProjectionClause)clauses.get(SelectClauseType.Projection.toString());
+    public ProjectionFeature getProjectionClause() { 
+        return (ProjectionFeature)clauses.get(SelectQueryClauseType.Projection.toString());
     }
 
     public SourceClause getSourceClause() { 
-        return (SourceClause)clauses.get(SelectClauseType.Source.toString());
+        return (SourceClause)clauses.get(SelectQueryClauseType.Source.toString());
     }
     
     public TargetClause getTargetClause() { 
-        return (TargetClause)clauses.get(SelectClauseType.Target.toString());
+        return (TargetClause)clauses.get(SelectQueryClauseType.Target.toString());
     }
 
-    public AnchorClause getAnchorClause() { 
-        return (AnchorClause)clauses.get(SelectClauseType.Anchor.toString());
+    public AnchorFeature getAnchorClause() { 
+        return (AnchorFeature)clauses.get(SelectQueryClauseType.Anchor.toString());
     }
 
-    public FilterClause getFilterClause() { 
-        return (FilterClause)clauses.get(SelectClauseType.Filter.toString());
+    public SelectionFeature getFilterClause() { 
+        return (SelectionFeature)clauses.get(SelectQueryClauseType.Filter.toString());
     }
 
-    public OrderClause getOrderClause() { 
-        return (OrderClause)clauses.get(SelectClauseType.Order.toString());
+    public OrderFeature getOrderClause() { 
+        return (OrderFeature)clauses.get(SelectQueryClauseType.Order.toString());
     }
 
-    public LimitClause getLimitClause() { 
-        return (LimitClause)clauses.get(SelectClauseType.Limit.toString());
+    public LimitFeature getLimitClause() { 
+        return (LimitFeature)clauses.get(SelectQueryClauseType.Limit.toString());
     }
 
-    public GroupClause getGroupClause() { 
-        return (GroupClause)clauses.get(SelectClauseType.Group.toString());
+    public GroupFeature getGroupClause() { 
+        return (GroupFeature)clauses.get(SelectQueryClauseType.Group.toString());
     }
 
     public void addClause(ClauseDescriptor clause){
@@ -180,7 +180,7 @@ public class SelectDescriptor extends StatementDescriptor{
     public void validate() {
         MemberExpression faultyAttribute;
         if(getProjectionClause().isPresent()){
-            ProjectionClause projection = getProjectionClause();
+            ProjectionFeature projection = getProjectionClause();
             // check whether the join keys are valid and present in the associated perspective
             if(getSourceClause().getContainer().getDataContainerType() == DataContainer.DataContainerType.Joined){
                 JoinedContainer join = (JoinedContainer) getSourceClause().getContainer();

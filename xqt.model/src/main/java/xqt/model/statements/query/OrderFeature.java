@@ -15,12 +15,12 @@ import xqt.model.ClauseDescriptor;
  * @author Javad Chamanara
  * @project SciQuest
  */
-public class OrderClause extends ClauseDescriptor{
+public class OrderFeature extends ClauseDescriptor{
     private Map<String, OrderEntry> orderItems = new LinkedHashMap<>();
 
-    public OrderClause(){
+    public OrderFeature(){
         id = UUID.randomUUID().toString();
-        type = SelectClauseType.Order.toString();
+        type = SelectQueryClauseType.Order.toString();
     }
 
     public Map<String, OrderEntry> getOrderItems() {
