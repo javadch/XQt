@@ -9,8 +9,6 @@ package xqt.adapters.csv;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
-import com.vaiona.csv.reader.DataReader;
-import com.vaiona.csv.reader.DataReaderBuilder;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.ParseException;
@@ -18,6 +16,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import xqt.adapters.csv.reader.DataReader;
+import xqt.adapters.csv.reader.DataReaderBuilder;
 import xqt.model.adapters.BaseDataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -125,7 +126,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
                 .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
                 //.addProjection("MAX", "SN")// MIN, SUM, COUNT, AVG, 
-                .namespace("com.vaiona.csv.reader")
+                .namespace("xqt.adapters.csv.reader")
                 .dialect(dialect)
                 .namesCaseSensitive(false)
             ;
