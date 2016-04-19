@@ -9,7 +9,7 @@ import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.io.FileHelper;
 import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
-import com.vaiona.csv.reader.HeaderBuilder;
+import xqt.adapters.csv.reader.HeaderBuilder;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
