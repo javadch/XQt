@@ -1,0 +1,411 @@
+@import xqt.adapters.csv.reader.*
+@import com.vaiona.commons.data.*
+@import com.vaiona.commons.types.*;
+
+@args() {
+    String namespace,
+    String BaseClassName,
+    String RecordClassName,
+    String EntityClassName,
+    String ReaderClassName,
+    String LeftClassName,
+    String RightClassName,
+    String TargetRowType,
+    String Where,
+    String rowHeader,
+    String linePattern,
+    Map<AttributeInfo, String> Ordering,
+    Integer skip,
+    Integer take,
+    boolean writeResultsToFile,
+    String joinType,
+    String joinOperator,
+    String leftJoinKey,
+    String rightJoinKey,
+    List<AttributeInfo> Mid,
+    String ContainerName,
+    String RightContainerName,
+    Integer LeftFieldsNo,
+    Integer RightFieldsNo
+}
+
+package @(namespace);
+
+import @(namespace).*;
+import com.vaiona.commons.data.*;
+import java.io.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.Arrays;
+
+@@SuppressWarnings("unchecked")
+public class @(ReaderClassName) implements DataReader<@(TargetRowType), @(LeftClassName), @(RightClassName)> {
+    BufferedReader leftReader, rightReader;
+    BufferedWriter writer;
+
+    //Map<String, FieldInfo> headers = new LinkedHashMap<>();
+
+    String  columnDelimiter     = ",";
+    String  columnDelimiterRight= ",";
+    String  quoteMarker       = "\"";
+    String  typeDelimiter       = ":";
+    String  unitDelimiter       = "::";
+    String  commentIndicator    = "#";
+    String  missingValue        = "NA";
+    String  source              = "";
+    String  sourceRight         = "";
+    String  target              = "";
+    boolean bypassFirstRow      = false;
+    boolean bypassFirstRowRight = false;
+    boolean trimTokens          = true;
+    LineParser lineParser       = new DefaultLineParser();
+    LineParser lineParserRight  = new DefaultLineParser();
+
+    public List<@(TargetRowType)> read(List<@(LeftClassName)> source1, List<@(RightClassName)> source2)  throws FileNotFoundException, IOException {
+    
+        @if(Ordering!= null && Ordering.size() > 0) {
+        Comparator<@(EntityClassName)> sorter = new Comparator<@(EntityClassName)>() {
+                    @@Override
+                    public int compare(@(EntityClassName) left, @(EntityClassName) right){
+                    @for (Map.Entry<AttributeInfo, String> entry : Ordering.entrySet()) {
+                        @{
+                            DataTypeInfo dti = TypeSystem.getTypes().get(entry.getKey().conceptualDataType);
+                            AttributeInfo ad = entry.getKey();
+                        }
+                        @if(Ordering.size() == 1) {                            
+                            @if(entry.getValue().toUpperCase().equals("ASC")){
+                                return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                            } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                            }
+                        } else {
+                            @if(entry_isFirst){
+                                if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (!entry_isFirst && !entry_isLast) { 
+                                else if(@(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name))) != 0){
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            } else if (entry_isLast) {
+                                else {
+                                    @if(entry.getValue().toUpperCase().equals("ASC")){
+                                        return @(dti.getComparePattern().replace("$first$", "left." + (ad.name)).replace("$second$", "right." + (ad.name)));
+                                    } else if(entry.getValue().toUpperCase().equals("DESC")) {
+                                        return @(dti.getComparePattern().replace("$first$", "right." + (ad.name)).replace("$second$", "left." + (ad.name)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+               }
+              };
+        }
+
+        lineParserRight.setQuoteMarker(quoteMarker);
+        lineParserRight.setDilimiter(columnDelimiterRight);
+        lineParserRight.setTrimTokens(trimTokens);
+
+        lineParser.setQuoteMarker(quoteMarker);
+        lineParser.setDilimiter(columnDelimiter);
+        lineParser.setTrimTokens(trimTokens);
+
+        long skipped =0, taken =0;
+
+        String outerSource = source;
+        String innerSource = sourceRight;
+        @if(joinType.equalsIgnoreCase("RightOuterJoin")){	
+            outerSource = sourceRight;
+            innerSource = source;
+            if(outerSource == null || outerSource.isEmpty()){
+                    outerSource = innerSource;
+            }
+        }
+        leftReader = new BufferedReader(new FileReader(new File(outerSource)));
+        FileInputStream rightInputStream = new FileInputStream(innerSource);
+
+        @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+            if(this.bypassFirstRowRight){
+                leftReader.readLine();
+            }
+        } else {
+            if(this.bypassFirstRow){
+                leftReader.readLine();
+            }
+        }
+        /////////////////////////////////////////////////////////////////////
+        List<@(EntityClassName)> resultset = new ArrayList<>();
+        for(String[] left: leftReader.lines()
+                .filter(p -> !p.trim().startsWith(commentIndicator))
+                .map(p -> lineParser.split(p)).collect(Collectors.toList())                 
+            ){
+            @(EntityClassName) nonMatching = null;
+            @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                if(taken >= @(take)) break;
+            }
+            try{
+                rightInputStream.getChannel().position(0);
+                rightReader = new BufferedReader(new InputStreamReader(rightInputStream));
+                @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+                    if(this.bypassFirstRow){
+                        rightReader.readLine();
+                    }
+                } else {
+                    if(this.bypassFirstRowRight){
+                        rightReader.readLine();
+                    }
+                }    
+                Boolean recordMatched = false;
+                for(String[] right: rightReader.lines()
+                        .filter(p -> !p.trim().startsWith(commentIndicator))
+                        .map(p -> lineParserRight.split(p)).collect(Collectors.toList()) 
+                    ){
+                    @if(joinType.equalsIgnoreCase("RightOuterJoin")){
+                        String[] joinedRow = Arrays.copyOf(right, left.length + right.length);
+                        System.arraycopy(left, 0, joinedRow, @(LeftFieldsNo), left.length); 
+                    } else {
+                        String[] joinedRow = Arrays.copyOf(left, left.length + right.length);
+                        System.arraycopy(right, 0, joinedRow, @(LeftFieldsNo), right.length); @/ it should use the number of actual fields as mentioned in the file header or perspective instead of the left.length
+                    }
+                        @/ if you rename the rowEntity, then its reference in DataReaderBuilder.extractUsedAttributes method should also change.
+                    @(EntityClassName) rowEntity = new @(EntityClassName)(joinedRow); // PRE: populate the keys
+                    if(!rowEntity.isValid) continue; // filter rows with wrong keys
+                    @/ check the join type here
+                    @if(joinType.equalsIgnoreCase("InnerJoin")){
+                        @if(joinOperator.equalsIgnoreCase("!equals")){ // speciall check for NOT EQUALS on strings!
+                            if(((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
+                        } else {
+                            if(!((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))) @/ Negate of the JOIN operator here!
+                        }
+                            continue; @/ based on the join key comparison results, skip the row
+                        @if(Mid != null && Mid.size() > 0){
+                            rowEntity.midPopulate(); // populate attributes required by the where clause.
+                        }
+                        @if(Where!= null && !Where.isEmpty()) {
+                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                        } else {
+                            if(!rowEntity.isValid) continue; // check population validity only
+                        }
+                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                        @/ ORDERING HERE
+                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ @/ if no ordering is imposed and limit.skip is present
+                            if(skipped++ < @(skip)) continue; @/ the current row should be skipped
+                        }
+                        rowEntity.populate(); // populate the remaining attributes.
+                        resultset.add(rowEntity);
+                        @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                            if(taken++ >= @(take)) break;
+                        }
+                    }   
+                    else if(joinType.equalsIgnoreCase("LeftOuterJoin")){
+                        @if(Mid != null && Mid.size() > 0){
+                            rowEntity.midPopulate(); // populate attributes required by the where clause.
+                        }
+                        @if(Where!= null && !Where.isEmpty()) {
+                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                        } else {
+                            if(!rowEntity.isValid) continue; // check population validity only
+                        }
+                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                        @/ ORDERING HERE
+                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
+                            if(skipped++ < @(skip)) continue;
+                        }
+                        @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
+                            if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                                rowEntity.populate();
+                                resultset.add(rowEntity);
+                                //nonMatching = null;
+                                recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                                //break;
+                            } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+				nonMatching = rowEntity.populateLeft();
+                            }
+                        } else {
+                            if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                                rowEntity.populate();
+                                resultset.add(rowEntity);
+                                //nonMatching = null;
+                                recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                                //break;
+                            } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+				nonMatching = rowEntity.populateLeft();
+                            }
+                        }	
+                    }
+                    else if(joinType.equalsIgnoreCase("RightOuterJoin")){
+                        @if(Mid != null && Mid.size() > 0){
+                            rowEntity.midPopulate(); // populate attributes required by the where clause.
+                        }
+                        @if(Where!= null && !Where.isEmpty()) {
+                            if(!rowEntity.isValid || !(@Where)) continue; // check population validity and apply the Where clause. the negate of the where clause is checked here                       
+                        } else {
+                            if(!rowEntity.isValid) continue; // check population validity only
+                        }
+                        @/ if no sorting is requested, try applying limits here, otherwise do it when the join is finished
+                        @/ ORDERING HERE
+                        @if(skip > -1 && (Ordering == null || Ordering.size() <= 0)){ // if no ordering is imposed and limit.skip is present
+                            if(skipped++ < @(skip)) continue;
+                        }
+                        @if(joinOperator.equalsIgnoreCase("!equals")){ // special check for NOT EQUALS on strings!
+                            if(!((rowEntity.@(leftJoinKey)) .equals (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                                rowEntity.populate();
+                                resultset.add(rowEntity);
+                                //nonMatching = null;
+                                recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                                //break;
+                            } else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+				nonMatching = rowEntity.populateRight();
+                            }                                      
+                        } else {
+                            if(((rowEntity.@(leftJoinKey)) @joinOperator (rowEntity.@(rightJoinKey)))){ @/ JOIN operator here!
+                                rowEntity.populate();
+                                resultset.add(rowEntity);
+                                //nonMatching = null;
+                                recordMatched = true; @/ when a join match is found, the non matching record are NOT added
+                                //break;
+                            }
+                            else if(nonMatching == null){ // no match found, hence, only the left side should get populated, and once. non matching rows are created once, no need to generate them for each inner loop
+				nonMatching = rowEntity.populateRight();
+                            }                        
+                        }	
+                    }
+                }
+		if(nonMatching != null && recordMatched == false)
+			resultset.add(nonMatching);
+                @if(take > -1 && (Ordering == null || Ordering.size() <= 0)){
+                    if(taken++ >= @(take)) break;
+                }
+            } catch (IOException ex){
+                // throw a proper exception
+            }
+        }
+        @if(Ordering!= null && Ordering.size() > 0){ // the result should be sorted. in this case, the limit clause has not been applied yet
+            resultset = resultset.stream().sorted(sorter)
+            @if(skip > -1){
+                .skip(@(skip))
+            }
+            @if(take > -1){
+                .limit(@(take))
+            }
+            .collect(Collectors.toList());
+        }
+        @if(writeResultsToFile){
+            resultset.stream()
+            .peek(p-> writeToFile(p))
+            .count(); // it is just to make the stream to be consumed
+            if (writer != null){
+               try {
+                   writer.flush();
+                   writer.close();
+               } catch (IOException ex) {
+                   Logger.getLogger(@(EntityClassName).class.getName()).log(Level.SEVERE, null, ex);
+               }        
+            }
+            return null;
+        } else {
+            return resultset;
+        }
+    }
+
+    private void writeToFile(@(EntityClassName) entity){
+        try {
+            if (writer == null) {
+                writer = new BufferedWriter(new FileWriter(new File(target)));
+                writer.write("@rowHeader" + "\n");
+            }
+            String line = lineParser.join(@linePattern);
+            writer.write(line + "\n");
+        } catch (IOException ex) {
+            Logger.getLogger(@(EntityClassName).class.getName()).log(Level.SEVERE, null, ex); @/ replace it with an AdpaterExcetion
+        } 
+    }
+
+    @@Override
+    public DataReader columnDelimiter(String value) {
+        columnDelimiter = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader quoteMarker(String value) {
+        quoteMarker = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader trimTokens(boolean value) {
+        trimTokens = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader typeDelimiter(String value) {
+        typeDelimiter = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader unitDelimiter(String value) {
+        unitDelimiter = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader missingValue(String value) {
+        missingValue = value;
+        return this;
+    }
+    
+    @@Override
+    public DataReader source(String value){
+        source = value;
+        return this;
+    }
+    
+    @@Override
+    public DataReader target(String value){
+        target = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader bypassFirstRow(Boolean value){
+         bypassFirstRow = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader bypassFirstRowRight(Boolean value) {
+        bypassFirstRowRight = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader sourceRight(String value) {
+        sourceRight = value;
+        return this;
+    }
+
+    @@Override
+    public DataReader columnDelimiterRight(String value) {
+        columnDelimiterRight = value;
+        return this;
+    }
+
+}
