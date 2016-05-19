@@ -136,7 +136,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                 .namespace("xqt.adapters.dbms")
                 .statementId(select.getId())
                 .dialect(dialect)
-                .namesCaseSensitive(false) // meybe need to be true for PgS
+                .namesCaseSensitive(false) // maybe need to be true for PgS
             ;
             switch (select.getSourceClause().getContainer().getDataContainerType()) {
                 case Single:
