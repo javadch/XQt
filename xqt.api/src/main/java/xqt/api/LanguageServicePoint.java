@@ -415,7 +415,7 @@ public class LanguageServicePoint {
             LoggerHelper.logDebug(msg);
         }
         
-        LoggerHelper.logDebug(MessageFormat.format("Checking whetehr the JDK 8 is available", 0));
+        LoggerHelper.logDebug(MessageFormat.format("Checking whetehr a JDK 8 is available", 0));
         Environment.getJDK8Folder(); // if not found throws a proper exception
         
     }
