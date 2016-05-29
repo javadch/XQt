@@ -7,6 +7,7 @@
 package xqt.adapters.csv;
 
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import java.io.IOException;
@@ -226,6 +227,12 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             } else { // see whether there exists any attribute of unknown type!
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
+//                builder.getFields().values().stream().forEach(at -> {
+//                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+//                });
+                for(FieldInfo field: builder.getFields().values()) {
+        			field.internalDataType = helper.getPhysicalType(field.conceptualDataType);
+        		}
             }
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
