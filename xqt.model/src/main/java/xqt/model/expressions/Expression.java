@@ -20,6 +20,8 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
     protected String body;
     protected ExpressionType expressionType;
     protected String returnType = TypeSystem.TypeName.Unknown; // link it the conceptual types
+    
+    public abstract List<MemberExpression> getMemberExpressions();
 
     public String getReturnType() {
         return returnType;
@@ -49,46 +51,81 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
     
     public static BinaryExpression Add(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Add);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "+", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
     public static BinaryExpression Subtract(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Subtract);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "-", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
     public static BinaryExpression Multiply(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Multiply);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "*", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
     public static BinaryExpression Divide(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Divide);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "/", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
     public static BinaryExpression Modulo(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.Modulo);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "%", false, false));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -98,6 +135,14 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "and", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
+
         return ex;
     }
 
@@ -107,36 +152,65 @@ public abstract class Expression extends ElementDescriptor implements VisitingEx
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "or", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
+
         return ex;
     }
 
     public static BinaryExpression ArithmeticAnd(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticAnd);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         // it may be always INT
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "aand", false, true));
-return ex;
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
+        return ex;
     }
 
     public static BinaryExpression ArithmeticOr(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticOr);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         // it may be always INT
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "aor", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
     public static BinaryExpression ArithmeticXor(Expression left, Expression right){
         BinaryExpression ex = new BinaryExpression(left, right, ExpressionType.ArithmeticXor);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         // it may be always INT
         ex.getLanguageExceptions().addAll(left.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "axor", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(ex.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -146,6 +220,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "gt", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
@@ -155,6 +237,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         //ex.returnType = TypeSystem.Boolean;
         ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "gteq", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
@@ -164,6 +254,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lt", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
     
@@ -173,6 +271,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "lteq", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
@@ -182,6 +288,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "eq", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
@@ -191,6 +305,14 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "like", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
@@ -200,16 +322,31 @@ return ex;
         ex.getLanguageExceptions().addAll(right.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(left.getReturnType(), right.getReturnType(), "noteq", false, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        // with the logical comparison operators the best guess for the type of a side is the type of the other side 
+        if(left.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	left.setReturnType(right.getReturnType());
+        }
+        if(right.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	right.setReturnType(left.getReturnType());
+        }
         return ex;
     }
 
     // should be removed and modeled as a function
     public static BinaryExpression Power(Expression x, Expression y) {
         BinaryExpression ex = new BinaryExpression(x, y, ExpressionType.Power);
-        // check the types of the left and right expressiosns and merge them
+        // check the types of the left and right expressions and merge them
         ex.getLanguageExceptions().addAll(x.getLanguageExceptions());
         ex.getLanguageExceptions().addAll(y.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Real;
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(x.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	x.setReturnType(ex.getReturnType());
+        }
+        if(y.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	y.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -218,6 +355,10 @@ return ex;
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "not", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -226,6 +367,10 @@ return ex;
         ex.returnType = operand.getReturnType();        
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
         ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "-", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -233,6 +378,10 @@ return ex;
         UnaryExpression ex = new UnaryExpression(operand, ExpressionType.IsNull);
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnull", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
     
@@ -241,6 +390,10 @@ return ex;
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isnumber", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
 
@@ -249,6 +402,10 @@ return ex;
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isdate", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
     
@@ -257,6 +414,10 @@ return ex;
         ex.getLanguageExceptions().addAll(operand.getLanguageExceptions());
         ex.returnType = TypeSystem.TypeName.Boolean;
         //ex.setReturnType(TypeSystem.getResultType(operand.getReturnType(), operand.getReturnType(), "isempty", true, true));
+        // based on the expected type of the resulting expression, set the expected type of the left/right sides if they are unknown
+        if(operand.getReturnType().equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+        	operand.setReturnType(ex.getReturnType());
+        }
         return ex;
     }
     
@@ -298,7 +459,7 @@ return ex;
 
     public static InvalidExpression Invalid() {        
         InvalidExpression ex = new InvalidExpression();
-        ex.returnType = TypeSystem.TypeName.Unknown;
+        ex.returnType = TypeSystem.TypeName.Invalid;
         return ex;
     }
 
