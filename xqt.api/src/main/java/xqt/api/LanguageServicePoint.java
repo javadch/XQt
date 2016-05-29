@@ -48,6 +48,8 @@ public class LanguageServicePoint {
     protected List<Exception> exceptions = new ArrayList<>();
     protected ClassLoader classLoader = null;
     private String configFolders = ".";
+    private String processFolder = ""; // the root of the process submitted to the service point
+    private String applicationFolder = System.getProperty("user.dir"); // application root, to be used in relative data paths if no specific process folder is specified
     
     public LanguageServicePoint(String configFolders) throws Exception{
         // some of the functions in the default adapter, are  using jide to draw plot resultsets! those calls make license check mandatory!        
@@ -59,12 +61,17 @@ public class LanguageServicePoint {
         check(configFolders);
         config();
         this.configFolders = configFolders;
-        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folders: {0}.", configFolders));
+        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folder(s): {0}.", configFolders));
         LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}.", Paths.get(".").toFile().getAbsolutePath()));
     }
 
+    public LanguageServicePoint(String configFolders, String processFolder) throws Exception{
+		this(configFolders);
+		this.processFolder = processFolder;
+    }
+
     private void config() {
-    	// config the Java runtime properties such as max heap size, etc.
+    	// config the Java runtime properties such as ...
     	
 	}
 
@@ -86,7 +93,7 @@ public class LanguageServicePoint {
         //this.inputStream = processScript;
         runtime = new RuntimeSystem();
         try{
-            engine = runtime.createQueryEngine(processScript, configFolders, exceptions); // also static method should work   
+            engine = runtime.createQueryEngine(processScript, configFolders, processFolder, applicationFolder, exceptions); // also static method should work   
             engine.setClassLoader(classLoader);
             LoggerHelper.logDebug(MessageFormat.format("Query engine is built and ready to be used.", 1));
 
@@ -154,6 +161,7 @@ public class LanguageServicePoint {
         try {
             filePath = FileHelper.makeAbsolute(fileName);
             inputStream = new MarkableFileInputStream(new FileInputStream(filePath));
+            // setting the process folder is needed! It is used from the RQUIS package
         } catch (IOException ex) { // FileNotFoundException
             this.exceptions.add(ex);
             return ex.getMessage();
@@ -200,7 +208,7 @@ public class LanguageServicePoint {
         // Id is the pointer to the statement, find and process it, then store the result
         // if it is already executed, just return the result set
         // if there is a dependency on some previous statements, process them also (recursive: they may have dependencies too)
-        // after the execution of the statement, invalidate resultset that are dependant upon this one
+        // after the execution of the statement, invalidate resultset that are dependent upon this one
         // also return the result set
         // needs init to be done first, so this method should be called after the process method is called
         if(forceExecution)

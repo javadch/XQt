@@ -127,7 +127,10 @@ public class StatementExecuter implements StatementVisitor{
             // create another complementing query over the first complementing query to delegate the write to the original adapter
             
         }
-        select.getExecutionInfo().getAdapter().prepare(select, null); // creates the source files but does not compile them 
+        HashMap<String, Object> context = new HashMap<>();
+        context.put("processFolder", engine.getProcessPath());
+        context.put("applicationFolder", engine.getApplicationPath());
+        select.getExecutionInfo().getAdapter().prepare(select, context); // creates the source files but does not compile them 
         LoggerHelper.logDebug(MessageFormat.format("Checkpoint: StatementExecuter.prepare {0}.", 1));                
         if(select.hasError()) // check after lazy construction and validations
             return;

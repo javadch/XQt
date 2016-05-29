@@ -40,7 +40,7 @@ public class LanguageServiceTask extends SwingWorker<LanguageServicePoint, Strin
     
 	public LanguageServiceTask(String processScript, ProcessExecutionListener listener){
         try {
-        	lsp = new LanguageServicePoint(".");
+        	lsp = new LanguageServicePoint(".", listener.getProcessPath());
         	lsp.addScript(processScript);
         	processFile = "";
     	} catch (Exception ex) { // execution errors
