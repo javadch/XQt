@@ -7,6 +7,7 @@
 package xqt.model.expressions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,11 @@ public class MemberExpression extends Expression{
     public String toString() {
         return this.id;
     }   
+    
+    @Override
+    public List<MemberExpression> getMemberExpressions(){
+    	return Arrays.asList(this);	
+    }
 
     public enum MemberType {
         Simple,

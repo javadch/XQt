@@ -6,6 +6,10 @@
 
 package xqt.model.expressions;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  *
  * @author standard
@@ -50,5 +54,19 @@ public class BinaryExpression extends Expression{
     @Override
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public List<MemberExpression> getMemberExpressions(){
+    	HashMap<String, MemberExpression> members = new HashMap<>();
+		for(MemberExpression member: left.getMemberExpressions()){
+			if(!members.containsKey(member.getId()))
+				members.put(member.getId(), member);
+		}
+		for(MemberExpression member: right.getMemberExpressions()){
+			if(!members.containsKey(member.getId()))
+				members.put(member.getId(), member);
+		}
+    	return members.values().stream().distinct().collect(Collectors.toList());
     }
 }

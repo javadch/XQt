@@ -7,11 +7,13 @@
 package xqt.adapters.csv;
 
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
 
     private CsvDataAdapterHelper helper = null;
     private DataReaderBuilder builder = null;
+    private String applicationFolder = "";
+	private String processFolder = "";
+	
     
     public CsvDataAdapter(){
         needsMemory = false; // default is false, too.
@@ -52,7 +57,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         runtimeJoinOperators.put(JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinOperator.LTEQ, "<=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
-        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a special case that is replaced properly in the reader class template
         
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
         
@@ -101,7 +106,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 Class<?> entryPoint = select.getExecutionInfo().getExecutionSource().getCompiledClass();            
                 DataReader reader = builder.build(entryPoint);
                 List<Object> result = reader
-                    .target(helper.getCompleteTargetName(select.getTargetClause()))
+                    .target(helper.getCompleteTargetName(select.getTargetClause(), getBaseContainerPath()))
                     .read(source, null);
                 if(result == null)
                     return null;
@@ -118,6 +123,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     @Override
     public void prepare(SelectDescriptor select, Object context) {
         // check whether the source is a simple or a joined one!
+    	HashMap<String, Object> contextInfo = ((HashMap<String, Object>)context);
+    	applicationFolder = contextInfo.get("applicationFolder").toString();
+    	processFolder = contextInfo.get("processFolder").toString();
+    	
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}",select.getId()));        
         try{
             builder = new DataReaderBuilder();
@@ -213,7 +222,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         builder.sourceOfData("container");
         builder.containerName(container.getContainerName());        
         try{
-            builder.addFields(helper.getContinerSchema(container, builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addFields(helper.getContinerSchema(container, getBaseContainerPath(), builder.getColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             if(select.getProjectionClause().isPresent() == false 
                     && select.getProjectionClause().getPerspective().getPerspectiveType() == 
                     PerspectiveDescriptor.PerspectiveType.Implicit) {
@@ -226,6 +235,12 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             } else { // see whether there exists any attribute of unknown type!
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
+//                builder.getFields().values().stream().forEach(at -> {
+//                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+//                });
+                for(FieldInfo field: builder.getFields().values()) {
+        			field.internalDataType = helper.getPhysicalType(field.conceptualDataType);
+        		}
             }
             // aggregate functions in the perspective should be be handled here. also other prepare functions and adapters should do it properly
             Boolean hasAggregates = prepareAggregates(builder, select);
@@ -370,8 +385,8 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         builder.rightColumnDelimiter(determineDeleimiter(columnDelimiter));                
 
         try{
-            builder.addLeftFields(helper.getContinerSchema(leftContainer, builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
-            builder.addRightFields(helper.getContinerSchema(rightContainer, builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addLeftFields(helper.getContinerSchema(leftContainer, getBaseContainerPath(), builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
+            builder.addRightFields(helper.getContinerSchema(rightContainer, getBaseContainerPath(), builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
            
             // it is sopposed that the perspective oject is set to null during the gramar visitation, if not appreaed in the join statement
             if(leftContainer.getPerspective() == null) {
@@ -585,8 +600,8 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                         //.quoteDelimiter("\"")
                         //.unitDelimiter("::")
                         // <====================================================
-                        .source(helper.getCompleteSourceName(((SingleContainer)select.getSourceClause().getContainer())))
-                        .target(helper.getCompleteTargetName(select.getTargetClause()))
+                        .source(helper.getCompleteSourceName(((SingleContainer)select.getSourceClause().getContainer()), getBaseContainerPath()))
+                        .target(helper.getCompleteTargetName(select.getTargetClause(), getBaseContainerPath()))
                         // pass the target file
                         .bypassFirstRow(helper.isFirstRowHeader(((SingleContainer)select.getSourceClause().getContainer())))
                         .trimTokens(true) // default is true
@@ -625,7 +640,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
                 List<Object> source = (List<Object>)sourceVariable.getResult().getTabularData(); // for testing purpose, it just returns the source
                 Resultset resultSet = new Resultset(ResultsetType.Tabular); 
                 List<Object> result = reader // do not check for source == null, and do not bypass this case. the adapter needs to do something even when the source is null
-                    .target(helper.getCompleteTargetName(select.getTargetClause()))
+                    .target(helper.getCompleteTargetName(select.getTargetClause(), getBaseContainerPath()))
                     .read(source, null);
                 if(result == null)
                     return null;
@@ -655,10 +670,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             DataReader<Object, Object, Object> reader = builder.build(entryPoint);
             if(reader != null){
                 List<Object> result = reader
-                    .source(helper.getCompleteSourceName((SingleContainer)join.getLeftContainer()))
-                    .sourceRight(helper.getCompleteSourceName((SingleContainer)join.getRightContainer()))    
-                    .target(helper.getCompleteTargetName(select.getTargetClause()))
-                    // pass th target file
+                    .source(helper.getCompleteSourceName((SingleContainer)join.getLeftContainer(), getBaseContainerPath()))
+                    .sourceRight(helper.getCompleteSourceName((SingleContainer)join.getRightContainer(), getBaseContainerPath()))    
+                    .target(helper.getCompleteTargetName(select.getTargetClause(), getBaseContainerPath()))
+                    // pass the target file
                     .bypassFirstRow(helper.isFirstRowHeader((SingleContainer)join.getLeftContainer()))
                     .bypassFirstRowRight(helper.isFirstRowHeader((SingleContainer)join.getRightContainer()))
                     .trimTokens(true) // default is true
@@ -686,4 +701,9 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         return null;    
     }
 
+    private String getBaseContainerPath(){
+    	if(processFolder.isEmpty())
+    		return applicationFolder;
+    	return processFolder;
+    }
 }

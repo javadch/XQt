@@ -6,6 +6,8 @@
 
 package xqt.model.expressions;
 
+import java.util.List;
+
 /**
  *
  * @author standard
@@ -37,6 +39,11 @@ public class ParameterExpression extends Expression{
     @Override
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public List<MemberExpression> getMemberExpressions(){
+    	return internalExpression.getMemberExpressions();	
     }
     
 }
