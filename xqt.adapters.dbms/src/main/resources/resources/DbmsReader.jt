@@ -51,6 +51,7 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
     String  userName = "";
     String  password = "";
     List<FieldInfo> fields = null;
+    List<AttributeInfo> attributes = null;
 
     public List<@(TargetRowType)> read(List<@(LeftClassName)> source1, List<@(RightClassName)> source2)  throws FileNotFoundException, IOException {
         ResultSet rs = null;
@@ -78,7 +79,7 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
                         while(rs.next()){
                             System.out.println("Processing row #" + rowCounter);
                             rowCounter++;
-                            @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, fields));
+                            @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, attributes));
                             if(entity.isValid == true){
                                 entity.populate();
                                 if(entity.isValid == true){
@@ -124,4 +125,10 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
         fields = value;
         return this;
     }    
+    
+    @@Override
+    public DbmsDataReader attributes(List<AttributeInfo> value) {
+        attributes = value;
+        return this;
+    }
 }

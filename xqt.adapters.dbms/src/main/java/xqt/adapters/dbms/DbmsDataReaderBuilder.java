@@ -90,53 +90,24 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     @Override
     protected String translate(AttributeInfo attribute, boolean rightSide){
         String translated = "";
-        for (StringTokenizer stringTokenizer = new StringTokenizer(attribute.forwardMap, " "); stringTokenizer.hasMoreTokens();) {
-            String token = stringTokenizer.nextToken();
-            boolean found = false;
-            String properCaseToken = token;
-            if(!namesCaseSensitive)
-                properCaseToken = token.toLowerCase();
-            if(!rightSide && fields.containsKey(properCaseToken)){
-                FieldInfo fd = fields.get(properCaseToken);
-                // need for a type check
-                // the follwoing statement, sets a default format for the date, if the field is of type Date
-                String temp = TypeSystem.getTypes().get(fd.conceptualDataType).getCastPattern().replace("$data$", "row[" + fd.index + "]");
-                if(fd.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)
-                    || (attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date))){
-                    // check whether the field has date format, if yes, apply it
-                    if(fd.unit!= null && !fd.unit.isEmpty() && !fd.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(fd.unit).replace("$data$", "row[" + fd.index + "]");
-                    // check wether the attribute has date format, if yes, apply it
-                    } else if(attribute.unit!= null && !attribute.unit.isEmpty()  && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + fd.index + "]");                        
-                    }
+        String properCaseToken = attribute.name;
+        if(!namesCaseSensitive)
+            properCaseToken = properCaseToken.toLowerCase();
+        if(!rightSide){
+            // need for a type check
+            // the following statement, sets a default format for the date, if the field is of type Date
+            String temp = TypeSystem.getTypes().get(attribute.conceptualDataType).getCastPattern().replace("$data$", "row[" + attribute.index + "]");
+            if(attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)){
+                // check whether the field has date format, if yes, apply it
+                if(attribute.unit!= null && !attribute.unit.isEmpty() && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+                    temp = TypeSystem.getTypes().get(attribute.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + attribute.index + "]");
+                // check whether the attribute has date format, if yes, apply it
                 }
-                translated = translated + " " + temp;
-                found = true;
             }
-            if(rightSide && rightFields.containsKey(properCaseToken)){
-                FieldInfo fd = rightFields.get(properCaseToken);
-                // need for a type check
-                // the righside attributes reffer to the right side fields.Tthe Entity is a product of a line of the left and the right container
-                // The generated code, creates the product by concatenating the left and right string arrays and passes them as the cotr argument 
-                // to the Entity. This is why the fied indexes for the right side attributes are shifted by the size of the left hand side field array.
-                String temp = TypeSystem.getTypes().get(fd.conceptualDataType).getCastPattern().replace("$data$", "row[" + (fields.size() + fd.index) + "]");
-                if(fd.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)
-                    || (attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date))){
-                    // check whether the field has date format, if yes, apply it
-                    if(fd.unit!= null && !fd.unit.isEmpty() && !fd.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(fd.unit).replace("$data$", "row[" + (fields.size() + fd.index) + "]");
-                    // check wether the attribute has date format, if yes, apply it
-                    } else if(attribute.unit!= null && !attribute.unit.isEmpty()  && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + (fields.size() + fd.index) + "]");                        
-                    }
-                }
-                translated = translated + " " + temp;
-                found = true;
-            }
-            if(!found) {
-                translated = translated + " " + token;
-            }            
+            translated = translated + " " + temp;
+        }
+        else if(rightSide){
+        	// add table name to the field names! but maybe later in the query!
         }
         // enclose the translated attribute in a data conversion based on the attributes type
         //translated = dataTypes.get(type).replace("$data$", translated);

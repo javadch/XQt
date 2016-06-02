@@ -132,7 +132,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
             builder = new DbmsDataReaderBuilder();
             builder
                 //.baseClassName("GeneratedX") // let the builder name the classes automatically
-                .dateFormat("yyyy-MM-dd'T'HH:mm:ssX") //check the timezone formatting
+                .dateFormat("yyyy-MM-dd") // 'T'HH:mm:ssX  check the timezone formatting
                 .namespace("xqt.adapters.dbms")
                 .statementId(select.getId())
                 .dialect(dialect)
@@ -235,7 +235,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                 select.validate();
                 if(select.hasError())
                     return;
-            } else { // see whether there exists any attribute of unkown type!
+            } else { // see whether there exists any attribute of unknown type!
                 select.getProjectionClause().setPerspective(
                     helper.improvePerspective(builder.getFields(), select.getProjectionClause().getPerspective()));
                 // extract referenced fields from the perspective and other clauses, then remove the not-used ones from the field list
@@ -274,7 +274,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                         if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
                             AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
                             rowEntityattributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
-                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a veraible of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a variable of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
                         }
                     }
                 } 
@@ -305,9 +305,13 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 builder.addResultAttributes(attributeInfos);
-                builder.getResultAttributes().values().stream().forEach(at -> {
+                for (AttributeInfo at : builder.getResultAttributes().values()) {
                     at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
-                });
+				}
+//                builder.getResultAttributes().values().stream().forEach(at -> {
+//                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+//                    at.forwardMap = at.name; // experimental code: all the mapping expressions are done by the DB.
+//                });
                 prepareGroupBy(builder, select);
                 if(isSupported("select.groupby")) {
                     if(groupByAttributes.size() > 0){
@@ -445,6 +449,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
             if(reader != null){
                 List<Object> result = reader
                         .fields(builder.getFields().values().stream().collect(Collectors.toList()))
+                        .attributes(builder.getResultAttributes().values().stream().collect(Collectors.toList()))
                         .connectionString(builder.connectionString) //(helper.getConnectionString(container))
                         .userName(builder.username)//(helper.getContainerUsername(container))
                         .password(builder.password)//(helper.getContainerPassword(container))
