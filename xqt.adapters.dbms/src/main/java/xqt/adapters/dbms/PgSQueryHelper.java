@@ -16,6 +16,7 @@ import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import xqt.adapters.dbms.postgresql.PgSGroupByFeatureTransformer;
 import xqt.adapters.dbms.postgresql.PgSProjectionFeatureTransformer;
 import xqt.model.containers.SingleContainer;
 import xqt.model.transformation.QueryFeatureTransformer;
@@ -45,6 +46,7 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
                 return fields;
         }
  
+        // retrieves the schema from the database catalog
         if (connection != null) {
             try{
                 try (Statement stmt = connection.createStatement()) {
@@ -147,6 +149,8 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
         // generate the filter clause
         String selectionStr = "TRUE";
         // generate the goup by clause
+        QueryFeatureTransformer groupBy = new PgSGroupByFeatureTransformer();
+        String groupByStr = groupBy.transform(queryFeatures.get("Attributes"), queryFeatures);
         // generate the ordering clause
         // generate the offesting clause
         
