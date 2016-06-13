@@ -491,9 +491,9 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 if(select.getProjectionClause().getPerspective().getPerspectiveType() == PerspectiveDescriptor.PerspectiveType.Implicit
                         || select.getProjectionClause().getPerspective().getAttributes().size() <= 0){
                     // The current variable based statement is reading data from another statement's output sx, so that sx was having a physical schema
-                    // This is why the select has no attribute! in perspective less statemets, the schema is lazily extracted from the data container, which causes the
-                    // depending satetement remain attribute less!
-                    // the master statement's perspective is now avaialable in builder
+                    // This is why the select has no attribute! in perspective less statements, the schema is lazily extracted from the data container, which causes the
+                    // depending statement remain attribute less!
+                    // the master statement's perspective is now available in builder
                     select.getProjectionClause().setPerspective(builder.getRecordPerspective().createCanonicPerspective());
                 }
             }

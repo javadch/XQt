@@ -8,6 +8,8 @@ package xqt.model.expressions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import xqt.model.adapters.DataAdapter;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.functions.AggregationCallInfo;
 import xqt.model.functions.FunctionInfo;
@@ -21,13 +23,15 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
     private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
     private final String namingPrefix;
     private final String basePaths = ".";
+    private DataAdapter adapter = null;
 
     public AggregationFunctionVisitor() {
         this.namingPrefix = null;
     }
     
-    public AggregationFunctionVisitor(String namingPrefix, String basePaths){
+    public AggregationFunctionVisitor(String namingPrefix, DataAdapter adapter){
         this.namingPrefix = namingPrefix;
+        this.adapter = adapter;
     }
 
     public List<AggregationCallInfo> getAggregattionCallInfo() {
@@ -48,7 +52,11 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
         // do not change the function itself, it will be done by the adapters
 ///////////////////////////
        try{
-            FunctionInfoContainer functionContainer = FunctionInfoContainer.getDefaultInstance(basePaths);
+            FunctionInfoContainer functionContainer = null;
+            if( adapter == null)
+            	functionContainer = FunctionInfoContainer.getDefaultInstance(basePaths);
+            else
+            	functionContainer = FunctionInfoContainer.getInstance(adapter.getAdapterInfo().getId(), adapter.getConfigPaths());
             Optional<FunctionInfo> fInfo = functionContainer.getRegisteredFunctions().stream()
                     .filter(p-> p.getPackageName().equalsIgnoreCase(expr.getPackageId()) 
                             && p.getName().equalsIgnoreCase(expr.getId())
@@ -66,7 +74,7 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
             } else {            
                 expr.getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
+                                .setMessageTemplate("Function \'%s\' was not found in package \'%s\'.")
                                 .setContextInfo1(expr.getPackageId())
                                 .setContextInfo2(expr.getPackageId())
                                 .build()
@@ -101,5 +109,9 @@ public class AggregationFunctionVisitor implements ExpressionVisitor{
     @Override
     public void visit(ValueExpression expr) {
     }
+
+	public DataAdapter getAdapter() {
+		return adapter;
+	}
     
 }
