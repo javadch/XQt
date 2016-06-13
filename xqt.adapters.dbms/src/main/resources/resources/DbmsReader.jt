@@ -14,10 +14,6 @@
     String LeftClassName,
     String RightClassName,
     String TargetRowType,
-    String Where,
-    Map<AttributeInfo, String> Ordering,
-    Integer skip,
-    Integer take,
     String ContainerName,
     String NativeQuery
 }

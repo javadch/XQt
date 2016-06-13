@@ -15,6 +15,18 @@ public class PgSGroupByFeatureTransformer implements QueryFeatureTransformer{
 	@Override
 	public String transform(Object feature, Map<String, Object> queryFeatures) {
 		StringJoiner sj = new StringJoiner(",", "", "");
+		List<AttributeInfo> attributInfos = (List<AttributeInfo>)feature;
+		for(AttributeInfo attributeInfo: attributInfos){
+			StringBuilder attributeSb = new StringBuilder();
+			//experimental code
+			if(attributeInfo.forwardMapTranslated != null && !attributeInfo.forwardMapTranslated.isEmpty())
+				attributeSb.append(attributeInfo.forwardMapTranslated);
+			else
+				attributeSb.append(attributeInfo.forwardMap); //Should not work properly, but for testing purposes.
+			//attributeSb .append(" AS ");
+			//attributeSb.append(attributeInfo.name);
+			sj.add(attributeSb.toString());
+		}
 		return sj.toString();
 	}
 

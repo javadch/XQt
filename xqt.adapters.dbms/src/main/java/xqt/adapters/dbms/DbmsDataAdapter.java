@@ -6,6 +6,7 @@
 package xqt.adapters.dbms;
 
 import com.vaiona.commons.data.AttributeInfo;
+import com.vaiona.commons.data.DataReaderBuilderBase;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.io.IOException;
 import java.text.MessageFormat;
@@ -16,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.BaseDataAdapter;
 import xqt.model.containers.DataContainer;
@@ -25,9 +27,13 @@ import xqt.model.conversion.ConvertSelectElement;
 import xqt.model.data.Resultset;
 import xqt.model.data.ResultsetType;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.expressions.AggregationFunctionVisitor;
+import xqt.model.expressions.Expression;
 import xqt.model.functions.AggregationCallInfo;
+import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -37,13 +43,10 @@ import xqt.model.statements.query.SelectDescriptor;
 public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
     private DbmsDataReaderBuilder builder = null;
     private DbmsDataAdapterHelper helper = null;
-    private ConvertSelectElement convertSelect = null;
-    private Map<JoinedContainer.JoinOperator, String> runtimeJoinOperators = new HashMap<>();
-    private HashMap<String, Boolean> capabilities = new HashMap<>();
-    private AdapterInfo adapterInfo;
-    private String dialect = "default";
         
     public DbmsDataAdapter(){
+    	dialect = "default";
+    	needsMemory = false;
         convertSelect = new ConvertSelectElement();
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EQ, "==");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEQ, "!=");
@@ -51,28 +54,14 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.GTEQ, ">=");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<="); 
-    }
-
-    @Override
-    public String getDialect() {
-        return dialect;
-    }
-
-    @Override
-    public void setDialect(String dialect) {
-        this.dialect = dialect;
-    }
-    
-    @Override
-    public boolean needsMemory() {
-        return false;
+        LoggerHelper.logDebug(MessageFormat.format("The DBMS adapter encapsulated in the class: {0} was successfully instantiated.", DbmsDataAdapter.class.getName()));        
     }
 
     @Override
     public void setup(Map<String, Object> config) {
         registerCapability("select.qualifier", true);
-        registerCapability("function", false);
-        registerCapability("function.default.max", false);
+        registerCapability("function", true);
+        registerCapability("function.default.max", true);
         registerCapability("expression", true);
         registerCapability("select.projection.perspective", true);
         registerCapability("select.projection.perspective.implicit", true);
@@ -87,7 +76,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         registerCapability("select.anchor", false);
         registerCapability("select.filter", false);
         registerCapability("select.orderby", false);
-        registerCapability("select.groupby", false);
+        registerCapability("select.groupby", true);
         registerCapability("select.limit", false);
         registerCapability("select.limit.take", false);
         registerCapability("select.limit.skip", false);
@@ -181,41 +170,9 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
             );                        
         }    
     }
-
-    @Override
-    public boolean isSupported(String capability) {
-        if(capabilities.containsKey(capability) && capabilities.get(capability) == true)
-            return true;
-        return false;
-    }
-
-    @Override
-    public void registerCapability(String capabilityKey, boolean isSupported) {
-        capabilities.put(capabilityKey, isSupported);
-    }
-
-    @Override
-    public boolean hasRequiredCapabilities(SelectDescriptor select) {
-        boolean allmatched = select.getRequiredCapabilities().stream().allMatch(p-> this.isSupported(p));
-        return allmatched;
-    }
-
-    @Override
-    public AdapterInfo getAdapterInfo() {
-        return adapterInfo;
-    }
-
-    @Override
-    public void setAdapterInfo(AdapterInfo value) {
-        adapterInfo = value;
-    }
     
-    Map<String, AttributeInfo>  attributeInfos = new LinkedHashMap<>();
-    private final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
-    private final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
-    private final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
-    //private final List<String> groupByImplicitAttributes = new ArrayList<>();
-
+    // if needed develop an adapter specific implementation of prepareAggregates
+    
     private void prepareSingle(SelectDescriptor select) {
         SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());
         try{
@@ -251,10 +208,10 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                 builder.addAggregates(aggregattionCallInfo);
                 // send the aggregate perspective
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                Map<String, AttributeInfo> rowEntityattributeInfos = convertSelect.prepareAttributes(aggregatePerspective, this, false);            
+                Map<String, AttributeInfo> rowEntityattributeInfos = new HashMap<String, AttributeInfo>();//convertSelect.prepareAttributes(aggregatePerspective, this, false);            
                 // set the resultset perspective. 
                 // check whether all the field references in the mappings, are valid by making sure they are in the Fields list.
-                // maybe pareparation is not needed!!!!!!
+                // maybe preparation is not needed!!!!!!
                 attributeInfos = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
                 for(AttributeInfo attInfo: attributeInfos.values()){
                     attInfo.forwardMap = attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
@@ -267,21 +224,21 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
                     }
                 }
 
-                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
-                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes hsould be added to the row entity to be used in the group constrcution keys
-                    //replace the forward map of the resultentity to point to the same attribute in the row entity
-                    for(AttributeInfo attInfo: attributeInfos.values()){
-                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
-                            AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
-                            rowEntityattributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
-                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a variable of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
-                        }
-                    }
-                } 
-                builder.addRowAttributes(rowEntityattributeInfos);
-                builder.getRowAttributes().values().stream().forEach(at -> {
-                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
-                });
+//                // check if there are groupby attributes, add them to the row entity and replace the access method of the result entity
+//                if(groupByAttributes != null && groupByAttributes.size() > 0){ // the groupby attributes should be added to the row entity to be used in the group constrcution keys
+//                    //replace the forward map of the resultentity to point to the same attribute in the row entity
+//                    for(AttributeInfo attInfo: attributeInfos.values()){
+//                        if(groupByAttributes.stream().anyMatch(p-> p.name.equals(attInfo.name))){
+//                            AttributeInfo tobeAddedToTheRowEntity = new AttributeInfo(attInfo);
+//                            rowEntityattributeInfos.put(tobeAddedToTheRowEntity.name, tobeAddedToTheRowEntity);
+//                            attInfo.forwardMap = "rowEntity." + attInfo.name; // pointing to a variable of same name in the row entity//attInfo.forwardMap.replaceAll("DONOTCHANGE.([^\\s]*).NOCALL\\s*\\(\\s*([^\\s]*)\\s*\\)", "functions.get(\"$1\").move(rowEntity.$2)");
+//                        }
+//                    }
+//                } 
+//                builder.addRowAttributes(rowEntityattributeInfos);
+//                builder.getRowAttributes().values().stream().forEach(at -> {
+//                    at.internalDataType = helper.getPhysicalType(at.conceptualDataType);
+//                });
 
                 builder.addResultAttributes(attributeInfos);
                 builder.getResultAttributes().values().stream().forEach(at -> {
@@ -349,7 +306,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
             }
             
             prepareLimit(builder, select);
-            //all attributes refered to from the group by plus, 
+            //all attributes referred to from the group by plus, 
             //if the perspective contains aggregate functions, all non aggregate attributes should be added to the goup by list
             // 
 
@@ -367,80 +324,57 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         }
     }
 
-    // these methods appear in multiple adapters, subject to be factored out.
-//    private Boolean prepareAggregates(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-//        // adopt for other types of queries, variable, join, etc
-//        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
-//            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), configPaths);
-//            attribute.getForwardExpression().accept(visitor);
-//            if(visitor.getAggregattionCallInfo().size() > 0){
-//                aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
-//            } else {// the attribute does not contain any aggregate, it should be considered as a group by item. preserve and merge it with group by list, later
-//                groupByImplicitAttributes.add(attribute.getId());
-//            }
-//        }
-//        // if there is no aggregate function discovered, there is no need to do anything else, 
-//        // also the group by items found above, are not needed anymore
-//        if(aggregattionCallInfo.size() <= 0){
-//            // remove the group by list items, too
-//            groupByAttributes.clear();
-//            groupByImplicitAttributes.clear();
-//            return false;
-//        }
-////        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
-//        aggregatePerspective.setId("aggregate_Perspective_for" + select.getProjectionClause().getPerspective().getId());
-//
-//        // replace the original aggregate calls
-//        for(AggregationCallInfo callInfo: aggregattionCallInfo){
-//                // I should find a way to replace this function with a specific wrapper call!!
-//                callInfo.getFunction().setId(callInfo.getAliasName()); //.setId(callInfo.getAliasName());
-//                callInfo.getFunction().setPackageId("DONOTCHANGE");
-//                callInfo.getFunction().getParameters().clear();
-//                callInfo.getFunction().getParameters()
-//                        .add(Expression.Parameter(
-//                                Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
-//                
-//                // also add the callinfo parameters to the row entity perpspective ...
-//                PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
-//                attribute.setId(callInfo.getParameterName());
-//                attribute.setDataType(callInfo.getParameter().getReturnType());
-//
-//                attribute.setForwardExpression(callInfo.getParameter());
-//                attribute.setReverseExpression(null);
-//                aggregatePerspective.addAttribute(attribute);
-//        }
-//        // if there is any aggregate function present in the perspective (aggregattionCallInfo)
-//        // construct a row entity perpective to be used for reading the data. The current perspective is
-//        // used for the result entities.
-//        return true;
-//    }
+    @Override
+    protected Boolean prepareAggregates(DataReaderBuilderBase builder, SelectDescriptor select) {
+    	//Boolean result = super.prepareAggregates(builder, select);
+    	// ------------------------------------
+        // adopt for other types of queries, variable, join, etc
+        for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
+            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), this);
+            attribute.getForwardExpression().accept(visitor);
+            if(visitor.getAggregattionCallInfo().size() > 0){
+                aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
+            } else {// the attribute is not containing aggregate, it should be considered as a group by item. preserve and check it with group by list, later
+                if(!attribute.isAuxiliary())
+                    groupByImplicitAttributes.add(attribute.getId());
+            }
+        }
+        // if there is no aggregate function discovered, there is no need to do anything else, 
+        // also the group by items found above, are not needed anymore
+        if(aggregattionCallInfo.size() <= 0){
+            // remove the group by list items, too
+            groupByAttributes.clear();
+            return false;
+        }
+        return true;
+    	
+    	// ------------------------------------
+    	// prepare for DBMS
 
-//    private void prepareGroupBy(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-//        if(isSupported("select.groupby")) {
-//            for(String implicitGroupByItem: groupByImplicitAttributes){
-//                if(attributeInfos.containsKey(implicitGroupByItem)){
-//                    groupByAttributes.add(attributeInfos.get(implicitGroupByItem));
-//                }                 
-//            }
-//            for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
-//                if(attributeInfos.containsKey(entry.getKey())){
-//                    groupByAttributes.add(attributeInfos.get(entry.getKey()));
-//                }            
-//            }
-//        }
-//    }
+    }
+    
+    @Override
+    protected void prepareGroupBy(DataReaderBuilderBase builder, SelectDescriptor select) {
+    	//super.prepareGroupBy(builder, select);
+    	// prepare group by for DBMS
+        if(isSupported("select.groupby")) {
+            for(String implicitGroupByItem: groupByImplicitAttributes){
+                if(attributeInfos.containsKey(implicitGroupByItem)){
+                    groupByAttributes.add(attributeInfos.get(implicitGroupByItem));
+                }                 
+            }
+            for (Map.Entry<String, GroupEntry> entry : select.getGroupClause().getGroupIds().entrySet()) {
+                if(attributeInfos.containsKey(entry.getKey())){
+                    groupByAttributes.add(attributeInfos.get(entry.getKey()));
+                }            
+            }
+            if(groupByAttributes.size() > 0){
+                builder.groupBy(groupByAttributes);
+            }
+        }
 
-//    private void prepareLimit(DbmsDataReaderBuilder builder, SelectDescriptor select) {
-//        if(isSupported("select.limit")){
-//            builder.skip(select.getLimitClause().getSkip())
-//                   .take(select.getLimitClause().getTake());
-//        }
-//        else{
-//            builder.skip(-1)
-//                   .take(-1);
-//        }
-//    }    
-
+    }
+    
     private Resultset runForSingleContainer(SelectDescriptor select, Object context) {
         try{
             //SingleContainer container =((SingleContainer)select.getSourceClause().getContainer());

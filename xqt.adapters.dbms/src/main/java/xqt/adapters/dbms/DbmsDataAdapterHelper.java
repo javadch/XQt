@@ -49,7 +49,7 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
 
     @Override
     public String getAggregateReaderResourceName() {
-        return "DbmsAggregateReader";
+        return "DbmsReader";
     }
 
     @Override

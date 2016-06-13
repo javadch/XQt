@@ -226,6 +226,9 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     					field.conceptualDataType = member.getReturnType();
     					field.internalDataType = TypeSystem.TypeName.Unknown; //??
     					field.dataTypeQuality = DataTypeQuality.Enforced;
+    				} else {
+    					member.setReturnType(field.conceptualDataType); // experimental
+    					updateAttribiteType(att);
     				}
     			}
     		}
@@ -233,7 +236,13 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         return this;
     }
 
-    public enum PerspectiveType {
+    private void updateAttribiteType(PerspectiveAttributeDescriptor attribute) {
+		// Take a look at how the final return type of expression is set, write a refresh type of expressions, call it from here and then set the
+    	// attributes data type from it.
+		attribute.setDataType(attribute.getForwardExpression().getReturnType());
+	}
+
+	public enum PerspectiveType {
         Explicit,
         Implicit,
         Inline

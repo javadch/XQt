@@ -71,7 +71,7 @@ public class DefaultLineParser implements LineParser{
                     curToken.append((char)ch);
                 }
             }
-            if(++index < line.length()) // avoid geting out of range
+            if(++index < line.length()) // avoid getting out of range
                 ch = line.charAt(index);
         }
         tokens.add(this.trimTokens? curToken.toString().trim(): curToken.toString());

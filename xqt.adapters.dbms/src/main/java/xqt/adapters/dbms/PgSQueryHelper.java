@@ -150,12 +150,12 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
         String selectionStr = "TRUE";
         // generate the group by clause
         QueryFeatureTransformer groupBy = new PgSGroupByFeatureTransformer();
-        String groupByStr = groupBy.transform(queryFeatures.get("Attributes"), queryFeatures);
+        String groupByStr = groupBy.transform(queryFeatures.get("GroupBy"), queryFeatures);
         // generate the ordering clause
         // generate the offesting clause
         
         //The query pattern may go upper to be reused by other dialects.
-        String query = MessageFormat.format("SELECT {0} FROM {1} WHERE ({2})", projectionStr, sourceStr, selectionStr);//
+        String query = MessageFormat.format("SELECT {0} FROM {1} WHERE ({2}) GROUP By {3}", projectionStr, sourceStr, selectionStr, groupByStr);//
         return query;
     }
     
