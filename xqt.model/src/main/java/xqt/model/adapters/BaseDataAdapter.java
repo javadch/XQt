@@ -137,6 +137,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
         if(aggregattionCallInfo.size() <= 0){
             // remove the group by list items, too
             groupByAttributes.clear();
+            groupByImplicitAttributes.clear();
             return false;
         }
 //        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
