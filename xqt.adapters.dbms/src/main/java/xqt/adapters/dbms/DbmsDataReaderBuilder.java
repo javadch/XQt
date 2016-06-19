@@ -162,6 +162,17 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
         readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
         // do not move these items to the base class
+        
+        readerContext.put("Where", whereClauseTranslated);
+        readerContext.put("Ordering", orderItems);
+        readerContext.put("skip", skip);
+        readerContext.put("take", take);
+//        readerContext.put("writeResultsToFile", writeResultsToFile);
+//        readerContext.put("joinType", ""); // to avoid null joinType in case of single containers.
+//        readerContext.put("joinOperator", "");            
+//        readerContext.put("leftJoinKey", "");
+//        readerContext.put("rightJoinKey", ""); 
+
     }
     
     @Override
@@ -241,4 +252,15 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         sources.put(rf.getFullName(), rf); // the reader must be added first
         return sources;
     }
+    
+    /*
+     * (non-Javadoc)
+     * @see com.vaiona.commons.data.DataReaderBuilderBase#enhanceAttribute(java.lang.String, boolean)
+     * In the DBMS adapter, there is no need to have prefixes for column names.
+     */
+    @Override
+    protected String enhanceAttribute(String token, boolean isJoinMode, String joinPrefix, String nonJoinPrefix) {
+       return token;
+	}
+
 }

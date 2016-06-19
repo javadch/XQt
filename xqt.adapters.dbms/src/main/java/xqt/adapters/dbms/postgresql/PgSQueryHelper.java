@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package xqt.adapters.dbms;
+package xqt.adapters.dbms.postgresql;
 
 import com.vaiona.commons.data.FieldInfo;
 import com.vaiona.commons.types.TypeSystem;
@@ -16,8 +16,7 @@ import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import xqt.adapters.dbms.postgresql.PgSGroupByFeatureTransformer;
-import xqt.adapters.dbms.postgresql.PgSProjectionFeatureTransformer;
+import xqt.adapters.dbms.DbmsDataAdapterHelper;
 import xqt.model.containers.SingleContainer;
 import xqt.model.transformation.QueryFeatureTransformer;
 
@@ -140,23 +139,40 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     
     @Override
     public String assembleQuery(Map<String, Object> queryFeatures){// its called from the builder!
+    	StringBuilder querySb = new StringBuilder();
+    	
         // generate the projection clause -> ((temp_lo+temp_hi)/2) as Temperature, xyz as xyz, beware of functions SUBSTRING(x, 0, 10) as m,
         QueryFeatureTransformer projection = new PgSProjectionFeatureTransformer();
         String projectionStr = projection.transform(queryFeatures.get("Attributes"), queryFeatures);
+        if(projectionStr == null || projectionStr.length() <= 0){
+        	projectionStr = "*";
+        }
+        querySb.append(MessageFormat.format("SELECT {0} ", projectionStr));
         
         // generate the source clause
         String sourceStr = queryFeatures.get("ContainerName").toString(); // should be changed
+        querySb.append(MessageFormat.format("FROM {0} ", sourceStr));
+
         // generate the filter clause
-        String selectionStr = "TRUE";
+        QueryFeatureTransformer selection = new PgSSelectionFeatureTransformer();
+        String selectionStr = selection.transform(queryFeatures.get("Where"), queryFeatures);
+        if(selectionStr == null || selectionStr.length() <= 0){
+        	selectionStr = "";
+        } else {
+        	querySb.append(MessageFormat.format("WHERE ({0}) ", selectionStr));
+        }
         // generate the group by clause
         QueryFeatureTransformer groupBy = new PgSGroupByFeatureTransformer();
         String groupByStr = groupBy.transform(queryFeatures.get("GroupBy"), queryFeatures);
+        if(groupByStr == null || groupByStr.length() <= 0){
+        	groupByStr = "";
+        } else {
+        	querySb.append(MessageFormat.format("GROUP By ({0}) ", groupByStr));
+        }
         // generate the ordering clause
-        // generate the offesting clause
+        // generate the limiting clause
         
-        //The query pattern may go upper to be reused by other dialects.
-        String query = MessageFormat.format("SELECT {0} FROM {1} WHERE ({2}) GROUP By {3}", projectionStr, sourceStr, selectionStr, groupByStr);//
-        return query;
+        return querySb.toString();
     }
     
     

@@ -68,8 +68,8 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
 
             if (connection != null) {
                 try{
-                    try (Statement stmt = connection.createStatement()) {
-                        rs = stmt.executeQuery("@(NativeQuery)");
+                    try (PreparedStatement stmt = connection.prepareStatement("@(NativeQuery)")) {
+                        rs = stmt.executeQuery();//("@(NativeQuery)");
                         List<@(EntityClassName)> result = new ArrayList<>();
                         int rowCounter = 0;
                         while(rs.next()){

@@ -153,7 +153,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
                         .add(Expression.Parameter(
                                 Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
                 
-                // also add the callinfo parameters to the row entity perpspective ...
+                // also add the callinfo parameters to the row entity perspective ...
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
                 attribute.setId(callInfo.getParameterName());
                 attribute.setDataType(callInfo.getParameter().getReturnType());

@@ -9,6 +9,8 @@ import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.FieldInfo;
 import java.util.List;
 import java.util.Map;
+
+import xqt.adapters.dbms.postgresql.PgSQueryHelper;
 import xqt.model.adapters.BaseAdapterHelper;
 import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.SingleContainer;

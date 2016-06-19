@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import xqt.model.adapters.DataAdapter;
@@ -34,7 +35,7 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
     private String source;
     private List<String> memeberNames = new ArrayList<>();
     private final DataAdapter adapter;
-    private final static Map<ExpressionType, String> patterns = new HashMap<>();
+    private static Map<ExpressionType, String> patterns = new HashMap<>();
     
     static {
         patterns.put(ExpressionType.Add, "(( {0} ) + ( {1} ))");
@@ -66,11 +67,20 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         patterns.put(ExpressionType.IsNull, "(( {0} ) == null)");
         patterns.put(ExpressionType.IsNumber, "({0}.matches(\"-?\\\\d+(\\\\.\\\\d+)?\"))"); // <DataType>.isNaN(x) not supported yet
         patterns.put(ExpressionType.IsDate, "(( {0} ) == null)"); // not supported yet
-        patterns.put(ExpressionType.IsEmpty, "((( {0} ) != null) && ({0} .length() <= 0))");
+        patterns.put(ExpressionType.IsEmpty, "((( {0} ) == null) || ({0} .length() <= 0))");
     }
 
     public ExpressionLocalizer(DataAdapter value){
         adapter = value;
+        Map<ExpressionType, String> adapterPatterns = adapter.getExpressionPatterns();
+        // Overriding the expression patterns with adapter specific ones, if adapters exposed them.
+        if(adapterPatterns!= null){
+	        for (Entry<ExpressionType, String> item : adapterPatterns.entrySet()) {
+	        	if(patterns.containsKey(item.getKey())){
+	        		patterns.put(item.getKey(),item.getValue());
+	        	}
+			}
+        }
     }
     
     public String getSource() {

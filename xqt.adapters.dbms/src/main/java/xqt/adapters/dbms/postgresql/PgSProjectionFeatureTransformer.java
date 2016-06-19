@@ -14,15 +14,9 @@ public class PgSProjectionFeatureTransformer implements QueryFeatureTransformer{
 
 	@Override
 	public String transform(Object feature, Map<String, Object> queryFeatures) {
-		// TODO Auto-generated method stub
-//		StringBuilder sb = new StringBuilder(); 
-//		ProjectionFeature projection = (ProjectionFeature)feature;
-//		for(PerspectiveAttributeDescriptor attribute: projection.getPerspective().getAttributes().values()){
-//			//attribute.
-//			sb.append("Hi");
-//		}
-		// it can be that I was wrong with the ProjectionFeatureCLass
-		// try following too
+		if(feature == null)
+			return null;
+
 		StringJoiner sj = new StringJoiner(",", "", "");
 		List<AttributeInfo> attributInfos = (List<AttributeInfo>)feature;
 		for(AttributeInfo attributeInfo: attributInfos){

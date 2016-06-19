@@ -14,6 +14,8 @@ public class PgSGroupByFeatureTransformer implements QueryFeatureTransformer{
 
 	@Override
 	public String transform(Object feature, Map<String, Object> queryFeatures) {
+		if(feature == null)
+			return null;
 		StringJoiner sj = new StringJoiner(",", "", "");
 		List<AttributeInfo> attributInfos = (List<AttributeInfo>)feature;
 		for(AttributeInfo attributeInfo: attributInfos){

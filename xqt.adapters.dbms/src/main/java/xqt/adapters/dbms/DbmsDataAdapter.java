@@ -32,6 +32,7 @@ import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.AggregationFunctionVisitor;
 import xqt.model.expressions.Expression;
+import xqt.model.expressions.ExpressionType;
 import xqt.model.functions.AggregationCallInfo;
 import xqt.model.statements.query.GroupEntry;
 import xqt.model.statements.query.SelectDescriptor;
@@ -74,7 +75,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         registerCapability("select.target.persist", false);
         registerCapability("select.target.plot", false);
         registerCapability("select.anchor", false);
-        registerCapability("select.filter", false);
+        registerCapability("select.filter", true);
         registerCapability("select.orderby", false);
         registerCapability("select.groupby", true);
         registerCapability("select.limit", false);
@@ -344,6 +345,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         if(aggregattionCallInfo.size() <= 0){
             // remove the group by list items, too
             groupByAttributes.clear();
+            groupByImplicitAttributes.clear();
             return false;
         }
         return true;
@@ -412,4 +414,42 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         return null;    
     }
 
+    public Map<ExpressionType, String> getExpressionPatterns(){
+    	Map<ExpressionType, String> patterns = new HashMap<>();
+    	// check for supported dialects and return proper patterns accordingly,
+    	// current set is PostgreSQL specific!
+        patterns.put(ExpressionType.Add, "(( {0} ) + ( {1} ))");
+        patterns.put(ExpressionType.And, "(( {0} ) AND ( {1} ))");
+        patterns.put(ExpressionType.ArithmeticAnd, "(( {0} ) & ( {1} ))"); //?
+        patterns.put(ExpressionType.ArithmeticOr, "(( {0} ) | ( {1} ))");
+        //patterns.put(ExpressionType.ArithmeticXor, "(( {0} ) + ( {1} ))");
+        patterns.put(ExpressionType.Attribute, "( {0} )");
+        patterns.put(ExpressionType.Constant, " {0} ");
+        patterns.put(ExpressionType.Divide, "(( {0} ) / ( {1} ))");
+        patterns.put(ExpressionType.Equal, "(( {0} ) = ( {1} ))");
+        patterns.put(ExpressionType.StringEqual, "(( {0} ) = ( {1} ))"); 
+        patterns.put(ExpressionType.Function, "( {0} ( {1} ) )"); // the second arg is the parameters' source
+        patterns.put(ExpressionType.GreaterThan, "(( {0} ) > ( {1} ))");
+        patterns.put(ExpressionType.GreaterThanOrEqual, "(( {0} ) >= ( {1} ))");
+        patterns.put(ExpressionType.LessThan, "(( {0} ) < ( {1} ))");
+        patterns.put(ExpressionType.LessThanOrEqual, "(( {0} ) <= ( {1} ))");
+        patterns.put(ExpressionType.Member, " {0} "); //maybe type conversion is needed too!
+        patterns.put(ExpressionType.Modulo, "(( {0} ) % ( {1} ))");
+        patterns.put(ExpressionType.Multiply, "(( {0} ) * ( {1} ))");
+        patterns.put(ExpressionType.Negate, "( - ( {0} ))");
+        patterns.put(ExpressionType.Not, "( NOT ( {0} ))");
+        patterns.put(ExpressionType.NotEqual, "(( {0} ) != ( {1} ))");
+        patterns.put(ExpressionType.StringNotEqual, "(( {0} ) != ( {1} ))"); 
+        patterns.put(ExpressionType.Or, "(( {0} ) OR ( {1} ))");
+        patterns.put(ExpressionType.Parameter, " {0} ");
+        patterns.put(ExpressionType.Power, "(power( {0} , {1} ))");
+        patterns.put(ExpressionType.Subtract, "(( {0} ) - ( {1} ))");
+        patterns.put(ExpressionType.IsNull, "(( {0} ) IS NULL)");
+        patterns.put(ExpressionType.IsNumber, "({0} SIMILAR TO ''-?\\d+(\\.\\d+)?'')");
+        // <DataType>.isNaN(x) not supported yet
+        patterns.put(ExpressionType.IsDate, "(( {0} ) == null)"); // not supported yet
+        patterns.put(ExpressionType.IsEmpty, "((( {0} ) IS NULL) OR (length({0}) <= 0))");
+       
+    	return patterns;
+    }
 }

@@ -34,6 +34,7 @@ import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.expressions.ExpressionType;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -706,4 +707,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     		return applicationFolder;
     	return processFolder;
     }
+
+	@Override
+	public Map<ExpressionType, String> getExpressionPatterns() {
+		// Does not need to do anything!
+		return null;
+	}
 }
