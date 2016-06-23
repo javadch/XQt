@@ -62,7 +62,7 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
         } catch (Exception ex){}
         
         //fileName = basePath.concat(".").concat(fileExtention);
-        fileName = Paths.get(baseContainerPath, basePath.concat(".").concat(fileExtention)).toString();
+        fileName = Paths.get(FileHelper.resolvePaths(basePath, baseContainerPath).concat(".").concat(fileExtention)).toString();
         try{
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;

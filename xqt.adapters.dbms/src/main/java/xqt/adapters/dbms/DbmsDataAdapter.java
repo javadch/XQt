@@ -69,7 +69,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         registerCapability("select.projection.perspective.explicit", true);
         registerCapability("select.projection.perspective.inline", true);
         registerCapability("select.source.single", true);
-        registerCapability("select.source.joined", true);
+        registerCapability("select.source.joined", false);
         registerCapability("select.source.variable", false);
         registerCapability("select.target.variable", true);
         registerCapability("select.target.persist", false);
@@ -445,7 +445,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         patterns.put(ExpressionType.Power, "(power( {0} , {1} ))");
         patterns.put(ExpressionType.Subtract, "(( {0} ) - ( {1} ))");
         patterns.put(ExpressionType.IsNull, "(( {0} ) IS NULL)");
-        patterns.put(ExpressionType.IsNumber, "({0} SIMILAR TO ''-?\\d+(\\.\\d+)?'')");
+        patterns.put(ExpressionType.IsNumber, "({0} SIMILAR TO \'-?\\d+(\\.\\d+)?\')");
         // <DataType>.isNaN(x) not supported yet
         patterns.put(ExpressionType.IsDate, "(( {0} ) == null)"); // not supported yet
         patterns.put(ExpressionType.IsEmpty, "((( {0} ) IS NULL) OR (length({0}) <= 0))");

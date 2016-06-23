@@ -80,6 +80,13 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         return canonic;
     }
 
+    // creates a perspective without any attributes
+    public PerspectiveDescriptor createUnitPerspective() {
+        PerspectiveDescriptor unit = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+        unit.setId("unit_Perspective_"+ id);
+        return unit;
+    }
+    
     public PerspectiveType getPerspectiveType() {
         return perspectiveType;
     }
@@ -170,7 +177,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     }
 
     public HashSet<SchemaItem> createSchema() {
-        // pay attention to aggrgates!
+        // pay attention to aggregates!
         HashSet<SchemaItem> schema = new LinkedHashSet<>();
         // do not use the functional counterpart, as it uses the streaming method, which doe not guarantee to preserve the order
         for(PerspectiveAttributeDescriptor attribute: this.getAttributes().values()){

@@ -389,7 +389,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.addLeftFields(helper.getContinerSchema(leftContainer, getBaseContainerPath(), builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             builder.addRightFields(helper.getContinerSchema(rightContainer, getBaseContainerPath(), builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
            
-            // it is sopposed that the perspective oject is set to null during the gramar visitation, if not appreaed in the join statement
+            // it is supposed that the perspective object is set to null during the grammar visitation, if not appeared in the join statement
             if(leftContainer.getPerspective() == null) {
                 leftContainer.setPerspective(helper.createPhysicalPerspective(builder.getLeftFields(), null, "left_" + select.getId()));
             }

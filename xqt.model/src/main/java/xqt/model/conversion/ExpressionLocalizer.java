@@ -160,26 +160,26 @@ public class ExpressionLocalizer { //implements ExpressionVisitor{
         String funcPattern = patterns.get(exp.getExpressionType());
         String functionPart = "";
         if(exp.getPackageId().equalsIgnoreCase("DONOTCHANGE")){
-                // call a specificaly designed method as the aggregate wrapper
+                // call a specifically designed method as the aggregate wrapper
                 //this is the actual information of the concrete aggregate function to be called, but it should (usually) be replaced in the adapters to call a wrapper method
-                // in order to direct the call to the groupped version of the aggregates/ running aggregates.
+                // in order to direct the call to the grouped version of the aggregates/ running aggregates.
             functionPart = MessageFormat.format("{0}.{1}.{2}", 
                 exp.getPackageId(), 
                 exp.getId(),
                 "NOCALL");
             String runtimeType = TypeSystem.getTypes().get(exp.getReturnType()).getRuntimeType();
-            // enhancing the aggregate calls with explicit returntype casting. because the aggrgate functions are
+            // enhancing the aggregate calls with explicit return type casting. because the aggregate functions are
             // called via the interface AggregateFunction which returns an Object.
             funcPattern = MessageFormat.format("(({0}){1})", runtimeType, funcPattern);
-            // the funcPattern still has placeholders for the function name and the parameter list.
+            // the funcPattern still has place holders for the function name and the parameter list.
             return MessageFormat.format(funcPattern, functionPart, localizedParameters);
         }
         Optional <FunctionInfo> funcSpec =adapter.getAdapterInfo().getFunctionInfoContainer(adapter.getConfigPaths()).getRegisteredFunctions().stream()
                 .filter(p->p.getName().equals(exp.getFunctionSpecification().getName())).findFirst();
-        // if there is no such a funtion, use the default one
+        // if there is no such a function, use the default one
         // if there is one, try find the dialect specific implementation, if not use the default fallback one!
         List<FunctionImplementation> impls;
-        if(!funcSpec.isPresent()){ // no adapter specific funtion! try use the fallback adapter
+        if(!funcSpec.isPresent()){ // no adapter specific function! try use the fallback adapter
             impls = exp.getFunctionSpecification().getImplementations();
         } else {
             impls = funcSpec.get().getImplementations();

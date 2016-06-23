@@ -274,7 +274,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             // when the source is a variable it is not possible to have an explicitly declared perspective. 
             // So there should be an error message here if the perspective clause is present in the statement
             // The statement is reading from a variable which has a perspective. So if there is an explicit or inline 
-            // perspective defined for the resultset (the target) it should be condiered.
+            // perspective defined for the resultset (the target) it should be considered.
             // otherwise the source perspective is implicitly used for the target.
             case Variable:
                 if(projection.getPerspective() == null){ // there is no target perspective defined, so use the source perspective by following where it was used as target
@@ -324,8 +324,8 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                                 .build()
                     );                
                 } else {
-                    // if left and right perspectives are present, try combile them into the clause perspective
-                    // and then repair the filter, order, anchor, and groupig clauses.
+                    // if left and right perspectives are present, try combine them into the clause perspective
+                    // and then repair the filter, order, anchor, and grouping clauses.
                     // otherwise it will be done by the adapter.
                     JoinedContainer join = ((JoinedContainer)source.getContainer());
                     if(join.getLeftContainer().getDataContainerType() == DataContainer.DataContainerType.Variable){
@@ -484,14 +484,17 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
         select.getLanguageExceptions().addAll(group.getLanguageExceptions());
 
         select.setOrderInParent(processModel.totalElementCount());
-        processModel.addStatementDescriptor(select); //its better to return to visit processmodel and add the perspective there
         select.validate(); // should be back soon. its commented to test where clause attributes not defined in perspectives. 26.05.15
         stack.pop();
-        // speciall case that deals with heterogneous joins!
+        // Special case that deals with heterogeneous joins!
         SelectDescriptor joinSelect = analizeJoin(select);
-        if(joinSelect != null)
+        if(joinSelect != null){
+            processModel.addStatementDescriptor(joinSelect); //its better to return to visit process model and add the statement there
             return joinSelect;
-        return select;
+        } else {
+        	processModel.addStatementDescriptor(select);
+        	return select;
+        }
     }
 
 //    @Override
@@ -1154,7 +1157,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             if(!fInfo.isPresent()){            
                 invalidExpr.getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("Function \'%s\' is not found in package \'%s\'.")
+                                .setMessageTemplate("Function \'%s\' was not found in package \'%s\'.")
                                 .setContextInfo1(id)
                                 .setContextInfo2(packageId)
                                 .setLineNumber(ctx.getStart().getLine())
@@ -1515,18 +1518,19 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
             JoinedContainer joinedSource = (JoinedContainer)select.getSourceClause().getContainer();
             if(joinedSource.getLeftContainer().getDataContainerType() != joinedSource.getRightContainer().getDataContainerType()){
                 // hetero. build and return
+            	return createHeteroJoin(select);
             }
             if(joinedSource.getLeftContainer() instanceof VariableContainer){
                 if(joinedSource.getRightContainer() instanceof VariableContainer){
                     // homo case
-                    return select;
+                    return null;
                 } else if(joinedSource.getRightContainer() instanceof SingleContainer){
-                    return craeteHeteroJoin(select);
+                    return createHeteroJoin(select);
                 }
             } 
             if(joinedSource.getLeftContainer() instanceof SingleContainer){
                 if(joinedSource.getRightContainer() instanceof VariableContainer){
-                    return craeteHeteroJoin(select);
+                    return createHeteroJoin(select);
                 } 
                 if(joinedSource.getRightContainer() instanceof SingleContainer){
                     // both sides are single containers.
@@ -1534,26 +1538,26 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                     SingleContainer right = ((SingleContainer)joinedSource.getRightContainer());
                     if(!left.getBinding().getConnection().getAdapterName().equalsIgnoreCase(right.getBinding().getConnection().getAdapterName())){
                         // different adapters
-                        return craeteHeteroJoin(select);
+                        return createHeteroJoin(select);
                     }
                     ConnectionParameterDescriptor leftDialect = left.getBinding().getConnection().getParameterValue("dialect", "default");
                     ConnectionParameterDescriptor rightDialect = right.getBinding().getConnection().getParameterValue("dialect", "default");
                     if(!leftDialect.getValue().equalsIgnoreCase(rightDialect.getValue())){
-                        // homo-morph case but currently behaved like a hetro
-                        return craeteHeteroJoin(select);
+                        // homo-morph case but currently behaved like a hetero
+                        return createHeteroJoin(select);
                     }
                 }
             }
-
-            // break down the select statement to its parts and craete Joined out of it
             return select; 
         }
         return null;
         
     }
 
-    private SelectDescriptor craeteHeteroJoin(SelectDescriptor select) {
-        
-        return new JoinedSelectDescriptor(null, null, null);
+    private SelectDescriptor createHeteroJoin(SelectDescriptor select) {   
+        // break down the select statement to its parts and create Joined one out of it
+    	JoinedSelectDescriptor joinedSelect = new JoinedSelectDescriptor(select);
+    	select = null; // The select was cloned to a joined one. NOt needed anymore
+    	return joinedSelect;
     }
 }

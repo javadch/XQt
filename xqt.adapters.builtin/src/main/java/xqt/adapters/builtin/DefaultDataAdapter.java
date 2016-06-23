@@ -44,6 +44,7 @@ import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.expressions.ExpressionType;
 import xqt.model.expressions.MemberExpression;
+import xqt.model.statements.query.JoinedSelectDescriptor;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -63,7 +64,7 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LT, "<");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.LTEQ, "<=");        
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
-        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a speciall case that is replaced properly in the reader class template
+        runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a special case that is replaced properly in the reader class template
         helper = new DefaultDataAdapterHelper();
     }
     
@@ -75,10 +76,19 @@ public class DefaultDataAdapter extends BaseDataAdapter{
                 Variable sourceVariable = (Variable)memory.get(((VariableContainer)select.getSourceClause().getContainer()).getVariableName());
                 return runForSingleContainer(select, sourceVariable);
             case Joined:
-                JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
-                Variable leftVariable = (Variable)memory.get(((VariableContainer)join.getLeftContainer()).getVariableName());
-                Variable rightVariable = (Variable)memory.get(((VariableContainer)join.getRightContainer()).getVariableName());
-                return runForJoinedContainer(select, leftVariable, rightVariable);
+            	Variable leftVariable = null;
+            	Variable rightVariable = null;
+                if(select instanceof JoinedSelectDescriptor){
+                	JoinedSelectDescriptor join = (JoinedSelectDescriptor)select;
+                    leftVariable = join.getLeftSide().getExecutionInfo().getVariable();
+                    rightVariable = join.getRightSide().getExecutionInfo().getVariable();                	
+                } else {
+                  JoinedContainer join = ((JoinedContainer)select.getSourceClause().getContainer());
+                  leftVariable = (Variable)memory.get(((VariableContainer)join.getLeftContainer()).getVariableName());
+                  rightVariable = (Variable)memory.get(((VariableContainer)join.getRightContainer()).getVariableName());                	
+                }
+                // run the hetero join on the result of its side queries.
+            	return runForJoinedContainer(select, leftVariable, rightVariable);
             default:
                 return null;
         }
@@ -411,9 +421,13 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         if(select.hasError())
             return;
         
-        builder.leftClassName(select.getDependsUpon().getEntityType().getFullName());
-        builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
-        
+        if(select instanceof JoinedSelectDescriptor){
+        	builder.leftClassName(((JoinedSelectDescriptor)select).getLeftSide().getEntityType().getFullName());
+        	builder.rightClassName(((JoinedSelectDescriptor)select).getRightSide().getEntityType().getFullName());
+        } else {
+            builder.leftClassName(select.getDependsUpon().getEntityType().getFullName());
+            builder.rightClassName(select.getDependsUpon2().getEntityType().getFullName());
+        }
         builder.readerResourceName(helper.getReaderResourceName());
         builder.entityResourceName(helper.getJoinedEntityResourceName());        
         Map<String, AttributeInfo>  attributes = convertSelect.prepareAttributes(select.getProjectionClause().getPerspective(), this, false);            
