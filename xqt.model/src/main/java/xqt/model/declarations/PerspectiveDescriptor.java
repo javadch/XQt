@@ -229,6 +229,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     				FieldInfo field = fields.get(memberId);
     				if(field.dataTypeQuality == FieldInfo.DataTypeQuality.Extracted || field.dataTypeQuality == FieldInfo.DataTypeQuality.Enforced){
     					member.setReturnType(field.conceptualDataType);
+    					updateAttribiteType(att);
     				} else if(!member.getReturnType().equals(TypeSystem.TypeName.Unknown)) {
     					field.conceptualDataType = member.getReturnType();
     					field.internalDataType = TypeSystem.TypeName.Unknown; //??
