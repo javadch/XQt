@@ -74,7 +74,7 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
                         List<@(EntityClassName)> result = new ArrayList<>();
                         int rowCounter = 0;
                         while(rs.next()){
-                            System.out.println("Processing row #" + rowCounter);
+                            //System.out.println("Processing row #" + rowCounter);
                             rowCounter++;
                             @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, attributes));
                             if(entity.isValid == true){

@@ -78,9 +78,9 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         registerCapability("select.filter", true);
         registerCapability("select.orderby", false);
         registerCapability("select.groupby", true);
-        registerCapability("select.limit", false);
-        registerCapability("select.limit.take", false);
-        registerCapability("select.limit.skip", false);
+        registerCapability("select.limit", true);
+        registerCapability("select.limit.take", true);
+        registerCapability("select.limit.skip", true);
     }
 
     @Override
@@ -445,7 +445,7 @@ public class DbmsDataAdapter extends BaseDataAdapter { //implements DataAdapter{
         patterns.put(ExpressionType.Power, "(power( {0} , {1} ))");
         patterns.put(ExpressionType.Subtract, "(( {0} ) - ( {1} ))");
         patterns.put(ExpressionType.IsNull, "(( {0} ) IS NULL)");
-        patterns.put(ExpressionType.IsNumber, "({0} SIMILAR TO \'-?\\d+(\\.\\d+)?\')");
+        patterns.put(ExpressionType.IsNumber, "({0} SIMILAR TO ''\'-?\\d+(\\.\\d+)?\''')");
         // <DataType>.isNaN(x) not supported yet
         patterns.put(ExpressionType.IsDate, "(( {0} ) == null)"); // not supported yet
         patterns.put(ExpressionType.IsEmpty, "((( {0} ) IS NULL) OR (length({0}) <= 0))");

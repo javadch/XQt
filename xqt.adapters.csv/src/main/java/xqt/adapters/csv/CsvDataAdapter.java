@@ -60,7 +60,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a special case that is replaced properly in the reader class template
         
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
         
         //ExcelTest exTest = new ExcelTest();
         //exTest.read();
@@ -128,7 +128,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     	applicationFolder = contextInfo.get("applicationFolder").toString();
     	processFolder = contextInfo.get("processFolder").toString();
     	
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}",select.getId()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}.",select.getId()));        
         try{
             builder = new DataReaderBuilder();
             builder.statementId(select.getId());

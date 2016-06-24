@@ -163,7 +163,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
                 aggregatePerspective.addAttribute(attribute);
         }
         // if there is any aggregate function present in the perspective (aggregattionCallInfo)
-        // construct a row entity perpective to be used for reading the data. The current perspective is
+        // construct a row entity perspective to be used for reading the data. The current perspective is
         // used for the result entities.
         return true;
     }

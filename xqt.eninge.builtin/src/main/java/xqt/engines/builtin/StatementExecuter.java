@@ -95,7 +95,7 @@ public class StatementExecuter implements StatementVisitor{
         } 
         statement.getExecutionInfo().setExecutionTime(System.nanoTime() - startExecutionTime);
         
-        LoggerHelper.logDebug(MessageFormat.format("Statement {0} was run successfully on the {1} adapter .", statement.getId(), statement.getExecutionInfo().getAdapter().getAdapterInfo().getId()));        
+        LoggerHelper.logDebug(MessageFormat.format("Statement {0} was run successfully on the {1} adapter.", statement.getId(), statement.getExecutionInfo().getAdapter().getAdapterInfo().getId()));        
         return result;
     }
 

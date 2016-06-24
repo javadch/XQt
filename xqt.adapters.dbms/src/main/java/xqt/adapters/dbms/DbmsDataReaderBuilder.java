@@ -11,10 +11,12 @@ import com.vaiona.commons.compilation.ObjectCreator;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.DataReaderBuilderBase;
 import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -181,17 +183,18 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         if(sourceOfData.equalsIgnoreCase("container")){
             String otherCalssNames = (namespace + "." + baseClassName + "Entity");
             readerContext.put("LeftClassName", "Object"); // used as both left and right sides' type.
-            readerContext.put("RightClassName", "Object"); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
+            readerContext.put("RightClassName", "Object"); // in the single container it is not used by the reader, but should be provided for compilation purposes.
             readerContext.put("TargetRowType", otherCalssNames);
             readerContext.put("ContainerName", this.containerName); 
             if(hasAggregate()){
             	readerContext.put("GroupBy", this.groupByAttributes);
             }
             String query = queryHelper.assembleQuery(readerContext);
+            LoggerHelper.logDebug(MessageFormat.format("Ready to ship the query: {0}.", query.trim()));
             readerContext.put("NativeQuery", query);
         } else if (sourceOfData.equalsIgnoreCase("variable")){
-            readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
-            readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
+            readerContext.put("LeftClassName", this.leftClassName); 
+            readerContext.put("RightClassName", this.leftClassName);
             readerContext.put("TargetRowType", this.leftClassName);            
         }
     }

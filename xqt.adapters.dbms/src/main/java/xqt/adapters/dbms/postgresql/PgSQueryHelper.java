@@ -171,7 +171,18 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
         }
         // generate the ordering clause
         // generate the limiting clause
+        int take = (int)queryFeatures.get("take");
+        int skip = (int)queryFeatures.get("skip");
+        if(skip > 0){
+        	//querySb.append(MessageFormat.format("OFFSET {0} ", skip)); // added thousand separators, comma!! check this one: {0,number,#} 
+        	querySb.append("OFFSET ").append(skip);
+        }
         
+        if(take > 0){
+        	//querySb.append(MessageFormat.format("LIMIT {0} ", take));
+        	querySb.append("LIMIT ").append(take);
+        }
+
         return querySb.toString();
     }
     

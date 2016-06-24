@@ -57,7 +57,7 @@ public class ConnectionAnnotator {
                     .build()
             );
         } else {
-            connection.setSourceUri(ctx.srcURI.getText().replaceAll ("'([^']*)'", "$1")); // triming potemtial single quotes
+            connection.setSourceUri(ctx.srcURI.getText().replaceAll ("'([^']*)'", "$1")); // Trimming potential single quotes
         }
         connection.setParserContext((ParserRuleContext)ctx);
         return connection;       

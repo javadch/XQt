@@ -7,6 +7,7 @@
  */
 package xqt.lang.parsing;
 
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -141,10 +142,16 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
     public Object visitConnection(@NotNull XQtParser.ConnectionContext ctx) { 
         ConnectionDescriptor connection = ConnectionAnnotator.describeConnection(ctx, processModel);
         stack.push(connection); // it would be better if there were no need for data communication :-(
+
+        LoggerHelper.logInfo(MessageFormat.format("These parameters were recieved on the {0} connection:", connection.getId()));
+        LoggerHelper.logInfo(MessageFormat.format("Parameter {0}: {1}.", "Source URL", connection.getSourceUri()));
+        LoggerHelper.logInfo(MessageFormat.format("Parameter {0}: {1}.", "Adapter Name", connection.getAdapterName()));
+
         for(XQtParser.Parameter_defContext paramCtx: ctx.parameter_def()){
             ConnectionParameterDescriptor param = (ConnectionParameterDescriptor)visitParameter_def(paramCtx);
             connection.addParameter(param);
             connection.getLanguageExceptions().addAll(param.getLanguageExceptions());
+            LoggerHelper.logInfo(param.toString());
         }
         connection.setOrderInParent(processModel.totalElementCount());
         processModel.addConfiguration(connection); //its better to return to visit process model and add the perspective there
@@ -317,7 +324,7 @@ public class GrammarVisitor extends XQtBaseVisitor<Object> {
                 if(projection.getPerspective() != null && projection.isPresent()){
                     source.getLanguageExceptions().add(
                             LanguageExceptionBuilder.builder()
-                                .setMessageTemplate("It is not allowed to use a perspective when JOIN is present. The statement has declared perspective '%s'")                            
+                                .setMessageTemplate("It is not allowed to use a perspective when JOIN is present. The statement has declared perspective '%s'.")                            
                                 .setContextInfo1(projection.getPerspective().getId())
                                 .setLineNumber(ctx.getStart().getLine())
                                 .setColumnNumber(ctx.getStop().getCharPositionInLine())
