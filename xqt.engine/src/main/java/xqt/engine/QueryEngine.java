@@ -53,5 +53,8 @@ public interface QueryEngine {
     
     String getConfigPaths();
     void setConfigPaths(String value);
+    
+    String getApplicationPath();
+    String getProcessPath();
 
 }

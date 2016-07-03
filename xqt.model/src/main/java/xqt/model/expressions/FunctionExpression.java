@@ -7,7 +7,10 @@
 package xqt.model.expressions;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import xqt.model.functions.FunctionInfo;
 
 /**
@@ -62,5 +65,17 @@ public class FunctionExpression extends Expression{
     @Override
     public String toString() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    @Override
+    public List<MemberExpression> getMemberExpressions(){
+    	HashMap<String, MemberExpression> members = new HashMap<>();
+    	for(Expression par: parameters){
+    		for(MemberExpression member: par.getMemberExpressions()){
+    			if(!members.containsKey(member.getId()))
+    				members.put(member.getId(), member);
+    		}
+    	}
+    	return members.values().stream().distinct().collect(Collectors.toList());
     }
 }

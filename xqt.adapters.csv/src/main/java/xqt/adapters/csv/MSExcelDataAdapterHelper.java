@@ -13,6 +13,7 @@ import xqt.adapters.csv.reader.RowBuilder;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -34,8 +35,8 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
     }
     
     @Override
-    public String getContainerSchemaHolder(SingleContainer container){
-        String basePath = getCompleteSourceName(container);
+    public String getContainerSchemaHolder(SingleContainer container, String baseContainerPath){
+        String basePath = getCompleteSourceName(container, baseContainerPath);
         String container0 = container.getContainerName();
         basePath = basePath.concat(".").concat(container0);
         if(isHeaderExternal(container)){
@@ -46,7 +47,7 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
     }
     
     @Override
-    public String getCompleteSourceName(SingleContainer container){ //may need a container index too!
+    public String getCompleteSourceName(SingleContainer container, String baseContainerPath){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         if(basePath.endsWith("\\")){
             basePath = basePath.substring(0, basePath.length() - "\\".length());
@@ -60,7 +61,8 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
             fileExtention = container.getBinding().getConnection().getParameters().get("fileextension").getValue();
         } catch (Exception ex){}
         
-        fileName = basePath.concat(".").concat(fileExtention);
+        //fileName = basePath.concat(".").concat(fileExtention);
+        fileName = Paths.get(baseContainerPath, basePath.concat(".").concat(fileExtention)).toString();
         try{
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;
@@ -85,10 +87,12 @@ class MSExcelDataAdapterHelper extends CsvDataAdapterHelper {
         } else {
             try {
                 LinkedHashMap<String, FieldInfo> headers = new LinkedHashMap<>();
-                //String columnDelimiter =    String.valueOf(params[0]);
-                String typeDelimiter =      String.valueOf(params[1]);
-                String unitDelimiter =      String.valueOf(params[2]);
-                String fileName = getCompleteSourceName(container);
+            	String baseContainerPath = 	String.valueOf(params[0]);
+                //String columnDelimiter =    String.valueOf(params[1]);
+                String typeDelimiter =      String.valueOf(params[2]);
+                String unitDelimiter =      String.valueOf(params[3]);
+                
+                String fileName = getCompleteSourceName(container, baseContainerPath);
                 HeaderBuilder hb = new HeaderBuilder();
                 //XSSFWorkbook workbook2 = new XSSFWorkbook(fileName);
                 InputStream inp = new FileInputStream(fileName);

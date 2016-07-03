@@ -7,4 +7,5 @@ public interface ProcessExecutionListener {
 	public void executed(StringBuilder report);
 	public void present(Variable v);
 	public void draw(Variable v);
+	public String getProcessPath();
 }

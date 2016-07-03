@@ -6,6 +6,9 @@
 
 package xqt.model.expressions;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author standard
@@ -26,4 +29,8 @@ public class InvalidExpression extends Expression{
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
+    @Override
+    public List<MemberExpression> getMemberExpressions(){
+    	return new ArrayList<MemberExpression>();	
+    }
 }

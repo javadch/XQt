@@ -7,6 +7,7 @@
 package xqt.adapters.csv.reader;
 
 import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.data.FieldInfo.DataTypeQuality;
 import com.vaiona.commons.logging.LoggerHelper;
 import java.io.BufferedReader;
 import java.io.File;
@@ -21,7 +22,7 @@ import java.util.Scanner;
  * @author Javad Chamanara
  */
 public class HeaderBuilder {
-    // other types of header builders should also be available. like the one that inferrs the field type from its usage in the attributes
+    // other types of header builders should also be available. like the one that infers the field type from its usage in the attributes
     public LinkedHashMap<String, FieldInfo> buildFromDataFile(String fileName, String delimiter, String typeDelimiter, String unitDelimiter, boolean multiLine) throws IOException {
         LoggerHelper.logDebug(MessageFormat.format("The CSV adapter is extracting the fields from file: {0} ", fileName));        
         LinkedHashMap<String, FieldInfo> fields;
@@ -50,7 +51,8 @@ public class HeaderBuilder {
                     field.index = indexCount;
                     headers.put(field.name, field);
                     indexCount++;
-                }                
+                } 
+                scanner.close();
             }
         } while(multiLine == true && (headerLine != null && !headerLine.isEmpty()));
         return (headers);
@@ -58,7 +60,7 @@ public class HeaderBuilder {
     
     public FieldInfo convert(String fieldInfoString, String typeDelimiter, String unitDelimiter){
         FieldInfo field = new FieldInfo();
-        field.internalDataType = "String";
+        field.internalDataType = "";
         String temp = fieldInfoString.trim().replace("\"", "");
         if(temp.contains(typeDelimiter)){
             if(temp.contains(unitDelimiter)){
@@ -77,6 +79,12 @@ public class HeaderBuilder {
         else{
             field.name = temp;
         }    
+        if(field.internalDataType.isEmpty()){
+        	field.internalDataType = "String";
+        	field.dataTypeQuality = DataTypeQuality.Inferred;
+        } else {
+        	field.dataTypeQuality = DataTypeQuality.Extracted;        	
+        }
         return field;
     }
 }

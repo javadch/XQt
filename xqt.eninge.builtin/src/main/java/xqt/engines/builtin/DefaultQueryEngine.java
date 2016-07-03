@@ -40,11 +40,15 @@ public class DefaultQueryEngine  implements QueryEngine{
     private ProcessModel model = null;
     ClassLoader classLoader = null;
     String configPaths = ".";
+    String processFoler = "";
+    String applicationFolder = "";
     
-    public DefaultQueryEngine(ProcessModel processModel, String configPaths){
+    public DefaultQueryEngine(ProcessModel processModel, String configPaths, String processFoler, String applicationFolder){
         this.memory = new HashMap<>();
         model = processModel;
         this.configPaths = configPaths;
+        this.processFoler = processFoler;
+        this.applicationFolder = applicationFolder;
         // register connections, bindings and perspectives
         // create adapter objects, better to do it in the visit function of the executer class
         // set versioning schemes
@@ -282,13 +286,23 @@ public class DefaultQueryEngine  implements QueryEngine{
     // \currently is used for testing purposes
 	private void engineStartHook() {
 		// TODO Auto-generated method stub
-		LoggerHelper.logInfo("Engine start hook is started...");
+		LoggerHelper.logInfo("Engine start hook was started...");
 		TestingReader tr = new TestingReader();
 		try{
-			tr.readSenario1("C:\\Javad\\ViDa\\gen.csv");
+			//tr.readSenario1("C:\\Javad\\ViDa\\gen.csv");
 		} catch (Exception ex) {
 			System.out.println(ex.getMessage());
 		}
-		LoggerHelper.logInfo("Engine start hook is ended.");
+		LoggerHelper.logInfo("Engine start hook was finished.");
+	}
+
+	@Override
+	public String getApplicationPath() {
+		return applicationFolder;
+	}
+
+	@Override
+	public String getProcessPath() {
+		return processFoler;
 	}    
 }
