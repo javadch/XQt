@@ -15,7 +15,10 @@ import java.sql.Statement;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import xqt.adapters.dbms.postgresql.PgSProjectionFeatureTransformer;
 import xqt.model.containers.SingleContainer;
+import xqt.model.transformation.QueryFeatureTransformer;
 
 /**
  *
@@ -135,13 +138,20 @@ public class PgSQueryHelper extends DbmsDataAdapterHelper{
     
     @Override
     public String assembleQuery(Map<String, Object> queryFeatures){// its called from the builder!
-        String query = "SELECT * FROM " + queryFeatures.get("ContainerName");
         // generate the projection clause -> ((temp_lo+temp_hi)/2) as Temperature, xyz as xyz, beware of functions SUBSTRING(x, 0, 10) as m,
+        QueryFeatureTransformer projection = new PgSProjectionFeatureTransformer();
+        String projectionStr = projection.transform(queryFeatures.get("Attributes"), queryFeatures);
+        
         // generate the source clause
+        String sourceStr = queryFeatures.get("ContainerName").toString(); // should be changed
         // generate the filter clause
+        String selectionStr = "TRUE";
         // generate the goup by clause
         // generate the ordering clause
-        // generate the offestting clause
+        // generate the offesting clause
+        
+        //The query pattern may go upper to be reused by other dialects.
+        String query = MessageFormat.format("SELECT {0} FROM {1} WHERE ({2})", projectionStr, sourceStr,selectionStr);//
         return query;
     }
     
