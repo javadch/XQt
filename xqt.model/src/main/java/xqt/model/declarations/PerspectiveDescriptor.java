@@ -80,6 +80,13 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         return canonic;
     }
 
+    // creates a perspective without any attributes
+    public PerspectiveDescriptor createUnitPerspective() {
+        PerspectiveDescriptor unit = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+        unit.setId("unit_Perspective_"+ id);
+        return unit;
+    }
+    
     public PerspectiveType getPerspectiveType() {
         return perspectiveType;
     }
@@ -170,7 +177,7 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     }
 
     public HashSet<SchemaItem> createSchema() {
-        // pay attention to aggrgates!
+        // pay attention to aggregates!
         HashSet<SchemaItem> schema = new LinkedHashSet<>();
         // do not use the functional counterpart, as it uses the streaming method, which doe not guarantee to preserve the order
         for(PerspectiveAttributeDescriptor attribute: this.getAttributes().values()){
@@ -222,10 +229,14 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
     				FieldInfo field = fields.get(memberId);
     				if(field.dataTypeQuality == FieldInfo.DataTypeQuality.Extracted || field.dataTypeQuality == FieldInfo.DataTypeQuality.Enforced){
     					member.setReturnType(field.conceptualDataType);
+    					updateAttribiteType(att);
     				} else if(!member.getReturnType().equals(TypeSystem.TypeName.Unknown)) {
     					field.conceptualDataType = member.getReturnType();
     					field.internalDataType = TypeSystem.TypeName.Unknown; //??
     					field.dataTypeQuality = DataTypeQuality.Enforced;
+    				} else {
+    					member.setReturnType(field.conceptualDataType); // experimental
+    					updateAttribiteType(att);
     				}
     			}
     		}
@@ -233,7 +244,13 @@ public class PerspectiveDescriptor extends DeclarationDescriptor{
         return this;
     }
 
-    public enum PerspectiveType {
+    private void updateAttribiteType(PerspectiveAttributeDescriptor attribute) {
+		// Take a look at how the final return type of expression is set, write a refresh type of expressions, call it from here and then set the
+    	// attributes data type from it.
+		attribute.setDataType(attribute.getForwardExpression().getReturnType());
+	}
+
+	public enum PerspectiveType {
         Explicit,
         Implicit,
         Inline

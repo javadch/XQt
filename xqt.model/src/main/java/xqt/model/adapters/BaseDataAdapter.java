@@ -39,7 +39,18 @@ public abstract class BaseDataAdapter implements DataAdapter {
     protected ConvertSelectElement convertSelect = new ConvertSelectElement();
     protected String configPaths = ".";
 
+    // holds the information about aggregate functions as they were found in the perspective attributes.
+    // the agg. functions are substituted with a pointer in the aggregattionCallInfo, so that the adapater, calls them later
+    // the whole argument passed to an aggregate function is moved to here and replaced with an automatically generaated name.
+    // these items, are used to create an intermediate perspective for retreiving data.
+    // the original perspective is used for the aggregated/ grouped resultset.
     
+    protected final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
+    protected final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
+    protected final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
+    protected final List<String> groupByImplicitAttributes = new ArrayList<>();
+    
+
     @Override
     public boolean needsMemory() {
         return needsMemory;
@@ -105,17 +116,6 @@ public abstract class BaseDataAdapter implements DataAdapter {
         configPaths = value;
     }
 
-    // holds the information about aggregate functions as they were found in the perspective attributes.
-    // the agg. functions are substituted with a pointer in the aggregattionCallInfo, so that the adapater, calls them later
-    // the whole argument passed to an aggregate function is moved to here and replaced with an automatically generaated name.
-    // these items, are used to create an intermediate perspective for retreiving data.
-    // the original perspective is used for the aggregated/ grouped resultset.
-    
-    protected final List<AggregationCallInfo> aggregattionCallInfo = new ArrayList<>(); 
-    protected final PerspectiveDescriptor aggregatePerspective = new PerspectiveDescriptor(PerspectiveDescriptor.PerspectiveType.Implicit);
-    protected final List<AttributeInfo> groupByAttributes = new ArrayList<>();      
-    protected final List<String> groupByImplicitAttributes = new ArrayList<>();
-    
     public boolean hasAggregate(){
        return (aggregattionCallInfo.size() > 0 );
     }
@@ -123,7 +123,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
     protected Boolean prepareAggregates(DataReaderBuilderBase builder, SelectDescriptor select) {
         // adopt for other types of queries, variable, join, etc
         for(PerspectiveAttributeDescriptor attribute: select.getProjectionClause().getPerspective().getAttributes().values()){
-            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), this.configPaths);
+            AggregationFunctionVisitor visitor = new AggregationFunctionVisitor(attribute.getId(), this);
             attribute.getForwardExpression().accept(visitor);
             if(visitor.getAggregattionCallInfo().size() > 0){
                 aggregattionCallInfo.addAll(visitor.getAggregattionCallInfo());                
@@ -137,6 +137,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
         if(aggregattionCallInfo.size() <= 0){
             // remove the group by list items, too
             groupByAttributes.clear();
+            groupByImplicitAttributes.clear();
             return false;
         }
 //        aggregatePerspective.setPerspectiveType(PerspectiveDescriptor.PerspectiveType.Implicit);
@@ -152,7 +153,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
                         .add(Expression.Parameter(
                                 Expression.Member(callInfo.getParameterName(), callInfo.getParameter().getReturnType())));
                 
-                // also add the callinfo parameters to the row entity perpspective ...
+                // also add the callinfo parameters to the row entity perspective ...
                 PerspectiveAttributeDescriptor attribute = new PerspectiveAttributeDescriptor();
                 attribute.setId(callInfo.getParameterName());
                 attribute.setDataType(callInfo.getParameter().getReturnType());
@@ -162,7 +163,7 @@ public abstract class BaseDataAdapter implements DataAdapter {
                 aggregatePerspective.addAttribute(attribute);
         }
         // if there is any aggregate function present in the perspective (aggregattionCallInfo)
-        // construct a row entity perpective to be used for reading the data. The current perspective is
+        // construct a row entity perspective to be used for reading the data. The current perspective is
         // used for the result entities.
         return true;
     }

@@ -10,13 +10,12 @@ import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.statements.query.ProjectionFeature;
 import xqt.model.transformation.QueryFeatureTransformer;
 
-public class PgSProjectionFeatureTransformer implements QueryFeatureTransformer{
+public class PgSGroupByFeatureTransformer implements QueryFeatureTransformer{
 
 	@Override
 	public String transform(Object feature, Map<String, Object> queryFeatures) {
 		if(feature == null)
 			return null;
-
 		StringJoiner sj = new StringJoiner(",", "", "");
 		List<AttributeInfo> attributInfos = (List<AttributeInfo>)feature;
 		for(AttributeInfo attributeInfo: attributInfos){
@@ -26,8 +25,8 @@ public class PgSProjectionFeatureTransformer implements QueryFeatureTransformer{
 				attributeSb.append(attributeInfo.forwardMapTranslated);
 			else
 				attributeSb.append(attributeInfo.forwardMap); //Should not work properly, but for testing purposes.
-			attributeSb .append(" AS ");
-			attributeSb.append(attributeInfo.name);
+			//attributeSb .append(" AS ");
+			//attributeSb.append(attributeInfo.name);
 			sj.add(attributeSb.toString());
 		}
 		return sj.toString();

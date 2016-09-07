@@ -61,8 +61,8 @@ public class LanguageServicePoint {
         check(configFolders);
         config();
         this.configFolders = configFolders;
-        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folder(s): {0}.", configFolders));
-        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}.", Paths.get(".").toFile().getAbsolutePath()));
+        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated using config folder(s): {0}", configFolders));
+        LoggerHelper.logDebug(MessageFormat.format("The system API is initiated at the root folder: {0}", Paths.get(".").toFile().getAbsolutePath()));
     }
 
     public LanguageServicePoint(String configFolders, String processFolder) throws Exception{
@@ -86,7 +86,7 @@ public class LanguageServicePoint {
         // Load the function specifications from the packs
         LoggerHelper.logDebug(MessageFormat.format("Loading function specifications...", 1));
         loadFunctionSpecifications();
-        LoggerHelper.logDebug(MessageFormat.format("Function specifications loaded", 1));
+        LoggerHelper.logDebug(MessageFormat.format("Function specifications loaded.", 1));
         // Load the jars of the adapters. maybe it can be deferred to the time they actually requested!
         classLoader = this.getClass().getClassLoader();
         
@@ -186,12 +186,12 @@ public class LanguageServicePoint {
         
         // process all the statements and store the results, but do not return anything
         if(exceptions == null || exceptions.size() <=0){
-            LoggerHelper.logDebug(MessageFormat.format("execution of the process is started.", 1));
+            LoggerHelper.logDebug(MessageFormat.format("Execution of the process is started.", 1));
             // Suppress garbage collection
             //System.gc();
             engine.execute();
             // Reset garbage collection
-            LoggerHelper.logDebug(MessageFormat.format("execution of the process is finished.", 1));
+            LoggerHelper.logDebug(MessageFormat.format("Execution of the process is finished.", 1));
         }
   
         String errors = getErrors();
@@ -371,7 +371,7 @@ public class LanguageServicePoint {
         if(getEngine() != null && getEngine().getProcessModel() != null) {
             if(getEngine().getProcessModel().hasError()){ // semantic errors
                 errors.append("**************************************************************************************\n");
-                errors.append("******************************* Synatx and Semantic Errors *******************************\n");
+                errors.append("******************************* Syntax and Semantic Errors *******************************\n");
                 errors.append("**************************************************************************************\n");
                 for(Exception p : getExceptions()){
                     errors.append("Error " + ++errorCount + " : " + p.getMessage()+ "\n");
@@ -411,19 +411,19 @@ public class LanguageServicePoint {
     }
     
     public void check(String configPaths) throws Exception {
-        LoggerHelper.logDebug(MessageFormat.format("Checking whether all prerequisites are met", 0));
+        LoggerHelper.logDebug(MessageFormat.format("Checking whether all prerequisites are met...", 0));
         LoggerHelper.logDebug(MessageFormat.format("Checking config folder...", 0));
         String configFolder = FileHelper.getConfigPath(configPaths);
         if(configFolder == null || configFolder.isEmpty()){
-            String msg = MessageFormat.format("Config folder was not found neither in the root nor in any of these locations: {0}.", configPaths);
+            String msg = MessageFormat.format("Config folder was not found neither in the root nor in any of these locations: {0}", configPaths);
             LoggerHelper.logError(msg);
             throw new Exception(msg);
         } else {
-            String msg = MessageFormat.format("Config folder was found either in the root or in one of these locations: {0}.", configPaths);
+            String msg = MessageFormat.format("Config folder was found either in the root or in one of these locations: {0}", configPaths);
             LoggerHelper.logDebug(msg);
         }
         
-        LoggerHelper.logDebug(MessageFormat.format("Checking whetehr a JDK 8 is available", 0));
+        LoggerHelper.logDebug(MessageFormat.format("Checking whetehr a JDK 8 is available...", 0));
         Environment.getJDK8Folder(); // if not found throws a proper exception
         
     }

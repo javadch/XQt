@@ -9,6 +9,7 @@ package xqt.model.adapters;
 import java.util.Map;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
+import xqt.model.expressions.ExpressionType;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -36,4 +37,9 @@ public interface DataAdapter {
 
     String getConfigPaths();
     void setConfigPaths(String value);
+    
+    /*
+     * Adapter specific expression patterns to be used in expression visitation/transformation
+     */
+	Map<ExpressionType, String> getExpressionPatterns();
 }

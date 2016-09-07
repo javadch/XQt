@@ -25,6 +25,8 @@
  */
 package xqt.model.configurations;
 
+import java.text.MessageFormat;
+
 import xqt.model.PhraseDescriptor;
 
 /**
@@ -52,6 +54,10 @@ public class ConnectionParameterDescriptor extends PhraseDescriptor {
         this.value = value;
     }
     
+    @Override
+    public String toString(){
+    	return MessageFormat.format("Parameter {0}: {1}.", this.id, this.value);
+    }
     public static ConnectionParameterDescriptor createEmpty(String defaultValue){
         ConnectionParameterDescriptor empty = new ConnectionParameterDescriptor();
         empty.setConnection(null);

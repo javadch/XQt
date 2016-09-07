@@ -27,6 +27,7 @@ import xqt.model.exceptions.LanguageExceptionBuilder;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementDescriptor;
 import xqt.model.statements.StatementVisitor;
+import xqt.model.statements.query.JoinedSelectDescriptor;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -138,7 +139,7 @@ public class DefaultQueryEngine  implements QueryEngine{
         try{
             StatementDescriptor sd;
             sd = model.getStatement(statementDescriptorId);
-            StatementVisitor visitor = new StatementExecuter(this); // 
+            StatementVisitor visitor = new StatementExecuter(this, null, null); // 
             sd.accept(visitor);
             if(sd.getExecutionInfo().isExecuted() && sd.getExecutionInfo().getVariable() != null)
                 this.memory.put(sd.getExecutionInfo().getVariable().getName(), sd.getExecutionInfo().getVariable());
@@ -151,6 +152,8 @@ public class DefaultQueryEngine  implements QueryEngine{
         }        
     }
 
+    List<StatementDescriptor> erroneousStatements = new ArrayList<>();
+    LinkedHashMap<String, InMemorySourceFile> sourcesToBeCompiled = new LinkedHashMap<>();
     @Override
     public void execute() {
     	//engineStartHook();
@@ -161,118 +164,21 @@ public class DefaultQueryEngine  implements QueryEngine{
             // but the map does not guarantee the order!
             // TAKE CARE and change the code // <<<<<<<<<<<<<<<<<<<<<<<!!!!!!!!!!!!!!!!!
             // take a look at linked map, SortedMap
-            // as the statementIds are ascending, unique and key of the map, maybe sortedmap solves the issue
+            // as the statementIds are ascending, unique and key of the map, maybe sorted map solves the issue
             // but LinkedHashMap guarantees the insertion order without relying on the meaningfulness of the Ids
-            StatementVisitor visitor = new StatementExecuter(this, memory);
-            LinkedHashMap<String, InMemorySourceFile> sourcesToBeCompiled = new LinkedHashMap<>();
-            List<StatementDescriptor> erroneousStatements = new ArrayList<>();
-            for(StatementDescriptor sm: model.getStatements().values()){
-                // pass the required information without binding too much to the structure of the statement
-                // or needing too much knowledge about the statement!
-                if(sm.hasError()) {
-                    erroneousStatements.add(sm); // mark and avoid executing the statements with errors
-                } else {
-                    if(erroneousStatements.contains(sm.getDependsUpon())) {
-                        erroneousStatements.add(sm); // avoid executing statements that are dependent upon the errorenous statements and also mark them
-                    } else {
-                        sm.prepare(visitor); // after this step, the sources are ready, if any. so add them to a collection and comiple all of them at once
-                        if(sm.getDependsUpon() != null && sm instanceof SelectDescriptor) {
-                            // if the statement is depending upon a statement that its perspective was lazily created, it should be double checked
-                            // to see whether it is still valid (attributes used in various clauses should be in the perspective)
-                            SelectDescriptor select = (SelectDescriptor)sm;
-                            // the perspective should be linked to the master one, so just set the present status
-                            select.getProjectionClause().setPresent(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().isPresent());
-                            select.validate();
-                        }
-                        // in case of implicit perspectives, the prepare method goes through the data source to consruct a perspective and checks the validity of the select statement
-                        // so there is a chance to find some semantic errors here! and avoid executing the statement.
-                        if(sm.hasError()){
-                            erroneousStatements.add(sm); 
-                            LoggerHelper.logError(MessageFormat.format("The statement {0} has some errors.", sm.getId()));
-                        } else {
-                            // add the sources to the compilation unit
-                            LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Adding the sources to the compilation unit...", 1));                
-                            if(sm.getExecutionInfo().getSources().values().stream().count() > 0){
-                                sourcesToBeCompiled.putAll(sm.getExecutionInfo().getSources());                                
-                                if(sm instanceof SelectDescriptor){ // do it also for the other types
-                                    SelectDescriptor complementingStatement = ((SelectDescriptor)sm).getComplementingStatement();
-                                    if(complementingStatement != null && complementingStatement.getExecutionInfo().getSources().values().stream().count() > 0){
-                                        sourcesToBeCompiled.putAll(complementingStatement.getExecutionInfo().getSources());
-                                        SelectDescriptor complementingStatement2 = ((SelectDescriptor)sm).getComplementingStatement().getComplementingStatement();
-                                        if(complementingStatement2 != null && complementingStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
-                                            sourcesToBeCompiled.putAll(complementingStatement2.getExecutionInfo().getSources());
-                                        }
-                                    }
-                                }
-                            }
-                            LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Added {1} sources to the compilation unit.", 2, sourcesToBeCompiled.size()));                                            
-                        }
-                    }
-                }
-            }
-            JavaFileManager fileManager = null;
-            if(sourcesToBeCompiled.size() > 0){
-                // intentionally used the class loader obtained from the API caller to load the compiler class
-                // so that the generated classes are in the same loader as the API caller.
-                ClassCompiler compiler = (ClassCompiler) classLoader.loadClass("com.vaiona.commons.compilation.ClassCompiler")
-                                            .getConstructor(ClassLoader.class)
-                                            .newInstance(classLoader);
-                LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. preparing to compile {1} sources.", 3, sourcesToBeCompiled.size()));
-                for (Map.Entry<String, InMemorySourceFile> entry : sourcesToBeCompiled.entrySet()) {
-                    LoggerHelper.logDebug(MessageFormat.format("The source file {0} was added to the compilation queue.", entry.getKey()));
-                    InMemorySourceFile source = entry.getValue();
-                    compiler.addSource(source);
-                }
-                fileManager = compiler.compile(null);
-                //fileManager.getClassLoader
-            } else {
-                LoggerHelper.logDebug(MessageFormat.format("There are {0} statements submitted but no source is generated for them!", model.getStatements().size()));                
-            }
-            for(StatementDescriptor sm: model.getStatements().values()){     
-                if(!sm.hasError() && !erroneousStatements.contains(sm)){ // the statement has no error and is not dependent upon an errorenous one.
-                    if(sm.getExecutionInfo()!= null) {
-                        for(InMemorySourceFile source : sm.getExecutionInfo().getSources().values()){
-                            if(fileManager != null){
-                                try{
-                                    // some of the adapters may use no sources, or they may prepare in a non dynamic way for specific scenario
-                                    // default adapter for example may use a predefined class(s), or ...
-                                    source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
-                                    if(source.getCompiledClass() != null)
-                                        LoggerHelper.logDebug(MessageFormat.format("Compiled class is set for source {0}.", source.getFullName()));                
-                                    else
-                                        LoggerHelper.logError(MessageFormat.format("Compiled class is NOT set for source {0}.", source.getFullName()));                
+            
+            HashMap<String, Object> context = new HashMap<>();
+            context.put("processFolder", this.getProcessPath());
+            context.put("applicationFolder", this.getApplicationPath());
 
-                                    if(sm instanceof SelectDescriptor){ // do it also for the other types
-                                        SelectDescriptor compensationStatement = ((SelectDescriptor)sm).getComplementingStatement();
-                                        if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
-                                            for(InMemorySourceFile compSource : compensationStatement.getExecutionInfo().getSources().values()){
-                                                compSource.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource.getFullName()));                                
-                                            }
-                                            
-                                            SelectDescriptor compensationStatement2 = ((SelectDescriptor)sm).getComplementingStatement().getComplementingStatement();
-                                            if(compensationStatement2 != null && compensationStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
-                                                for(InMemorySourceFile compSource2 : compensationStatement2.getExecutionInfo().getSources().values()){
-                                                    compSource2.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource2.getFullName()));                                
-                                                }
-                                            }
-                                        }
-                                    }
-                                } catch (ClassNotFoundException ex) {
-                                    // a compilation error has happened, but a proper error message should be communicated to the user.
-                                    LoggerHelper.logError(MessageFormat.format("No class was compiled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
-                                }
-                            }
-                        }
-                        sm.accept(visitor);
-                        // get the result set back and assign it to the variable named in the target caluse
-                        // put the result set in the engine's memory
-                        // return a pointer to the variable!
-                        if(sm.getExecutionInfo().isExecuted() && sm.getExecutionInfo().getVariable() != null)
-                            this.memory.put(sm.getExecutionInfo().getVariable().getName(), sm.getExecutionInfo().getVariable());
-                    }
-                }
-            }
-
+        	StatementVisitor visitor = new StatementExecuter(this, memory, context); // better to have separated visitors for execution and preparation
+            erroneousStatements.clear();
+            sourcesToBeCompiled.clear();
+            
+            prepare(visitor);
+            compile();
+            run(visitor);
+            
         } catch (Exception ex) {
             LoggerHelper.logError(MessageFormat.format("An exception has occured in the DefaultQueryEngine. execute method. Details: {0}.", ex.getMessage()));                
             model.getLanguageExceptions().add(LanguageExceptionBuilder.builder()
@@ -282,7 +188,174 @@ public class DefaultQueryEngine  implements QueryEngine{
         }
     }
 
-    // This is a method to notify others that the engine has started. 
+    private void prepare(StatementVisitor visitor) {
+        for(StatementDescriptor sm: model.getStatements().values()){
+            // pass the required information without binding too much to the structure of the statement
+            // or needing too much knowledge about the statement!
+            if(sm.hasError()) {
+                erroneousStatements.add(sm); // mark and avoid executing the statements with errors
+            } else {
+                if(erroneousStatements.contains(sm.getDependsUpon())) {
+                    erroneousStatements.add(sm); // avoid executing statements that are dependent upon the errorenous statements and also mark them
+                } else {
+                    sm.prepare(visitor); // after this step, the sources are ready, if any. so add them to a collection and compile all of them at once
+                    if(sm.getDependsUpon() != null && sm instanceof SelectDescriptor) {
+                        // if the statement is depending upon a statement that its perspective was lazily created, it should be double checked
+                        // to see whether it is still valid (attributes used in various clauses should be in the perspective)
+                        SelectDescriptor select = (SelectDescriptor)sm;
+                        // the perspective should be linked to the master one, so just set the present status
+                        select.getProjectionClause().setPresent(((SelectDescriptor)select.getDependsUpon()).getProjectionClause().isPresent());
+                        select.validate();
+                    }
+                    // in case of implicit perspectives, the prepare method goes through the data source to construct a perspective and checks the validity of the select statement
+                    // so there is a chance to find some semantic errors here! and avoid executing the statement.
+                    if(sm.hasError()){
+                        erroneousStatements.add(sm); 
+                        LoggerHelper.logError(MessageFormat.format("The statement {0} has some errors.", sm.getId()));
+                    } else {
+                        // add the sources to the compilation unit
+                        LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Adding the sources to the compilation unit...", 1));                
+                        if(sm instanceof JoinedSelectDescriptor){
+                        	registerSources((JoinedSelectDescriptor)sm);
+                        }  else if(sm instanceof SelectDescriptor) {
+                        	registerSources((SelectDescriptor)sm);
+                        } // more types to be checked. checked the more specific types before the generic ones
+                        LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. Added {1} sources to the compilation unit.", 2, sourcesToBeCompiled.size()));                                            
+                    }
+                }
+            }
+        }
+    }
+
+    private void registerSources(SelectDescriptor select){
+        if(select.getExecutionInfo().getSources().values().stream().count() > 0){
+            sourcesToBeCompiled.putAll(select.getExecutionInfo().getSources());                                
+            SelectDescriptor complementingStatement = select.getComplementingStatement();
+            if(complementingStatement != null && complementingStatement.getExecutionInfo().getSources().values().stream().count() > 0){
+                sourcesToBeCompiled.putAll(complementingStatement.getExecutionInfo().getSources());
+                SelectDescriptor complementingStatement2 = select.getComplementingStatement().getComplementingStatement();
+                if(complementingStatement2 != null && complementingStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
+                    sourcesToBeCompiled.putAll(complementingStatement2.getExecutionInfo().getSources());
+                }
+            }
+        }
+    	
+    }
+    
+    private void registerSources(JoinedSelectDescriptor select){
+        registerSources(select.getLeftSide());
+        registerSources(select.getRightSide());
+        
+    	if(select.getExecutionInfo().getSources().values().stream().count() > 0){
+            sourcesToBeCompiled.putAll(select.getExecutionInfo().getSources());                                
+        }    	
+    }
+    
+    private void registerCompiledClasses(SelectDescriptor select, JavaFileManager fileManager){
+        for(InMemorySourceFile source : select.getExecutionInfo().getSources().values()){
+            if(fileManager != null){
+                try{
+                    // some of the adapters may use no sources, or they may prepare in a non dynamic way for specific scenario
+                    // default adapter for example may use a predefined class(s), or ...
+                    source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
+                    if(source.getCompiledClass() != null)
+                        LoggerHelper.logDebug(MessageFormat.format("Compiled class is set for source {0}.", source.getFullName()));                
+                    else
+                        LoggerHelper.logError(MessageFormat.format("Compiled class is NOT set for source {0}.", source.getFullName()));                
+
+                    SelectDescriptor compensationStatement = ((SelectDescriptor)select).getComplementingStatement();
+                    if(compensationStatement != null && compensationStatement.getExecutionInfo().getSources().values().stream().count() > 0){
+                        for(InMemorySourceFile compSource : compensationStatement.getExecutionInfo().getSources().values()){
+                            compSource.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource.getFullName()));                                
+                        }
+                        
+                        SelectDescriptor compensationStatement2 = ((SelectDescriptor)select).getComplementingStatement().getComplementingStatement();
+                        if(compensationStatement2 != null && compensationStatement2.getExecutionInfo().getSources().values().stream().count() > 0){
+                            for(InMemorySourceFile compSource2 : compensationStatement2.getExecutionInfo().getSources().values()){
+                                compSource2.setCompiledClass(fileManager.getClassLoader(null).loadClass(compSource2.getFullName()));                                
+                            }
+                        }
+                    }
+
+                } catch (ClassNotFoundException ex) {
+                    // a compilation error has happened, but a proper error message should be communicated to the user.
+                    LoggerHelper.logError(MessageFormat.format("No class was compiled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
+                }
+            }
+        }
+    }
+    
+    private void registerCompiledClasses(JoinedSelectDescriptor select, JavaFileManager fileManager){
+        for(InMemorySourceFile source : select.getExecutionInfo().getSources().values()){
+            if(fileManager != null){
+                try{
+                    // some of the adapters may use no sources, or they may prepare in a non dynamic way for specific scenarios
+                    // default adapter for example may use a predefined class(s), or ...
+                    source.setCompiledClass(fileManager.getClassLoader(null).loadClass(source.getFullName()));
+                    if(source.getCompiledClass() != null)
+                        LoggerHelper.logDebug(MessageFormat.format("Compiled class is set for source {0}.", source.getFullName()));                
+                    else
+                        LoggerHelper.logError(MessageFormat.format("Compiled class is NOT set for source {0}.", source.getFullName()));                
+                } catch (ClassNotFoundException ex) {
+                    // a compilation error has happened, but a proper error message should be communicated to the user.
+                    LoggerHelper.logError(MessageFormat.format("No class was compiled for the source {0}. The actual error: {1}.", source.getFullName(), ex.getMessage()));
+                }
+            }
+        }
+        // register the compiled classes for the left and right side of the join, if there is any.
+        registerCompiledClasses(select.getLeftSide(), fileManager);
+        registerCompiledClasses(select.getRightSide(), fileManager);
+    }
+
+    private void compile() throws Exception{
+        JavaFileManager fileManager = null;
+        if(sourcesToBeCompiled.size() > 0){
+            // intentionally used the class loader obtained from the API caller to load the compiler class
+            // so that the generated classes are in the same loader as the API caller.
+            ClassCompiler compiler = (ClassCompiler) classLoader.loadClass("com.vaiona.commons.compilation.ClassCompiler")
+                                        .getConstructor(ClassLoader.class)
+                                        .newInstance(classLoader);
+            LoggerHelper.logDebug(MessageFormat.format("Checkpoint {0}: DefaultQueryEngine.execute. preparing to compile {1} sources.", 3, sourcesToBeCompiled.size()));
+            for (Map.Entry<String, InMemorySourceFile> entry : sourcesToBeCompiled.entrySet()) {
+                LoggerHelper.logDebug(MessageFormat.format("The source file {0} was added to the compilation queue.", entry.getKey()));
+                InMemorySourceFile source = entry.getValue();
+                compiler.addSource(source);
+            }
+            fileManager = compiler.compile(null);
+            //fileManager.getClassLoader
+        } else {
+            LoggerHelper.logDebug(MessageFormat.format("There are {0} statements submitted but no source is generated for them!", model.getStatements().size()));                
+        }  
+        for(StatementDescriptor sm: model.getStatements().values()){     
+            if(!sm.hasError() && !erroneousStatements.contains(sm)){ // the statement has no error and is not dependent upon an errorenous one.
+                if(sm.getExecutionInfo()!= null) {
+                    if(sm instanceof JoinedSelectDescriptor){
+                    	registerCompiledClasses((JoinedSelectDescriptor)sm, fileManager);
+                    }  else if(sm instanceof SelectDescriptor) {
+                    	registerCompiledClasses((SelectDescriptor)sm, fileManager);
+                    } 
+                }
+            }
+        }
+        
+    }
+    
+    private void run(StatementVisitor visitor){
+        for(StatementDescriptor sm: model.getStatements().values()){     
+            if(!sm.hasError() && !erroneousStatements.contains(sm)){ // the statement has no error and is not dependent upon an errorenous one.
+                if(sm.getExecutionInfo()!= null) {
+                    sm.accept(visitor);
+                    // get the result set back and assign it to the variable named in the target clause
+                    // put the result set in the engine's memory
+                    // return a pointer to the variable!
+                    if(sm.getExecutionInfo().isExecuted() && sm.getExecutionInfo().getVariable() != null)
+                        this.memory.put(sm.getExecutionInfo().getVariable().getName(), sm.getExecutionInfo().getVariable());
+                }
+            }
+        }    	
+    }
+    
+	// This is a method to notify others that the engine has started. 
     // \currently is used for testing purposes
 	private void engineStartHook() {
 		// TODO Auto-generated method stub

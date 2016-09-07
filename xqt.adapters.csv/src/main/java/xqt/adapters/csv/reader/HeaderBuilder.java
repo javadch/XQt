@@ -24,10 +24,11 @@ import java.util.Scanner;
 public class HeaderBuilder {
     // other types of header builders should also be available. like the one that infers the field type from its usage in the attributes
     public LinkedHashMap<String, FieldInfo> buildFromDataFile(String fileName, String delimiter, String typeDelimiter, String unitDelimiter, boolean multiLine) throws IOException {
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter is extracting the fields from file: {0} ", fileName));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter is extracting fields from file: {0}.", fileName));        
         LinkedHashMap<String, FieldInfo> fields;
         try (BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)))) {
             fields = this.buildFromDataFile(reader, delimiter, typeDelimiter, unitDelimiter, multiLine);
+            LoggerHelper.logDebug(MessageFormat.format("The CSV adapter extracted {0} fields from file: {1}.", fields.size(), fileName));        
             return (fields);
         } catch (Exception ex){
             LoggerHelper.logError(MessageFormat.format("Schema generation error for adapter: \'CSV\'. {0}", ex.getMessage()));            

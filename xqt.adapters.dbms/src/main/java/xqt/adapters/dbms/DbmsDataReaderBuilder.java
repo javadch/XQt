@@ -5,13 +5,20 @@
  */
 package xqt.adapters.dbms;
 
+import com.vaiona.commons.compilation.ClassGenerator;
+import com.vaiona.commons.compilation.InMemorySourceFile;
 import com.vaiona.commons.compilation.ObjectCreator;
 import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.DataReaderBuilderBase;
 import com.vaiona.commons.data.FieldInfo;
+import com.vaiona.commons.logging.LoggerHelper;
 import com.vaiona.commons.types.TypeSystem;
+
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
@@ -90,53 +97,24 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     @Override
     protected String translate(AttributeInfo attribute, boolean rightSide){
         String translated = "";
-        for (StringTokenizer stringTokenizer = new StringTokenizer(attribute.forwardMap, " "); stringTokenizer.hasMoreTokens();) {
-            String token = stringTokenizer.nextToken();
-            boolean found = false;
-            String properCaseToken = token;
-            if(!namesCaseSensitive)
-                properCaseToken = token.toLowerCase();
-            if(!rightSide && fields.containsKey(properCaseToken)){
-                FieldInfo fd = fields.get(properCaseToken);
-                // need for a type check
-                // the follwoing statement, sets a default format for the date, if the field is of type Date
-                String temp = TypeSystem.getTypes().get(fd.conceptualDataType).getCastPattern().replace("$data$", "row[" + fd.index + "]");
-                if(fd.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)
-                    || (attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date))){
-                    // check whether the field has date format, if yes, apply it
-                    if(fd.unit!= null && !fd.unit.isEmpty() && !fd.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(fd.unit).replace("$data$", "row[" + fd.index + "]");
-                    // check wether the attribute has date format, if yes, apply it
-                    } else if(attribute.unit!= null && !attribute.unit.isEmpty()  && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + fd.index + "]");                        
-                    }
+        String properCaseToken = attribute.name;
+        if(!namesCaseSensitive)
+            properCaseToken = properCaseToken.toLowerCase();
+        if(!rightSide){
+            // need for a type check
+            // the following statement, sets a default format for the date, if the field is of type Date
+            String temp = TypeSystem.getTypes().get(attribute.conceptualDataType).getCastPattern().replace("$data$", "row[" + attribute.index + "]");
+            if(attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)){
+                // check whether the field has date format, if yes, apply it
+                if(attribute.unit!= null && !attribute.unit.isEmpty() && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
+                    temp = TypeSystem.getTypes().get(attribute.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + attribute.index + "]");
+                // check whether the attribute has date format, if yes, apply it
                 }
-                translated = translated + " " + temp;
-                found = true;
             }
-            if(rightSide && rightFields.containsKey(properCaseToken)){
-                FieldInfo fd = rightFields.get(properCaseToken);
-                // need for a type check
-                // the righside attributes reffer to the right side fields.Tthe Entity is a product of a line of the left and the right container
-                // The generated code, creates the product by concatenating the left and right string arrays and passes them as the cotr argument 
-                // to the Entity. This is why the fied indexes for the right side attributes are shifted by the size of the left hand side field array.
-                String temp = TypeSystem.getTypes().get(fd.conceptualDataType).getCastPattern().replace("$data$", "row[" + (fields.size() + fd.index) + "]");
-                if(fd.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date)
-                    || (attribute.conceptualDataType.equalsIgnoreCase(TypeSystem.TypeName.Date))){
-                    // check whether the field has date format, if yes, apply it
-                    if(fd.unit!= null && !fd.unit.isEmpty() && !fd.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(fd.unit).replace("$data$", "row[" + (fields.size() + fd.index) + "]");
-                    // check wether the attribute has date format, if yes, apply it
-                    } else if(attribute.unit!= null && !attribute.unit.isEmpty()  && !attribute.unit.equalsIgnoreCase(TypeSystem.TypeName.Unknown)){
-                        temp = TypeSystem.getTypes().get(fd.conceptualDataType).makeDateCastPattern(attribute.unit).replace("$data$", "row[" + (fields.size() + fd.index) + "]");                        
-                    }
-                }
-                translated = translated + " " + temp;
-                found = true;
-            }
-            if(!found) {
-                translated = translated + " " + token;
-            }            
+            translated = translated + " " + temp;
+        }
+        else if(rightSide){
+        	// add table name to the field names! but maybe later in the query!
         }
         // enclose the translated attribute in a data conversion based on the attributes type
         //translated = dataTypes.get(type).replace("$data$", translated);
@@ -155,12 +133,48 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
     protected void buildSharedSegments(){
         //entityResourceName = "";
         this.namespace("xqt.adapters.dbms");
-        super.buildSharedSegments();
+        //super.buildSharedSegments(); // either do not call the super, or reset its settings on the Record concept.
+        
+        if(baseClassName == null || baseClassName.isEmpty()){
+            //baseClassName = "C" + (new Date()).getTime(); // sometimes causes duplicate names
+            baseClassName = "Stmt_" +  statementId + "_"; //(new Date()).getTime();
+        }             
+        
+        String recordClassName = baseClassName + "Record";
+        String entityClassName = baseClassName + "Entity";
+        String readerClassName = baseClassName + "Reader";
+        
+        entityContext.put("namespace", namespace);
+        entityContext.put("BaseClassName", baseClassName);
+        entityContext.put("ReaderClassName", readerClassName);
+        entityContext.put("EntityClassName", entityClassName );
+        entityContext.put("Attributes", resultEntityAttributes.values().stream().collect(Collectors.toList()));        
+        entityContext.put("dialect", dialect);
+        
+
+        readerContext.put("namespace", namespace);
+        readerContext.put("BaseClassName", baseClassName);
+        readerContext.put("ReaderClassName", readerClassName);
+        readerContext.put("EntityClassName", entityClassName);
+        readerContext.put("Attributes", resultEntityAttributes.values().stream().collect(Collectors.toList()));
+        readerContext.put("writeResultsToFile", writeResultsToFile);
+        readerContext.put("dialect", dialect);
+        
         readerContext.put("sourceOfData", sourceOfData);     
         readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
         readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
         // do not move these items to the base class
-        recordContext.put("Attributes", rowEntityAttributes.values().stream().collect(Collectors.toList()));           
+        
+        readerContext.put("Where", whereClauseTranslated);
+        readerContext.put("Ordering", orderItems);
+        readerContext.put("skip", skip);
+        readerContext.put("take", take);
+//        readerContext.put("writeResultsToFile", writeResultsToFile);
+//        readerContext.put("joinType", ""); // to avoid null joinType in case of single containers.
+//        readerContext.put("joinOperator", "");            
+//        readerContext.put("leftJoinKey", "");
+//        readerContext.put("rightJoinKey", ""); 
+
     }
     
     @Override
@@ -169,14 +183,18 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         if(sourceOfData.equalsIgnoreCase("container")){
             String otherCalssNames = (namespace + "." + baseClassName + "Entity");
             readerContext.put("LeftClassName", "Object"); // used as both left and right sides' type.
-            readerContext.put("RightClassName", "Object"); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
+            readerContext.put("RightClassName", "Object"); // in the single container it is not used by the reader, but should be provided for compilation purposes.
             readerContext.put("TargetRowType", otherCalssNames);
-            readerContext.put("ContainerName", this.containerName);            
+            readerContext.put("ContainerName", this.containerName); 
+            if(hasAggregate()){
+            	readerContext.put("GroupBy", this.groupByAttributes);
+            }
             String query = queryHelper.assembleQuery(readerContext);
+            LoggerHelper.logDebug(MessageFormat.format("Ready to ship the query: {0}.", query.trim()));
             readerContext.put("NativeQuery", query);
         } else if (sourceOfData.equalsIgnoreCase("variable")){
-            readerContext.put("LeftClassName", this.leftClassName); // used as both left and right sides' type.
-            readerContext.put("RightClassName", this.leftClassName); // in the single container it is not used by the reader, but shold be provided for compilation purposes.
+            readerContext.put("LeftClassName", this.leftClassName); 
+            readerContext.put("RightClassName", this.leftClassName);
             readerContext.put("TargetRowType", this.leftClassName);            
         }
     }
@@ -192,4 +210,60 @@ public class DbmsDataReaderBuilder extends DataReaderBuilderBase {
         readerContext.put("LeftFieldsNo", this.fields.size());                    
         readerContext.put("RightFieldsNo", this.rightFields.size());                    
     }    
+    
+    @Override
+    public LinkedHashMap<String, InMemorySourceFile> buildSources() throws IOException{
+    	recordContext = readerContext; // The DBMS does not need the middle context, recordContext. It performs the grouping and aggregation in one pass.
+        String resultEntityString;
+        String rowEntityString;
+        String readerString;
+//        rowEntityAttributes.entrySet().stream().map((entry) -> entry.getValue()).forEach((ad) -> {
+//            if(ad.joinSide.equalsIgnoreCase("R"))
+//                ad.forwardMapTranslated = translate(ad, true);
+//            else
+//                ad.forwardMapTranslated = translate(ad, false);
+//        });
+//
+        resultEntityAttributes.entrySet().stream().map((entry) -> entry.getValue()).forEach((ad) -> {
+            if(ad.joinSide.equalsIgnoreCase("R"))
+                ad.forwardMapTranslated = translate(ad, true);
+            else
+                ad.forwardMapTranslated = translate(ad, false);
+        });
+        LinkedHashMap<String, InMemorySourceFile> sources = new LinkedHashMap<>();
+        ClassGenerator generator = new ClassGenerator();
+        if(entityResourceName!= null && !entityResourceName.isEmpty()){
+            resultEntityString = generator.generate(this, entityResourceName, "Resource", entityContext);
+            if(resultEntityString!= null && !resultEntityString.isEmpty()){
+                InMemorySourceFile ef = new InMemorySourceFile(baseClassName + "Entity", resultEntityString);
+                ef.setFullName(namespace + "." + baseClassName + "Entity");
+                sources.put(ef.getFullName(), ef); // the reader must be added first
+            }
+//            if(hasAggregate() && recordContext.size() > 0) { // this is a query which contains aggregates!
+//                rowEntityString = generator.generate(this, entityResourceName, "Resource", recordContext); // use the same resource template but different context
+//                if(rowEntityString!= null && !rowEntityString.isEmpty()){
+//                    InMemorySourceFile ef = new InMemorySourceFile(baseClassName + "Record", rowEntityString);
+//                    ef.setFullName(namespace + "." + baseClassName + "Record");
+//                    sources.put(ef.getFullName(), ef); // the reader must be added first
+//                }
+//            }
+        }    
+        readerString = generator.generate(this, readerResourceName, "Resource", readerContext);
+        InMemorySourceFile rf = new InMemorySourceFile(baseClassName + "Reader", readerString);
+        rf.setEntryPoint(true);
+        rf.setFullName(namespace + "." + baseClassName + "Reader");
+        sources.put(rf.getFullName(), rf); // the reader must be added first
+        return sources;
+    }
+    
+    /*
+     * (non-Javadoc)
+     * @see com.vaiona.commons.data.DataReaderBuilderBase#enhanceAttribute(java.lang.String, boolean)
+     * In the DBMS adapter, there is no need to have prefixes for column names.
+     */
+    @Override
+    protected String enhanceAttribute(String token, boolean isJoinMode, String joinPrefix, String nonJoinPrefix) {
+       return token;
+	}
+
 }

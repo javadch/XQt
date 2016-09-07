@@ -34,6 +34,7 @@ import xqt.model.declarations.PerspectiveAttributeDescriptor;
 import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.exceptions.LanguageExceptionBuilder;
+import xqt.model.expressions.ExpressionType;
 import xqt.model.statements.query.SelectDescriptor;
 
 /**
@@ -59,7 +60,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.EqString, ".equals");
         runtimeJoinOperators.put(JoinedContainer.JoinOperator.NotEqString, "!equals"); // this is a special case that is replaced properly in the reader class template
         
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class: {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter encapsulated in the class {0} was successfully instantiated.", CsvDataAdapter.class.getName()));        
         
         //ExcelTest exTest = new ExcelTest();
         //exTest.read();
@@ -127,7 +128,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     	applicationFolder = contextInfo.get("applicationFolder").toString();
     	processFolder = contextInfo.get("processFolder").toString();
     	
-        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}",select.getId()));        
+        LoggerHelper.logDebug(MessageFormat.format("The CSV adapter started preparing statement {0}.",select.getId()));        
         try{
             builder = new DataReaderBuilder();
             builder.statementId(select.getId());
@@ -388,7 +389,7 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
             builder.addLeftFields(helper.getContinerSchema(leftContainer, getBaseContainerPath(), builder.getLeftColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
             builder.addRightFields(helper.getContinerSchema(rightContainer, getBaseContainerPath(), builder.getRightColumnDelimiter(), builder.getTypeDelimiter(), builder.getUnitDelimiter()));
            
-            // it is sopposed that the perspective oject is set to null during the gramar visitation, if not appreaed in the join statement
+            // it is supposed that the perspective object is set to null during the grammar visitation, if not appeared in the join statement
             if(leftContainer.getPerspective() == null) {
                 leftContainer.setPerspective(helper.createPhysicalPerspective(builder.getLeftFields(), null, "left_" + select.getId()));
             }
@@ -706,4 +707,10 @@ public class CsvDataAdapter extends BaseDataAdapter {//implements DataAdapter {
     		return applicationFolder;
     	return processFolder;
     }
+
+	@Override
+	public Map<ExpressionType, String> getExpressionPatterns() {
+		// Does not need to do anything!
+		return null;
+	}
 }
