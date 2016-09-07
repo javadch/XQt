@@ -101,10 +101,11 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
     @Override
     public LinkedHashMap<String, FieldInfo> getContinerSchema(SingleContainer container, Object... params) {
         try {
-            String columnDelimiter =    String.valueOf(params[0]);
-            String typeDelimiter =      String.valueOf(params[1]);
-            String unitDelimiter =      String.valueOf(params[2]);
-            String fileName = getContainerSchemaHolder(container);
+        	String baseContainerPath = 	String.valueOf(params[0]);
+            String columnDelimiter =    String.valueOf(params[1]);
+            String typeDelimiter =      String.valueOf(params[2]);
+            String unitDelimiter =      String.valueOf(params[3]);
+            String fileName = getContainerSchemaHolder(container, baseContainerPath);
             HeaderBuilder hb = new HeaderBuilder();
             LinkedHashMap<String, FieldInfo> fields = hb.buildFromDataFile(fileName, columnDelimiter, typeDelimiter, unitDelimiter, isHeaderExternal(container));
             fields.values().stream().forEach(field -> {
@@ -116,7 +117,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         }
     }
     
-    public String getContainerSchemaHolder(SingleContainer container){ //may need a container index too!
+    public String getContainerSchemaHolder(SingleContainer container, String baseContainerPath){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         String container0 = container.getContainerName();        
         String fileName = "";
@@ -127,7 +128,8 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             fileName = container0.concat(".").concat(fileExtention);
         }
         try{
-            fileName = Paths.get(basePath, fileName).toString();
+        	
+            fileName = Paths.get(FileHelper.resolvePaths(basePath, baseContainerPath), fileName).toString();
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;
         } catch (IOException ex){
@@ -144,12 +146,12 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         }
     }
 
-    public String getCompleteSourceName(SingleContainer container){ //may need a container index too!
+    public String getCompleteSourceName(SingleContainer container, String baseContainerPath){ //may need a container index too!
         String basePath = container.getBinding().getConnection().getSourceUri();
         String container0 = container.getContainerName();
         String fileName = "";
         String fileExtention = container.getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
-        fileName = Paths.get(basePath, container0.concat(".").concat(fileExtention)).toString();
+        fileName = Paths.get(FileHelper.resolvePaths(basePath, baseContainerPath), container0.concat(".").concat(fileExtention)).toString();
         try{
             fileName = FileHelper.makeAbsolute(fileName); 
             return fileName;
@@ -167,7 +169,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
         }
     }
 
-    public String getCompleteTargetName(TargetClause target){ //may need a container index too!
+    public String getCompleteTargetName(TargetClause target, String baseContainerPath){ //may need a container index too!
         if(target.getContainer().getDataContainerType() == DataContainer.DataContainerType.Single){
             SingleContainer container = (SingleContainer)target.getContainer();
             String basePath = container.getBinding().getConnection().getSourceUri();
@@ -175,7 +177,7 @@ public class CsvDataAdapterHelper extends BaseAdapterHelper{
             String fileExtention = ((SingleContainer)target.getContainer())
                         .getBinding().getConnection().getParameterValue("fileextension", "csv").getValue();
                                     
-            String fileName = Paths.get(basePath, container0.concat(".").concat(fileExtention)).toString();            
+            String fileName = Paths.get(FileHelper.resolvePaths(basePath, baseContainerPath), container0.concat(".").concat(fileExtention)).toString();            
             try{
                 fileName = FileHelper.makeAbsolute(fileName); 
                 return fileName;

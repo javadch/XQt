@@ -5,9 +5,12 @@
  */
 package xqt.adapters.dbms;
 
+import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.data.FieldInfo;
 import java.util.List;
 import java.util.Map;
+
+import xqt.adapters.dbms.postgresql.PgSQueryHelper;
 import xqt.model.adapters.BaseAdapterHelper;
 import xqt.model.configurations.ConnectionParameterDescriptor;
 import xqt.model.containers.SingleContainer;
@@ -48,7 +51,7 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
 
     @Override
     public String getAggregateReaderResourceName() {
-        return "DbmsAggregateReader";
+        return "DbmsReader";
     }
 
     @Override
@@ -72,12 +75,12 @@ public abstract class DbmsDataAdapterHelper extends BaseAdapterHelper{
     }
 
     // add a collection of column indexes or names to make the function process a projection of needed columns only
-    public static String[] createRowArray(ResultSet row, List<FieldInfo> fileds){
-        String[] cellValues = new String[fileds.size()];
-        for(int cellIndex =0;  cellIndex < fileds.size(); cellIndex++){
-            FieldInfo field = fileds.get(cellIndex);
+    public static String[] createRowArray(ResultSet row, List<AttributeInfo> attributes){
+        String[] cellValues = new String[attributes.size()];
+        for(int cellIndex =0;  cellIndex < attributes.size(); cellIndex++){
+            AttributeInfo at = attributes.get(cellIndex);
             try {
-                cellValues[cellIndex] = row.getString(field.name);
+                cellValues[cellIndex] = row.getString(at.name);
             } catch (Exception ex){
                 cellValues[cellIndex] = "";
             }

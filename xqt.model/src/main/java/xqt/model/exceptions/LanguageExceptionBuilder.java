@@ -4,10 +4,13 @@
  */
 package xqt.model.exceptions;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.antlr.v4.runtime.RecognitionException;
+
+import com.vaiona.commons.logging.LoggerHelper;
 
 
 /**
@@ -84,8 +87,8 @@ public class LanguageExceptionBuilder {
     }
     
     public LanguageException build(){
-        // the number of arguements used in the template is between 0 - 2. as I do not know how to pass proper arguent 
-        // to its corresponsing placeholder in the template, I am just counting them and decide!
+        // the number of arguments used in the template is between 0 - 2. as I do not know how to pass proper argument 
+        // to its corresponding placeholder in the template, I am just counting them and decide!
         int count = 0;
         if(useAsTemplate) //otherwise the message body does not have any placeholder for context 1 and 2
             count = messageTemplate == null? 0: (messageTemplate.length() - messageTemplate.replaceAll("\\%","").length());
@@ -96,14 +99,17 @@ public class LanguageExceptionBuilder {
         if(count <=0){
             LanguageException ex = new LanguageException(
                 messageTemplate, lineNumber, columnNumber, ruleStackTrace, cause);
+            LoggerHelper.logError(ex.getMessage());
             return ex;            
         } else if (count == 1){
             LanguageException ex = new LanguageException(
                 messageTemplate, lineNumber, columnNumber, contextInfo1, ruleStackTrace, cause);
+            LoggerHelper.logError(ex.getMessage());
             return ex;            
         } else if (count == 2){
             LanguageException ex = new LanguageException(
                 messageTemplate, lineNumber, columnNumber, contextInfo1, contextInfo2, ruleStackTrace, cause);
+            LoggerHelper.logError(ex.getMessage());
             return ex;
         }
         return null; // should be another exception

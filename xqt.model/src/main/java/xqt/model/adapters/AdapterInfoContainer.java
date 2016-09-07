@@ -107,13 +107,13 @@ public class AdapterInfoContainer {
         
         File f = Paths.get(FileHelper.makeAbsolute(FileHelper.getConfigPath(basePaths), "adapters.xml")).toFile();
         
-        LoggerHelper.logDebug("LoadingAdapterInfo" , MessageFormat.format("Loading file {0}", f.getAbsolutePath()));
+        LoggerHelper.logDebug("LoadingAdapterInfo" , MessageFormat.format("Loading adapaters' catalog file {0}.", f.getAbsolutePath()));
         try (InputStream inputStream = new FileInputStream(f)/*("./config/adapters.xml")*/) {
             InputSource inputSource = new InputSource(inputStream);
             xr.parse(inputSource);
-            LoggerHelper.logDebug(MessageFormat.format("The adapter config file {0} was successfully loaded.", f.getAbsolutePath()));
+            LoggerHelper.logDebug(MessageFormat.format("The adapters' catalog file {0} was successfully loaded.", f.getAbsolutePath()));
         } catch (Exception ex){
-            LoggerHelper.logError(MessageFormat.format("The adapter config file {0} was NOT loaded.", f.getAbsolutePath()));
+            LoggerHelper.logError(MessageFormat.format("The adapters' catalog file {0} was NOT loaded.", f.getAbsolutePath()));
             throw ex;
         }
 

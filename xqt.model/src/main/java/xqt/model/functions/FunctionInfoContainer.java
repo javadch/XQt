@@ -6,19 +6,17 @@
 
 package xqt.model.functions;
 
-import com.vaiona.commons.io.FileHelper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.UnmarshallerHandler;
 import javax.xml.bind.annotation.XmlElement;
@@ -27,6 +25,9 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
+
+import com.vaiona.commons.io.FileHelper;
+import com.vaiona.commons.logging.LoggerHelper;
 import xqt.model.adapters.AdapterInfo;
 import xqt.model.adapters.AdapterInfoContainer;
 
@@ -58,7 +59,7 @@ public class FunctionInfoContainer {
                 //writeConfig();
                 instances.put(adapterId, FunctionInfoContainer.loadRegisteredFunctions(adapterId, basePaths));
             } catch (Exception ex) {
-                Logger.getLogger(FunctionInfoContainer.class.getName()).log(Level.SEVERE, null, ex);
+            	LoggerHelper.logError(MessageFormat.format("Failed to load function specifications from '{0}' adapter.", adapterId));        
             }
         }
         return instances.get(adapterId);
@@ -74,6 +75,28 @@ public class FunctionInfoContainer {
     }
 
     private static FunctionInfoContainer loadRegisteredFunctions(String adapterId, String basePaths) throws Exception {
+    	// load the functions of the adpater and that of the fallback. merge them while the adpater functions have precedence.
+        List<FunctionInfo> functions = new ArrayList<>();
+        List<FunctionInfo> fallbackFunctions = new ArrayList<>();
+        functions = loadRegisteredFunctionsForAdapter(adapterId, basePaths);
+        AdapterInfo fallback = AdapterInfoContainer.getInstance(basePaths).getDefultAdapter();
+        if(fallback != null && fallback.getIsFallback() && !fallback.getId().equalsIgnoreCase(adapterId)){
+        	fallbackFunctions = loadRegisteredFunctionsForAdapter(fallback.getId(), basePaths);
+        }
+
+        for(FunctionInfo function: fallbackFunctions){
+        	Boolean found = functions.stream().anyMatch(p-> (function.getPackageName().equalsIgnoreCase(p.getPackageName()) 
+        			&& function.getName().equalsIgnoreCase(p.getName()) ));
+        	if(!found){
+        		functions.add(function);
+        	}
+        }
+        FunctionInfoContainer container = new FunctionInfoContainer();
+        container.setRegisteredFunctions(functions);
+        return container; //(FunctionInfoContainer)unmarshallerHandler.getResult();
+    }
+ 
+    private static List<FunctionInfo> loadRegisteredFunctionsForAdapter(String adapterId, String basePaths) throws Exception {
         JAXBContext jc = JAXBContext.newInstance(FunctionInfoContainer.class);
         UnmarshallerHandler unmarshallerHandler = jc.createUnmarshaller().getUnmarshallerHandler();
 
@@ -104,17 +127,14 @@ public class FunctionInfoContainer {
                     InputSource inputSource = new InputSource(inputStream);
                     xr.parse(inputSource);
                     FunctionInfoContainer temp = (FunctionInfoContainer)unmarshallerHandler.getResult();
-                    temp.registeredFunctions.forEach(p -> p.setPackageName(packageName)); // lowe case package name
+                    temp.registeredFunctions.forEach(p -> p.setPackageName(packageName)); // lower case package name
                     functions.addAll(temp.registeredFunctions);
                 }
             }
             functions.forEach(p -> p.setName(p.getName().toLowerCase())); // lower case function name
         }
-        FunctionInfoContainer container = new FunctionInfoContainer();
-        container.setRegisteredFunctions(functions);
-        return container; //(FunctionInfoContainer)unmarshallerHandler.getResult();
+        return functions;
     }
- 
 //    private static void writeConfigForTest() {
 //        FunctionParameterInfo p1 = new FunctionParameterInfo("columnName", "Boolean|Byte|String|Integer|Long|Real|Date");
 //        FunctionParameterInfo p2 = new FunctionParameterInfo("columnName2", "Boolean|Byte|String|Integer|Long|Real|Date");

@@ -14,10 +14,6 @@
     String LeftClassName,
     String RightClassName,
     String TargetRowType,
-    String Where,
-    Map<AttributeInfo, String> Ordering,
-    Integer skip,
-    Integer take,
     String ContainerName,
     String NativeQuery
 }
@@ -42,6 +38,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.PreparedStatement;
 import xqt.adapters.dbms.DbmsDataReader;
 
 @@SuppressWarnings("unchecked")
@@ -51,6 +48,7 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
     String  userName = "";
     String  password = "";
     List<FieldInfo> fields = null;
+    List<AttributeInfo> attributes = null;
 
     public List<@(TargetRowType)> read(List<@(LeftClassName)> source1, List<@(RightClassName)> source2)  throws FileNotFoundException, IOException {
         ResultSet rs = null;
@@ -71,14 +69,14 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
 
             if (connection != null) {
                 try{
-                    try (Statement stmt = connection.createStatement()) {
-                        rs = stmt.executeQuery("@(NativeQuery)");
+                    try (PreparedStatement stmt = connection.prepareStatement("@(NativeQuery)")) {
+                        rs = stmt.executeQuery();//("@(NativeQuery)");
                         List<@(EntityClassName)> result = new ArrayList<>();
                         int rowCounter = 0;
                         while(rs.next()){
-                            System.out.println("Processing row #" + rowCounter);
+                            //System.out.println("Processing row #" + rowCounter);
                             rowCounter++;
-                            @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, fields));
+                            @(EntityClassName) entity = new @(EntityClassName)(DbmsDataAdapterHelper.createRowArray(rs, attributes));
                             if(entity.isValid == true){
                                 entity.populate();
                                 if(entity.isValid == true){
@@ -124,4 +122,10 @@ public class @(ReaderClassName) implements xqt.adapters.dbms.DbmsDataReader<@(Ta
         fields = value;
         return this;
     }    
+    
+    @@Override
+    public DbmsDataReader attributes(List<AttributeInfo> value) {
+        attributes = value;
+        return this;
+    }
 }

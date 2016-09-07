@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.vaiona.csv.reader.RowBuilder;
+import xqt.adapters.csv.reader.RowBuilder;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
