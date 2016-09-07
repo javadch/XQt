@@ -20,9 +20,11 @@ import xqt.model.ClauseDescriptor;
 import xqt.model.adapters.DataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
+import xqt.model.containers.SingleContainer;
 import xqt.model.containers.VariableContainer;
 import xqt.model.data.Resultset;
 import xqt.model.data.Variable;
+import xqt.model.declarations.PerspectiveDescriptor;
 import xqt.model.exceptions.LanguageException;
 import xqt.model.execution.ExecutionInfo;
 import xqt.model.statements.StatementDescriptor;
@@ -170,7 +172,14 @@ public class JoinedSelectDescriptor extends SelectDescriptor {
         // It is needed to create a perspective for the side queries using the master query's 
         //side.addClause(select.getProjectionClause()); //the comp. query uses the main's projection
         ProjectionFeature   projection       = new ProjectionFeature();
-        projection.setPerspective(this.getProjectionClause().getPerspective().createUnitPerspective());
+        PerspectiveDescriptor perspective = this.getProjectionClause().getPerspective().createUnitPerspective();
+        if(container instanceof SingleContainer && ((SingleContainer)container).getPerspective() != null){
+        	perspective = ((SingleContainer)container).getPerspective();
+        }
+        else if(container instanceof VariableContainer && ((VariableContainer)container).getPerspective() != null){
+        	perspective = ((VariableContainer)container).getPerspective();
+        }
+        projection.setPerspective(perspective);
         projection.setPresent(false);
         side.addClause(projection);
         
