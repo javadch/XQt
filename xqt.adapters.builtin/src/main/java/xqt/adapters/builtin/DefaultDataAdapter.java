@@ -345,6 +345,85 @@ public class DefaultDataAdapter extends BaseDataAdapter{
         return chartPanel;
     }
     
+    private JPanel createBarChart( List<Object> result, PlotContainer plotModel){
+        Object [][] data = null;
+        List<Field> axes = new ArrayList<>();
+        if (result != null && result.size() > 0) {
+            Class<?> clazz = result.get(0).getClass();
+            //Field x = null;
+            //Field y = null;
+
+            try {
+                 //x = clazz.getField(plotModel.getHax());
+                 //y = clazz.getField(plotModel.getVaxes().get(0));
+                 axes.add(clazz.getField(plotModel.getHax().getId()));
+                 for(MemberExpression yAx: plotModel.getVaxes()) {
+                     axes.add(clazz.getField(yAx.getId()));
+                 }                              
+            } catch (NoSuchFieldException | SecurityException ex) {
+                Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            data = new Object[(int)result.stream().count()][axes.size()];
+            int rowCounter = 0;
+            for(Object row: result) {  
+                int columnCounter = 0;
+                for(Field axField: axes){
+                    try {
+                        //Object xValue = x.get(row); // convert the values to proper types and also choose proper point type
+                        //Object yValue = y.get(row);
+                        Object cellValue = axField.get(row);
+                        data[rowCounter][columnCounter++] = cellValue;
+                        //modelA.addPoint((double)xValue, (double)yValue); 
+                    } catch (IllegalArgumentException | IllegalAccessException ex) {
+                        // report an error
+                    }
+                }
+                rowCounter++;
+            }
+        }
+        //modelA.addPoint(102, 135);
+        //modelA.addPoint(170, 200);
+        TableModel tableModel = new DefaultTableModel(data, axes.stream().map(p->p.getName()).collect(Collectors.toList()).toArray());
+        SortableTable table = new SortableTable(tableModel);
+        String vLabel = plotModel.getVaxes().stream().map(p->p.getId()).collect(Collectors.joining(", "));
+        Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
+        xAxis.setRange(0, 400);
+        Axis yAxis = new NumericAxis(new AutoPositionedLabel(plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel()));
+        yAxis.setRange(0, 200);
+
+        Chart chart = new Chart(); 
+        chart.setTitle(plotModel.getPlotLabel());
+        chart.setXAxis(xAxis);
+        chart.setYAxis(yAxis);
+
+
+        List<TableToChartAdapter> adapters = new ArrayList<>();
+        int adapterCounter = 0;
+        List<Color> colorPallet = getDrawingColorPallet((int)axes.stream().count()-1);
+        for(Field ax: axes.stream().skip(1).collect(Collectors.toList())){ // the first filed is the X variable
+            TableToChartAdapter adapter = new TableToChartAdapter(ax.getName() /*+ " Series"*/, table.getModel());
+            ChartStyle style = new ChartStyle(colorPallet.get(adapterCounter++), false, true); 
+            adapter.setXColumn(0);
+            adapter.setYColumn(adapterCounter);  // the first y column starts from 1, which is incremented at the color setting line                          
+            adapters.add(adapter);
+            chart.addModel(adapter, style); // and the style
+        }
+        updateXRange(adapters, plotModel.gethLabel(), chart);
+        updateYRange(adapters, plotModel.getvLabel().isEmpty()? vLabel: plotModel.getvLabel(), chart);  
+        
+        JPanel chartPanel = new JPanel();
+        chartPanel.setLayout(new BorderLayout());
+        chartPanel.add(chart, BorderLayout.CENTER);
+        
+        JPanel legendPanel = new JPanel();
+        chartPanel.add(legendPanel, BorderLayout.EAST);
+
+        Legend legend = new Legend(chart);
+        legendPanel.add(legend);
+        
+        return chartPanel;
+    }
+    
     private List<Color> getDrawingColorPallet(int palletSize) {
         List<Color> pallet = new ArrayList<>(palletSize);
         for (int i = 0; i < palletSize; i++)
