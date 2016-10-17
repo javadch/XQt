@@ -8,6 +8,7 @@ package xqt.adapters.builtin;
 
 import com.jidesoft.chart.Chart;
 import com.jidesoft.chart.Legend;
+import com.jidesoft.chart.Orientation;
 import com.jidesoft.chart.annotation.AutoPositionedLabel;
 import com.jidesoft.chart.axis.Axis;
 import com.jidesoft.chart.axis.NumericAxis;
@@ -20,6 +21,7 @@ import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.types.TypeSystem;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.PageAttributes.OrientationRequestedType;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -356,10 +358,12 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 		chart.setTitle(plotModel.getPlotLabel());
 		chart.setXAxis(xAxis);
 		chart.setYAxis(yAxis);
-
+		
 		List<TableToChartAdapter> adapters = new ArrayList<>();
 		int adapterCounter = 0;
-		List<Color> colorPallet = getDrawingColorPallet((int) axes.stream().count() - 1);
+		int colorCounter=0;
+		int barWidth= 20;
+		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() - 1);
 		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { // the
 																				// first
 																				// filed
@@ -369,9 +373,14 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 																				// variable
 			TableToChartAdapter adapter = new TableToChartAdapter(
 					ax.getName() /* + " Series" */, table.getModel());
-			ChartStyle style = new ChartStyle(colorPallet.get(adapterCounter++), false, true);
+			ChartStyle style = new ChartStyle();//colorPallet.get(adapterCounter++), false, true, true);
+			style=style.withBars();
+			style.setBarsVisible(true);
+			style.setBarColor((Color)colorPallet.get(colorCounter++));
+			style.setBarOrientation( Orientation.horizontal);
+			style.setBarWidth(barWidth);
 			adapter.setXColumn(0);
-			adapter.setYColumn(adapterCounter); // the first y column starts
+			adapter.setYColumn(colorCounter); // the first y column starts
 												// from 1, which is incremented
 												// at the color setting line
 			adapters.add(adapter);
