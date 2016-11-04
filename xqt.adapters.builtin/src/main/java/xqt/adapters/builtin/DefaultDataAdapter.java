@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.swing.JPanel;
 import javax.swing.table.DefaultTableModel;
@@ -222,7 +223,7 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 			//return createBarOrigianlChart();
 		return createBarChart(result, plotModel);
 		default:
-			return null;
+			return createLineChart(result, plotModel);
 		}
 	}
 
@@ -315,240 +316,7 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 
 		return chartPanel;
 	}
-
-	private JPanel createBarOrigianlChartStop() {
-		List<Object> result = new ArrayList<>();
-		result = createDataset();
-
-		Object[][] data = null;
-		List<Field> axes = new ArrayList<>();
-		if (result != null && result.size() > 0) {
-			Field[] fields = Customer.class.getDeclaredFields();
-			try {
-				// x = clazz.getField(plotModel.getHax());
-				// y = clazz.getField(plotModel.getVaxes().get(0));
-				for (Field f : fields) {	
-					if (f.getName() != "id")
-						axes.add(f);		
-				}
-
-			} catch (SecurityException ex) {
-				Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
-			}
-			data = new Object[(int) result.stream().count()][axes.size()];
-			int rowCounter = 0;
-			for (Object row : result) { // All table column
-				int columnCounter = 0;
-				for (Field axField : axes) {
-					try {
-						// Object xValue = x.get(row); // convert the values to
-						// proper types and also choose proper point type
-						// Object yValue = y.get(row);
-						Object cellValue = axField.get(row);
-						data[rowCounter][columnCounter++] = cellValue;
-						// modelA.addPoint((double)xValue, (double)yValue);
-					} catch (IllegalArgumentException | IllegalAccessException ex) {
-						// report an error
-					}
-				}
-				rowCounter++;
-			}
-		}
-		// modelA.addPoint(102, 135);
-		// modelA.addPoint(170, 200);
-		TableModel tableModel = new DefaultTableModel(data,
-				axes.stream().map(p -> p.getName()).collect(Collectors.toList()).toArray());
-		SortableTable table = new SortableTable(tableModel);
-		table.setShowHorizontalLines(false);
-		table.setShowVerticalLines(false);
-		String vLabel = "Number_of_Students";// plotModel.getVaxes().stream().map(p
-												// ->
-												// p.getId()).collect(Collectors.joining(",
-												// "));
-		Axis xAxis = new NumericAxis(new AutoPositionedLabel("Activites"));
-
-		xAxis.setRange(0, 400);
-		Axis yAxis = new NumericAxis(new AutoPositionedLabel(vLabel));// plotModel.getvLabel().isEmpty()
-																		// ?
-																		// vLabel
-																		// :
-																		// plotModel.getvLabel()));
-		yAxis.setRange(0, 200);
-
-		Chart chart = new Chart();
-		chart.setTitle("Student Activites afer School");// plotModel.getPlotLabel());
-		chart.setXAxis(xAxis);
-		chart.setYAxis(yAxis);
-
-		List<TableToChartAdapter> adapters = new ArrayList<>();
-		int adapterCounter = 0;
-		int colorCounter = 0;
-		int barWidth = 10;
-		int RowCounter=-1;
-		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count()+10);
-		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { // the
-																				// first
-																				// filed
-																				// is
-			/*if(RowCounter >=0 )	{															// the
-			//for(RowCounter=0; RowCounter <(int) result.stream().count();RowCounter++ ){																	// X
-			int studentNum=(int)table.getModel().getValueAt(0, 0);																	// variable
-			table.getModel().setValueAt(studentNum+5, 0, 0);
-			//}
-			}*/
-			TableToChartAdapter adapter = new TableToChartAdapter(
-					ax.getName() /* + " Series " */ , table.getModel());
-
-			ChartStyle style = new ChartStyle();// colorPallet.get(adapterCounter++),
-												// false, true, true);
-			style = style.withBars();
-			style.setBarsVisible(true);
-			style.setBarColor((Color) colorPallet.get(colorCounter++));
-			style.setBarOrientation(Orientation.vertical);
-			style.setBarWidth(barWidth);
-			adapter.setXColumn(0);
-			adapter.setYColumn(colorCounter); // the first y column starts
-												// from 1, which is incremented
-												// at the color setting line
-			adapters.add(adapter);
-			chart.addModel(adapter, style);// and the style
-			RowCounter++;
-		}
-		updateXRange(adapters, "Activites After School", chart);
-		// updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel :
-		// plotModel.getvLabel(), chart);
-		updateYRange(adapters, vLabel, chart);
-
-		JPanel chartPanel = new JPanel();
-		chartPanel.setLayout(new BorderLayout());
-		chartPanel.add(chart, BorderLayout.CENTER);
-
-		JPanel legendPanel = new JPanel();
-		chartPanel.add(legendPanel, BorderLayout.EAST);
-
-		Legend legend = new Legend(chart);
-		legendPanel.add(legend);
-
-		return chartPanel;
-	}
 	
-	private JPanel createBarOrigianlChart( ) {
-		List<Object> result= new ArrayList<>();
-		result=createDataset();
-		
-		Object[][] data = null;
-		List<Field> axes = new ArrayList<>();
-		if (result != null && result.size() > 0) {
-		Field[] fields = Customer.class.getDeclaredFields();
-			try {
-				// x = clazz.getField(plotModel.getHax());
-				// y = clazz.getField(plotModel.getVaxes().get(0));
-				for(Field f : fields){
-					if(f.getName()!="id")
-					axes.add(f);
-		        }
-								
-			} catch ( SecurityException ex) {
-				Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
-			}
-			data = new Object[(int) result.stream().count()][axes.size()];
-			int rowCounter = 0;
-			for (Object row : result) { //All table column 
-				int columnCounter = 0;
-				for (Field axField : axes) {
-					try {
-						// Object xValue = x.get(row); // convert the values to
-						// proper types and also choose proper point type
-						// Object yValue = y.get(row);
-						Object cellValue = axField.get(row);
-						data[rowCounter][columnCounter++] = cellValue;
-						// modelA.addPoint((double)xValue, (double)yValue);
-					} catch (IllegalArgumentException | IllegalAccessException ex) {
-						// report an error
-					}
-				}
-				rowCounter++;
-			}
-		}
-		// modelA.addPoint(102, 135);
-		// modelA.addPoint(170, 200);
-		TableModel tableModel = new DefaultTableModel(data,
-				axes.stream().map(p -> p.getName()).collect(Collectors.toList()).toArray());
-		SortableTable table = new SortableTable(tableModel);
-		table.setShowHorizontalLines(false);
-		table.setShowVerticalLines(false);
-		String vLabel ="Number_of_Students" ;//plotModel.getVaxes().stream().map(p -> p.getId()).collect(Collectors.joining(", "));
-		Axis xAxis = new NumericAxis(new AutoPositionedLabel("Activites"));
-		 
-		xAxis.setRange(0, 400);
-		Axis yAxis = new NumericAxis(
-				new AutoPositionedLabel(vLabel));//plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel()));
-		yAxis.setRange(0, 200);
-
-		Chart chart = new Chart();
-		chart.setTitle("Student Activites afer School");//plotModel.getPlotLabel());
-		chart.setXAxis(xAxis);
-		chart.setYAxis(yAxis);
-		
-		List<TableToChartAdapter> adapters = new ArrayList<>();
-		int adapterCounter = 0;
-		int colorCounter=0;
-		int barWidth= 10;
-		int RowCounter=-1;
-		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +5);
-		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { // the
-																				// first
-																				// filed
-																				// is
-																				// the
-																				// X
-																				// variable
-			
-			if(RowCounter >=0 )	{															// the
-			for(RowCounter=0; RowCounter <(int) result.stream().count();RowCounter++ ){																	// X
-			int studentNum=(int)table.getModel().getValueAt(0, 0);																	// variable
-			table.getModel().setValueAt(studentNum+15, 0, 0);
-			}
-			}
-			TableToChartAdapter adapter = new TableToChartAdapter(
-					ax.getName() /* + " Series "*/ , table.getModel());
-						
-			ChartStyle style = new ChartStyle();//colorPallet.get(adapterCounter++), false, true, true);
-			style=style.withBars();
-			style.setBarsVisible(true);
-			style.setBarColor((Color)colorPallet.get(colorCounter++));
-			style.setBarOrientation( Orientation.vertical);
-			style.setBarWidth(barWidth);
-			
-			adapter.setXColumn(0);
-			//adapter.getXColumn();
-			adapter.setYColumn(colorCounter); // the first y column starts
-												// from 1, which is incremented
-												// at the color setting line
-			adapters.add(adapter);
-			chart.addModel(adapter, style);// and the style
-			adapter.clearAnnotations();
-			
-			RowCounter++;
-			
-		}
-		updateXRange(adapters, "Activites", chart);
-		//updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel(), chart);
-		updateYRange(adapters, vLabel, chart);
-
-		JPanel chartPanel = new JPanel();
-		chartPanel.setLayout(new BorderLayout());
-		chartPanel.add(chart, BorderLayout.CENTER);
-
-		JPanel legendPanel = new JPanel();
-		chartPanel.add(legendPanel, BorderLayout.EAST);
-
-		Legend legend = new Legend(chart);
-		legendPanel.add(legend);
-
-		return chartPanel;
-	}
-
 	private JPanel createBarChart(List<Object> result, PlotContainer plotModel) {
 		Object[][] data = null;
 		List<Field> axes = new ArrayList<>();
@@ -576,6 +344,7 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 						// Object xValue = x.get(row); // convert the values to
 						// proper types and also choose proper point type
 						// Object yValue = y.get(row);
+						
 						Object cellValue = axField.get(row);
 						data[rowCounter][columnCounter++] = cellValue;
 						// modelA.addPoint((double)xValue, (double)yValue);
@@ -607,9 +376,10 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 
 		List<TableToChartAdapter> adapters = new ArrayList<>();
 		int adapterCounter = 0;
-		int colorCounter = 0;
-		int barWidth = 10;
-		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() - 1);
+		int colorCounter=0;
+		int barWidth= 10;
+		int RowCounter=-1;
+		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +5);
 		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { // the
 																				// first
 																				// filed
@@ -617,22 +387,34 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 																				// the
 																				// X
 																				// variable
+			
+			if(RowCounter >=0 )	{															// the
+			for(RowCounter=0; RowCounter <(int) result.stream().count();RowCounter++ ){																	// X
+			int studentNum=toInt(table.getModel().getValueAt(0, 0));			// variable
+			if(studentNum != -1)
+			table.getModel().setValueAt(studentNum+11, 0, 0);
+			}
+			}
 			TableToChartAdapter adapter = new TableToChartAdapter(
-					ax.getName() /* + " Series" */, table.getModel());
-
-			ChartStyle style = new ChartStyle();// colorPallet.get(adapterCounter++),
-												// false, true, true);
-			style = style.withBars();
+					ax.getName() /* + " Series "*/ , table.getModel());
+						
+			ChartStyle style = new ChartStyle();//colorPallet.get(adapterCounter++), false, true, true);
+			style=style.withBars();
 			style.setBarsVisible(true);
-			style.setBarColor((Color) colorPallet.get(colorCounter++));
-			style.setBarOrientation(Orientation.vertical);
+			style.setBarColor((Color)colorPallet.get(colorCounter++));
+			style.setBarOrientation( Orientation.vertical);
 			style.setBarWidth(barWidth);
+			
 			adapter.setXColumn(0);
+			//adapter.getXColumn();
 			adapter.setYColumn(colorCounter); // the first y column starts
 												// from 1, which is incremented
 												// at the color setting line
 			adapters.add(adapter);
-			chart.addModel(adapter, style); // and the style
+			chart.addModel(adapter, style);// and the style
+			adapter.clearAnnotations();
+			
+			RowCounter++;
 		}
 		updateXRange(adapters, plotModel.gethLabel(), chart);
 		updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel(), chart);
@@ -649,93 +431,42 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 
 		return chartPanel;
 	}
-
-	private List<Object> createDTset() {
-		final List<Object> data = new ArrayList<Object>();
-		final String fiat = "FIAT";
-		final String audi = "AUDI";
-		final String ford = "FORD";
-		final String speed = "Speed";
-		final String millage = "Millage";
-		final String userrating = "User Rating";
-		final String safety = "safety";
-		final DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-		dataset.addValue(1.0, fiat, speed);
-		dataset.addValue(3.0, fiat, userrating);
-		dataset.addValue(5.0, fiat, millage);
-		data.add(dataset);
-
-		final DefaultCategoryDataset dataset2 = new DefaultCategoryDataset();
-		dataset2.addValue(5.0, audi, speed);
-		dataset2.addValue(6.0, audi, userrating);
-		dataset2.addValue(10.0, audi, millage);
-		dataset2.addValue(4.0, audi, safety);
-		data.add(dataset2);
-
-		final DefaultCategoryDataset dataset3 = new DefaultCategoryDataset();
-		dataset3.addValue(4.0, ford, speed);
-		dataset3.addValue(2.0, ford, userrating);
-		dataset3.addValue(3.0, ford, millage);
-		dataset3.addValue(6.0, ford, safety);
-
-		data.add(dataset3);
-		return data;
+	
+	@Deprecated
+	public static int toInt(Object obj)
+	{
+		int i=0;
+	    if (obj instanceof String)
+	    {
+	    	if(numberOrNot ((String) obj))
+	         return Integer.parseInt((String) obj);
+	    	else
+		    {
+		    	return i;
+		    }
+	    	
+	    } else if (obj instanceof Integer)
+	    {
+	         return ((Integer) obj).intValue();
+	    } else {
+	         return ((Double) obj).intValue();
+	    }
+	   
 	}
-
-	private List<Object> createDataset() {
-		final List<Object> data = new ArrayList<Object>();
-		// final String B="Bangladesh";
-		// final String G="Germany";
-		// final String U="USA";
-		// final String I="IRAN";
-
-		// new DefaultCategoryDataset( );
-		Customer dataset = new Customer();
-		dataset.setId(1);
-		dataset.setActivites(10);
-		dataset.Food=20;
-		dataset.Fd=10;
-		
-		//dataset.setSports(30);
-		//dataset.EarnMoney = 10;
-		//dataset.PlayGame = 60;
-		//dataset.WatchTV = 55;
-		dataset.setNumber_of_Students(30);
-
-		data.add(dataset);
-
-		Customer dat2 = new Customer();
-		dat2.setActivites(10);;
-		dat2.setNumber_of_Students(20);
-		dat2.Food=10;
-		dat2.Fd=20;
-		//dat2.EarnMoney = 20;
-		//dat2.PlayGame = 50;
-		//dat2.WatchTV = 85;
-		data.add(dat2);
-
-		Customer dat3 = new Customer();
-		dat3.setActivites(70);
-		dat3.Food=70;
-		dat3.Fd=25;
-		//dat3.EarnMoney = 300;
-		//dat3.PlayGame = 40;
-		//dat3.WatchTV = 65;
-		dat3.setNumber_of_Students(80);
-		data.add(dat3);
-
-		/*Customer dat4 = new Customer();
-		dat4.setSports(30);
-		dat4.EarnMoney = 50;
-		dat4.PlayGame = 10;
-		dat4.WatchTV = 90;
-		dat4.setNumber_of_Students(50);
-
-		data.add(dat4);*/
-		return data;
-	}
-
+	
+	static boolean numberOrNot(String input)
+    {
+        try
+        {
+            Integer.parseInt(input);
+        }
+        catch(NumberFormatException ex)
+        {
+            return false;
+        }
+        return true;
+    }
+	
 	private List<Color> getDrawingColorPallet(int palletSize) {
 		List<Color> pallet = new ArrayList<>(palletSize);
 		for (int i = 0; i < palletSize; i++)
