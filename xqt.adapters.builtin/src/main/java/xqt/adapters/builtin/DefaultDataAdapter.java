@@ -212,8 +212,8 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 			return createLineChart(result, plotModel);
 		case "b":
 			return createBarChart(result, plotModel);
-		//case "s":
-			//return createScatterChart(result, plotModel);
+		case "s":
+			return createScatterChart(result, plotModel);
 		default:
 			return createLineChart(result, plotModel);
 		}
@@ -400,7 +400,148 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 
 		return chartPanel;
 	}
+	
+	private JPanel createScatterChart(List<Object> result, PlotContainer plotModel) {
+		Object[][] data = null;
+		List<Field> axes = new ArrayList<>();
+		if (result != null && result.size() > 0) {
+			Class<?> clazz = result.get(0).getClass();
+			
+			try {
+				
+				axes.add(clazz.getField(plotModel.getHax().getId()));
+				for (MemberExpression yAx : plotModel.getVaxes()) {
+					axes.add(clazz.getField(yAx.getId()));
+				}
+			} catch (NoSuchFieldException | SecurityException ex) {
+				Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
+			}
+			data = new Object[(int) result.stream().count()][axes.size()];
+			int rowCounter = 0;
+			for (Object row : result) {
+				int columnCounter = 0;
+				for (Field axField : axes) {
+					try {
+							Object cellValue = axField.get(row);
+							data[rowCounter][columnCounter++] = cellValue;
+												
+					} catch (IllegalArgumentException | IllegalAccessException ex) {
+						// report an error
+					}
+				}
+				rowCounter++;
+			}
+		}
 		
+		TableModel tableModel = new DefaultTableModel(data,
+				axes.stream().map(p -> p.getName()).collect(Collectors.toList()).toArray());
+		SortableTable table = new SortableTable(tableModel);
+		String vLabel = plotModel.getVaxes().stream().map(p -> p.getId()).collect(Collectors.joining(", "));
+		Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
+		xAxis.setRange(0, 400);
+		Axis yAxis = new NumericAxis(
+				new AutoPositionedLabel(plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel()));
+		yAxis.setRange(0, 200);
+
+		Chart chart = new Chart();
+		chart.setTitle(plotModel.getPlotLabel());
+		chart.setXAxis(xAxis);
+		chart.setYAxis(yAxis);
+		
+		List<TableToChartAdapter> adapters = new ArrayList<>();
+		int RowCounter=0;
+		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +axes.size()+2);
+		try{
+		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) {
+																				
+			TableToChartAdapter adapter = new TableToChartAdapter(
+					ax.getName(), table.getModel());
+
+			ChartStyle style = new ChartStyle();
+			style.setPointsVisible(true);
+			style.setLinesVisible(false);
+			style.setPointShape(choosePointShape(RowCounter));  // choose the shape of the point.
+			style.setPointColor(colorPallet.get(RowCounter++));
+			style.setPointSize(10);
+			
+			adapter.setXColumn(0);
+			adapter.setYColumn(RowCounter); 
+			adapters.add(adapter);
+			chart.addModel(adapter, style);// and the style
+					
+		}
+		}
+		catch(Exception ex)
+		{
+			System.out.println(ex.toString() + "Error: from ScatterChart");
+		 return null;
+		}
+		updateXRange(adapters, plotModel.gethLabel(), chart);
+		updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel(), chart);
+
+		JPanel chartPanel = new JPanel();
+		chartPanel.setLayout(new BorderLayout());
+		chartPanel.add(chart, BorderLayout.CENTER);
+
+		JPanel legendPanel = new JPanel();
+		chartPanel.add(legendPanel, BorderLayout.EAST);
+
+		Legend legend = new Legend(chart);
+		legendPanel.add(legend);
+
+		return chartPanel;
+	}
+	
+	public PointShape choosePointShape(int pointShapeId){
+		
+		switch (pointShapeId) {
+		case 0:
+			return PointShape.CIRCLE;
+		case 1:
+			return PointShape.BOX;
+		case 2:
+			return PointShape.DIAMOND;
+		case 3:
+			return PointShape.SQUARE;
+		case 4:
+			return PointShape.DISC;
+		case 5:
+			return PointShape.DOWN_TRIANGLE;
+		case 6:
+			return PointShape.HORIZONTAL_LINE;
+		case 7:
+			return PointShape.DIAGONAL_CROSS;
+		case 8:
+			return PointShape.UPRIGHT_CROSS;
+		case 9:
+			return PointShape.UP_TRIANGLE;
+		default:
+			return PointShape.VERTICAL_LINE;
+		}
+		
+	}
+	
+	public static int toInt(Object obj)
+	{
+		int i=0;
+	    if (obj instanceof String)
+	    {
+	    	if(numberOrNot ((String) obj))
+	         return Integer.parseInt((String) obj);
+	    	else
+		    {
+		    	return i;
+		    }
+	    	
+	    } else if (obj instanceof Integer)
+	    {
+	         return ((Integer) obj).intValue();
+	    } else {
+	         return ((Double) obj).intValue();
+	    }
+	   
+	}
+	
 	static boolean numberOrNot(String input)
     {
         try
