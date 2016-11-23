@@ -9,12 +9,11 @@ package xqt.adapters.builtin;
 import com.jidesoft.chart.Chart;
 import com.jidesoft.chart.Legend;
 import com.jidesoft.chart.Orientation;
+import com.jidesoft.chart.PointShape;
 import com.jidesoft.chart.annotation.AutoPositionedLabel;
 import com.jidesoft.chart.axis.Axis;
-import com.jidesoft.chart.axis.CategoryAxis;
 import com.jidesoft.chart.axis.NumericAxis;
 import com.jidesoft.chart.model.TableToChartAdapter;
-import com.jidesoft.chart.style.BarStyle;
 import com.jidesoft.chart.style.ChartStyle;
 import com.jidesoft.grid.SortableTable;
 import com.jidesoft.range.NumericRange;
@@ -23,11 +22,7 @@ import com.vaiona.commons.data.AttributeInfo;
 import com.vaiona.commons.types.TypeSystem;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.PageAttributes.OrientationRequestedType;
-import java.awt.Paint;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -40,10 +35,6 @@ import java.util.stream.Collectors;
 import javax.swing.JPanel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-
-import org.jfree.data.category.CategoryDataset;
-import org.jfree.data.category.DefaultCategoryDataset;
-
 import xqt.model.adapters.BaseDataAdapter;
 import xqt.model.containers.DataContainer;
 import xqt.model.containers.JoinedContainer;
@@ -173,7 +164,7 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 		registerCapability("select.orderby", true);
 		registerCapability("select.groupby", true);
 		registerCapability("select.limit", true);
-		registerCapability("select.limit.take", true);	
+		registerCapability("select.limit.take", true);
 		registerCapability("select.limit.skip", true);
 	}
 
@@ -220,8 +211,9 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 		case "l":
 			return createLineChart(result, plotModel);
 		case "b":
-			//return createBarOrigianlChart();
-		return createBarChart(result, plotModel);
+			return createBarChart(result, plotModel);
+		case "s":
+			return createScatterChart(result, plotModel);
 		default:
 			return createLineChart(result, plotModel);
 		}
@@ -316,18 +308,13 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 
 		return chartPanel;
 	}
-	
+
 	private JPanel createBarChart(List<Object> result, PlotContainer plotModel) {
 		Object[][] data = null;
 		List<Field> axes = new ArrayList<>();
 		if (result != null && result.size() > 0) {
 			Class<?> clazz = result.get(0).getClass();
-			// Field x = null;
-			// Field y = null;
-
 			try {
-				// x = clazz.getField(plotModel.getHax());
-				// y = clazz.getField(plotModel.getVaxes().get(0));
 				axes.add(clazz.getField(plotModel.getHax().getId()));
 				for (MemberExpression yAx : plotModel.getVaxes()) {
 					axes.add(clazz.getField(yAx.getId()));
@@ -337,17 +324,12 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 			}
 			data = new Object[(int) result.stream().count()][axes.size()];
 			int rowCounter = 0;
-			for (Object row : result) { // All table column
+			for (Object row : result) {
 				int columnCounter = 0;
 				for (Field axField : axes) {
 					try {
-						// Object xValue = x.get(row); // convert the values to
-						// proper types and also choose proper point type
-						// Object yValue = y.get(row);
-						
-						Object cellValue = axField.get(row);
-						data[rowCounter][columnCounter++] = cellValue;
-						// modelA.addPoint((double)xValue, (double)yValue);
+							Object cellValue = axField.get(row);
+							data[rowCounter][columnCounter++] = cellValue;
 					} catch (IllegalArgumentException | IllegalAccessException ex) {
 						// report an error
 					}
@@ -355,13 +337,9 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 				rowCounter++;
 			}
 		}
-		// modelA.addPoint(102, 135);
-		// modelA.addPoint(170, 200);
 		TableModel tableModel = new DefaultTableModel(data,
 				axes.stream().map(p -> p.getName()).collect(Collectors.toList()).toArray());
 		SortableTable table = new SortableTable(tableModel);
-		table.setShowHorizontalLines(false);
-		table.setShowVerticalLines(false);
 		String vLabel = plotModel.getVaxes().stream().map(p -> p.getId()).collect(Collectors.joining(", "));
 		Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
 		xAxis.setRange(0, 400);
@@ -373,48 +351,39 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 		chart.setTitle(plotModel.getPlotLabel());
 		chart.setXAxis(xAxis);
 		chart.setYAxis(yAxis);
-
+		
 		List<TableToChartAdapter> adapters = new ArrayList<>();
-		int adapterCounter = 0;
+		//int adapterCounter = 0;
 		int colorCounter=0;
 		int barWidth= 10;
-		int RowCounter=-1;
-		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +5);
-		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { // the
-																				// first
-																				// filed
-																				// is
-																				// the
-																				// X
-																				// variable
+		//int RowCounter=-1;
+		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +axes.size()+2);
+		try{
+		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) { 
 			
-			if(RowCounter >=0 )	{															// the
-			for(RowCounter=0; RowCounter <(int) result.stream().count();RowCounter++ ){																	// X
-			int studentNum=toInt(table.getModel().getValueAt(0, 0));			// variable
-			if(studentNum != -1)
-			table.getModel().setValueAt(studentNum+11, 0, 0);
-			}
-			}
 			TableToChartAdapter adapter = new TableToChartAdapter(
-					ax.getName() /* + " Series "*/ , table.getModel());
-						
-			ChartStyle style = new ChartStyle();//colorPallet.get(adapterCounter++), false, true, true);
-			style=style.withBars();
+					ax.getName(), table.getModel());
+
+			ChartStyle style = new ChartStyle();
 			style.setBarsVisible(true);
 			style.setBarColor((Color)colorPallet.get(colorCounter++));
 			style.setBarOrientation( Orientation.vertical);
 			style.setBarWidth(barWidth);
-			
+			style.setLinesVisible(false);
+						
 			adapter.setXColumn(0);
-			//adapter.getXColumn();
 			adapter.setYColumn(colorCounter); // the first y column starts
 												// from 1, which is incremented
 												// at the color setting line
 			adapters.add(adapter);
-			chart.addModel(adapter, style);// and the style
-			adapter.clearAnnotations();
-			
-			RowCounter++;
+			chart.addModel(adapter, style);
+			chart.setBarGap(20);
+			chart.setBarGroupGap(20);
+		}
+		}
+		catch( Exception ex){
+			System.out.println("*************" + ex.toString() + " Error: occured in Barchart Creation ");
+			return null;
 		}
 		updateXRange(adapters, plotModel.gethLabel(), chart);
 		updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel(), chart);
@@ -432,7 +401,126 @@ public class DefaultDataAdapter extends BaseDataAdapter {
 		return chartPanel;
 	}
 	
-	@Deprecated
+	private JPanel createScatterChart(List<Object> result, PlotContainer plotModel) {
+		Object[][] data = null;
+		List<Field> axes = new ArrayList<>();
+		if (result != null && result.size() > 0) {
+			Class<?> clazz = result.get(0).getClass();
+			
+			try {
+				
+				axes.add(clazz.getField(plotModel.getHax().getId()));
+				for (MemberExpression yAx : plotModel.getVaxes()) {
+					axes.add(clazz.getField(yAx.getId()));
+				}
+			} catch (NoSuchFieldException | SecurityException ex) {
+				Logger.getLogger(DefaultDataAdapter.class.getName()).log(Level.SEVERE, null, ex);
+			}
+			data = new Object[(int) result.stream().count()][axes.size()];
+			int rowCounter = 0;
+			for (Object row : result) {
+				int columnCounter = 0;
+				for (Field axField : axes) {
+					try {
+							Object cellValue = axField.get(row);
+							data[rowCounter][columnCounter++] = cellValue;
+												
+					} catch (IllegalArgumentException | IllegalAccessException ex) {
+						// report an error
+					}
+				}
+				rowCounter++;
+			}
+		}
+		
+		TableModel tableModel = new DefaultTableModel(data,
+				axes.stream().map(p -> p.getName()).collect(Collectors.toList()).toArray());
+		SortableTable table = new SortableTable(tableModel);
+		String vLabel = plotModel.getVaxes().stream().map(p -> p.getId()).collect(Collectors.joining(", "));
+		Axis xAxis = new NumericAxis(new AutoPositionedLabel(plotModel.gethLabel()));
+		xAxis.setRange(0, 400);
+		Axis yAxis = new NumericAxis(
+				new AutoPositionedLabel(plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel()));
+		yAxis.setRange(0, 200);
+
+		Chart chart = new Chart();
+		chart.setTitle(plotModel.getPlotLabel());
+		chart.setXAxis(xAxis);
+		chart.setYAxis(yAxis);
+		
+		List<TableToChartAdapter> adapters = new ArrayList<>();
+		int RowCounter=0;
+		List<Color> colorPallet = getDrawingColorPallet((int) result.stream().count() +axes.size()+2);
+		try{
+		for (Field ax : axes.stream().skip(1).collect(Collectors.toList())) {
+																				
+			TableToChartAdapter adapter = new TableToChartAdapter(
+					ax.getName(), table.getModel());
+
+			ChartStyle style = new ChartStyle();
+			style.setPointsVisible(true);
+			style.setLinesVisible(false);
+			style.setPointShape(choosePointShape(RowCounter));  // choose the shape of the point.
+			style.setPointColor(colorPallet.get(RowCounter++));
+			style.setPointSize(10);
+			
+			adapter.setXColumn(0);
+			adapter.setYColumn(RowCounter); 
+			adapters.add(adapter);
+			chart.addModel(adapter, style);// and the style
+					
+		}
+		}
+		catch(Exception ex)
+		{
+			System.out.println(ex.toString() + "Error: from ScatterChart");
+		 return null;
+		}
+		updateXRange(adapters, plotModel.gethLabel(), chart);
+		updateYRange(adapters, plotModel.getvLabel().isEmpty() ? vLabel : plotModel.getvLabel(), chart);
+
+		JPanel chartPanel = new JPanel();
+		chartPanel.setLayout(new BorderLayout());
+		chartPanel.add(chart, BorderLayout.CENTER);
+
+		JPanel legendPanel = new JPanel();
+		chartPanel.add(legendPanel, BorderLayout.EAST);
+
+		Legend legend = new Legend(chart);
+		legendPanel.add(legend);
+
+		return chartPanel;
+	}
+	
+	public PointShape choosePointShape(int pointShapeId){
+		
+		switch (pointShapeId) {
+		case 0:
+			return PointShape.CIRCLE;
+		case 1:
+			return PointShape.BOX;
+		case 2:
+			return PointShape.DIAMOND;
+		case 3:
+			return PointShape.SQUARE;
+		case 4:
+			return PointShape.DISC;
+		case 5:
+			return PointShape.DOWN_TRIANGLE;
+		case 6:
+			return PointShape.HORIZONTAL_LINE;
+		case 7:
+			return PointShape.DIAGONAL_CROSS;
+		case 8:
+			return PointShape.UPRIGHT_CROSS;
+		case 9:
+			return PointShape.UP_TRIANGLE;
+		default:
+			return PointShape.VERTICAL_LINE;
+		}
+		
+	}
+	
 	public static int toInt(Object obj)
 	{
 		int i=0;
